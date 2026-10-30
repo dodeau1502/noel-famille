@@ -1,5 +1,5 @@
 import { extract, isPrivateIp, badHostname } from "./parse.js";
-import { pickOffers, cleanTitle, looksLikeUrl } from "./offers.js";
+import { pickOffers, cleanTitle, betterTitle, looksLikeUrl } from "./offers.js";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     const { url, info } = await readPage(q);
     if (info) {
       store = info.store;
-      title = cleanTitle(info.title, info.store);
+      title = betterTitle(info.title, info.heading, info.store);
       image = info.image;
       price = info.price;
       searchText = title || slugToText(url || q) || q;

@@ -102,3 +102,13 @@ export function looksLikeUrl(s) {
   if (/\s/.test(t)) return false;
   return /^https?:\/\//i.test(t) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(t);
 }
+
+// Le titre de la page (og:title) est parfois plus court que le titre du produit (« Drone X » au lieu de
+// « Contrôleur de vol pour drone X ») : on prend le titre H1 s'il contient tous les mots du premier et en ajoute.
+export function betterTitle(title, heading, store = "") {
+  const t = cleanTitle(title, store), h = cleanTitle(heading, store);
+  if (!h) return t;
+  if (!t) return h;
+  const ht = new Set(tokens(h)), tt = tokens(t);
+  return tt.every(x => ht.has(x)) && ht.size > tt.length ? h : t;
+}

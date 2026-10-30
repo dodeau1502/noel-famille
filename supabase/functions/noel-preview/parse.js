@@ -96,7 +96,9 @@ export function extract(html, finalUrl) {
 
   let store = meta["og:site_name"] || "";
   if (!store) { try { store = new URL(finalUrl).hostname.replace(/^www\./, ""); } catch (e) {} }
-  return { title: title.slice(0, 120), image, price, store: store.slice(0, 80) };
+  const h = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const heading = h ? decode(h[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ")).slice(0, 160) : "";
+  return { title: title.slice(0, 120), heading, image, price, store: store.slice(0, 80) };
 }
 
 export function isPrivateIp(ip) {

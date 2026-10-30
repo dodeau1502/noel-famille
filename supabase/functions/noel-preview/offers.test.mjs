@@ -35,4 +35,8 @@ assert.equal(cleanTitle("Wingspan - Philibert", "Philibert"), "Wingspan");
 assert.equal(cleanTitle("Casque XM5 - Noir", "Boulanger"), "Casque XM5 - Noir");
 assert.deepEqual(tokens("Plaid en laine mérinos"), ["plaid", "laine", "merinos"]);
 for (const [i, o] of [["https://www.fnac.com/x", true], ["fnac.com/jbl", true], ["casque sony xm5", false], ["jbl flip 6", false], ["amazon.fr", true]]) assert.equal(looksLikeUrl(i), o, i);
+import { betterTitle } from "./offers.js";
+assert.equal(betterTitle("Drone Dji Lito X1", "Controleur de vol avec capteur de proximité pour drone DJI Lito X1", "reparation-drone.com"), "Controleur de vol avec capteur de proximité pour drone DJI Lito X1");
+assert.equal(betterTitle("Casque Sony XM5", "Autre produit"), "Casque Sony XM5");
+assert.equal(betterTitle("", "Titre H1"), "Titre H1");
 console.log("offers OK");
