@@ -141,6 +141,22 @@
   .preview .thumb{width:72px; height:72px}
   .preview p{font-size:.95rem; overflow-wrap:anywhere}
   .status{font-size:.95rem; color:var(--muted)}
+  .offers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .offers li{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; min-height:48px; border-top:1px solid var(--line)}
+  .offers li:first-child{border-top:0}
+  .offers a{color:var(--ink); font-weight:600; text-decoration:none; min-width:0; overflow-wrap:anywhere; padding:10px 0; flex:1}
+  .offers a:hover{text-decoration:underline}
+  .offers b{font:700 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .offers li.best{background:var(--pine-soft)}
+  .offers li.best b{color:var(--pine)}
+  .offers .tag{font-size:.8rem; font-weight:700; color:var(--pine); margin-left:8px; white-space:nowrap}
+  .preview .more{display:flex; flex-direction:column; gap:2px; margin-top:4px; font-size:.92rem; color:var(--muted)}
+  .preview h3{margin:0; font:700 1rem/1.25 var(--f-display)}
+  .search-row{display:flex; gap:8px}
+  .search-row input{flex:1; min-width:0}
+  #result{display:flex; flex-direction:column; gap:12px}
+  details.manual summary{cursor:pointer; font-weight:600; color:var(--pine); min-height:40px; display:flex; align-items:center}
+  details.manual .grid2{padding-top:6px}
 
     .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
   .empty strong{display:block; color:var(--ink); font:700 1.1rem var(--f-display); margin-bottom:4px}
@@ -209,26 +225,34 @@
         <p class="note-owner">Tu vois uniquement tes idées. Ce que ta famille prend reste caché, c'est voulu.</p>
         <form class="card panel" id="addForm">
           <h2>Ajouter une idée</h2>
-          <label for="gUrl">Lien du produit (facultatif)
-            <input id="gUrl" type="url" maxlength="500" placeholder="Colle le lien d'un magasin" autocomplete="off" inputmode="url">
+          <label for="gQuery">Lien ou nom du produit
+            <div class="search-row">
+              <input id="gQuery" type="text" maxlength="300" placeholder="Colle un lien ou écris le nom" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+              <button class="btn" type="button" id="searchBtn">Chercher</button>
+            </div>
           </label>
           <p class="status" id="lookup" aria-live="polite" hidden></p>
-          <div class="preview" id="preview" hidden>
-            <div class="thumb" id="pvThumb"></div>
-            <p id="pvText"></p>
-          </div>
-          <label for="gTitle">Cadeau
-            <input id="gTitle" type="text" maxlength="120" placeholder="Ex. Casque audio sans fil" autocomplete="off">
-          </label>
-          <div class="grid2">
-            <label for="gPrice">Prix en euros (facultatif)
-              <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
-            </label>
+          <div id="result" hidden>
+            <div class="preview">
+              <div class="thumb" id="pvThumb"></div>
+              <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
+            </div>
             <label for="gNote">Précision (facultatif)
               <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
             </label>
+            <details class="manual" id="manual">
+              <summary>Corriger à la main</summary>
+              <div class="grid2">
+                <label for="gTitle">Nom du cadeau
+                  <input id="gTitle" type="text" maxlength="120" autocomplete="off">
+                </label>
+                <label for="gPrice">Prix en euros
+                  <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
+                </label>
+              </div>
+            </details>
+            <button class="btn" type="submit" id="addBtn">Ajouter à la liste</button>
           </div>
-          <button class="btn" type="submit" id="addBtn">Ajouter à la liste</button>
         </form>
       </div>
 
@@ -339,12 +363,20 @@ function render(){
     list.innerHTML = `<li class="empty"><strong>${t}</strong>${s}</li>`;
     return;
   }
-  $("priceNote").hidden = !gifts.some(g=>g.price != null);
+  const stamps = gifts.map(g=>g.offers_at).filter(Boolean).sort();
+  $("priceNote").hidden = !gifts.some(g=>g.price != null || (g.offers && g.offers.length));
+  $("priceNote").textContent = stamps.length
+    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez plusieurs marchands. Ils peuvent avoir changé : touche un marchand pour vérifier avant d'acheter."
+    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Touche « Comparer les prix » pour vérifier avant d'acheter.";
   list.innerHTML = shown.map(g=>{
     const url = safeUrl(g.url);
-    const see = url ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
+    const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
-    const price = g.price != null ? `<div class="price"><b>${eur(g.price)}</b></div>` : "";
+    const offs = (Array.isArray(g.offers) ? g.offers : []).filter(o=>o && /^https:\/\//.test(o.url||"") && o.price != null);
+    const best = offs.length ? offs[0].price : g.price;
+    const price = best != null ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b></div>` : "";
+    const hide = g.claimed_by && role==="family" && !same(g.claimed_by,who);
+    const offersHtml = (!hide && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Meilleur prix</span>':''}</a><b>${eur(o.price)}</b></li>`).join("")}</ul>` : "";
     const img = /^https:\/\//.test(g.image||"")
       ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
     const q = encodeURIComponent(g.title);
@@ -366,7 +398,7 @@ function render(){
     } else {
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
-    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${extra}</div></div>${g.claimed_by && role==="family" && !same(g.claimed_by,who) ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
+    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${extra}</div></div>${offersHtml}${g.claimed_by && role==="family" && !same(g.claimed_by,who) ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
   }).join("");
 }
 
@@ -395,61 +427,74 @@ document.querySelector(".tabs").addEventListener("click", e=>{
   filter = b.dataset.f; render();
 });
 
-let meta = {image:"", price:null, store:"", url:""};
-function showPreview(){
-  const pv = $("preview");
-  if(!meta.image && meta.price == null && !meta.store){ pv.hidden = true; return; }
+let meta = {image:"", price:null, store:"", offers:[], link:""};
+let searching = false;
+const isLink = q => !/\s/.test(q) && (/^https?:\/\//i.test(q) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(q));
+
+function showResult(){
+  $("result").hidden = false;
   $("pvThumb").innerHTML = meta.image ? `<img src="${esc(meta.image)}" alt="" referrerpolicy="no-referrer">` : PLACEHOLDER;
-  const bits = [];
-  if(meta.store) bits.push("Boutique : " + esc(meta.store));
-  if(meta.price != null) bits.push("Prix trouvé : " + eur(meta.price));
-  if(meta.image) bits.push("Photo trouvée");
-  $("pvText").innerHTML = bits.join("<br>");
-  pv.hidden = false;
+  $("pvTitle").textContent = $("gTitle").value;
+  const more = [];
+  if(meta.offers.length){
+    more.push(`<b style="color:var(--ink)">À partir de ${eur(meta.offers[0].price)}</b> chez ${esc(meta.offers[0].store)}`);
+    if(meta.offers.length > 1) more.push(`${meta.offers.length} marchands comparés`);
+  } else if(meta.price != null){
+    more.push(`<b style="color:var(--ink)">${eur(meta.price)}</b>${meta.store ? " chez " + esc(meta.store) : ""}`);
+  } else {
+    more.push("Prix non trouvé : tu peux le saisir à la main.");
+  }
+  $("pvMore").innerHTML = more.map(x=>`<span>${x}</span>`).join("");
 }
-async function lookup(){
-  let url = $("gUrl").value.trim(); const st = $("lookup");
-  if(!url){ meta = {image:"",price:null,store:"",url:""}; st.hidden = true; showPreview(); return; }
-  if(!/^https?:\/\//i.test(url)){ url = "https://" + url; $("gUrl").value = url; }
-  if(url === meta.url) return;
-  meta = {image:"",price:null,store:"",url}; showPreview();
-  st.hidden = false; st.textContent = "Lecture du lien…";
+
+async function search(){
+  const q = $("gQuery").value.trim(); const st = $("lookup");
+  if(!q || searching) return;
+  searching = true; $("searchBtn").disabled = true;
+  meta = {image:"", price:null, store:"", offers:[], link: isLink(q) ? (/^https?:\/\//i.test(q) ? q : "https://" + q) : ""};
+  st.hidden = false; st.textContent = "Recherche du produit et des prix…";
   try{
     const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-preview`, {
       method:"POST",
       headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-      body:JSON.stringify({code, url})
+      body:JSON.stringify({code, query:q})
     });
     const d = await r.json().catch(()=>null);
-    if(!r.ok || !d || !d.ok) throw new Error(d && d.reason || "Lecture automatique impossible.");
-    meta = {image:d.image||"", price:d.price, store:d.store||"", url};
-    if(d.title && !$("gTitle").value.trim()) $("gTitle").value = d.title;
-    if(d.price != null && !$("gPrice").value.trim()) $("gPrice").value = String(d.price).replace(".", ",");
-    showPreview();
-    st.textContent = (d.image || d.price != null) ? "Informations récupérées. Vérifie le nom et le prix avant d'ajouter."
-                                                    : "Ce site ne donne ni photo ni prix. Tu peux saisir le prix à la main.";
+    if(!r.ok || !d) throw new Error("Recherche impossible pour le moment.");
+    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.offers = Array.isArray(d.offers) ? d.offers : [];
+    $("gTitle").value = d.title || (isLink(q) ? "" : q);
+    $("gPrice").value = d.price != null ? String(d.price).replace(".", ",") : "";
+    const found = meta.image || d.price != null || meta.offers.length;
+    $("manual").open = !found || !$("gTitle").value;
+    st.textContent = found ? (d.reason ? d.reason + " Vérifie la fiche avant d'ajouter." : "Fiche remplie. Vérifie-la puis ajoute-la.")
+                           : ((d.reason || "Aucune information trouvée.") + " Remplis la fiche à la main.");
   }catch(e){
-    st.textContent = (e.message && e.message.length < 120 ? e.message : "Lecture automatique impossible.") + " Tu peux remplir les champs à la main.";
+    $("gTitle").value = isLink(q) ? "" : q; $("gPrice").value = ""; $("manual").open = true;
+    st.textContent = "Recherche automatique impossible. Remplis la fiche à la main.";
   }
+  searching = false; $("searchBtn").disabled = false;
+  showResult();
 }
-$("gUrl").addEventListener("change", lookup);
-$("gUrl").addEventListener("paste", ()=>setTimeout(lookup, 60));
+$("searchBtn").addEventListener("click", search);
+$("gQuery").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); search(); } });
+$("gQuery").addEventListener("paste", ()=>setTimeout(()=>{ if(isLink($("gQuery").value.trim())) search(); }, 80));
+$("gTitle").addEventListener("input", ()=>{ $("pvTitle").textContent = $("gTitle").value; });
 
-$("addForm").addEventListener("submit", async e=>{
+$("addForm").addEventListener("submit", e=>{
   e.preventDefault();
+  if($("result").hidden){ search(); return; }
   const title = $("gTitle").value.trim();
-  if(!title){ $("appErr").textContent = "Donne un nom au cadeau."; $("gTitle").focus(); return; }
-  await lookup();
-  let url = $("gUrl").value.trim();
-  if(url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+  if(!title){ $("manual").open = true; $("appErr").textContent = "Donne un nom au cadeau."; $("gTitle").focus(); return; }
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
-  if(price !== null && !(price >= 0 && price < 100000)){ $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
+  if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
+  const offers = meta.offers.length ? meta.offers.map(o=>({store:String(o.store).slice(0,60), price:o.price, url:o.url})) : null;
   run(async()=>{
-    await rpc("noel_add",{p_code:code,p_title:title,p_url:url,p_note:$("gNote").value,
-      p_image:meta.image||"", p_price:price, p_store:meta.store||""});
-    $("gTitle").value = $("gUrl").value = $("gNote").value = $("gPrice").value = "";
-    meta = {image:"",price:null,store:"",url:""}; $("lookup").hidden = true; showPreview();
+    await rpc("noel_add",{p_code:code,p_title:title,p_url:meta.link,p_note:$("gNote").value,
+      p_image:meta.image||"", p_price:price, p_store:meta.store||"", p_offers:offers});
+    $("gQuery").value = $("gTitle").value = $("gNote").value = $("gPrice").value = "";
+    meta = {image:"", price:null, store:"", offers:[], link:""};
+    $("lookup").hidden = true; $("result").hidden = true; $("manual").open = false;
   });
 });
 

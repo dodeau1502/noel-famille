@@ -7,8 +7,10 @@ avec le numérique, surtout sur téléphone. Langue : français.
 ## Structure
 - `site/index.html` : toute la page (HTML, CSS, JS, sans build). Seul ce dossier est publié.
 - `supabase/schema.sql` : état actuel complet de la base. À mettre à jour après chaque migration.
-- `supabase/functions/noel-preview/` : fonction serveur qui lit un lien de magasin (photo, titre, prix).
-  `parse.js` est testé par `node parse.test.mjs`.
+- `supabase/functions/noel-preview/` : fonction serveur appelée quand le propriétaire tape un lien ou un nom de produit.
+  Si c'est un lien, elle lit la page (`parse.js`) ; dans tous les cas elle cherche les offres chez plusieurs marchands
+  via Google Shopping (SerpAPI, secret `SERPAPI_KEY`) et ne garde que les offres qui correspondent au produit (`offers.js`).
+  Tests : `node parse.test.mjs` et `node offers.test.mjs`.
 - `.github/workflows/pages.yml` : publie `site/` sur GitHub Pages à chaque push sur `main`.
 
 ## Publier
@@ -16,8 +18,11 @@ Pousser sur `main` suffit. Rien d'autre. Le site se met à jour en 1 à 2 minute
 
 ## Supabase
 Projet `pegojglksepcfvispcrs` (région eu-west-3). Changer la base : `apply_migration`, puis mettre à jour `supabase/schema.sql`.
-Changer la fonction : `deploy_edge_function` (nom `noel-preview`, `verify_jwt: true`, fichiers `index.ts` et `parse.js`), puis
+Changer la fonction : `deploy_edge_function` (nom `noel-preview`, `verify_jwt: true`, fichiers `index.ts`, `parse.js` et `offers.js`), puis
 garder le dossier du dépôt identique à ce qui est déployé.
+
+Le secret `SERPAPI_KEY` est stocké côté Supabase (jamais dans le dépôt). Chaque fiche ajoutée consomme une recherche SerpAPI
+(offre gratuite : environ 250 par mois). Ne pas multiplier les appels (pas de rafraîchissement automatique en boucle).
 
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by` ni aucune donnée de réservation. Ne pas ajouter de colonne,
@@ -26,8 +31,10 @@ garder le dossier du dépôt identique à ce qui est déployé.
    `authenticated`. Tout passe par les fonctions `noel_*` qui vérifient un code.
 3. Ne jamais écrire les codes d'accès (propriétaire ou famille) dans le dépôt, un commit, une issue ou un message de PR.
    Ils ne sont stockés que sous forme d'empreinte en base. La clé « anon » de Supabase dans `index.html` est publique par conception.
-4. La fonction `noel-preview` ne doit répondre qu'au code propriétaire et refuser les adresses internes (protection SSRF).
-5. Échapper tout texte venant de la base avant de l'insérer dans le HTML (`esc()`), n'accepter que des liens `http(s)`
+4. Les offres affichées doivent correspondre au produit : une référence chiffrée (modèle) doit être identique, les prix
+   aberrants sont écartés. Ne pas assouplir ces règles sans ajouter un test dans `offers.test.mjs`.
+5. La fonction `noel-preview` ne doit répondre qu'au code propriétaire et refuser les adresses internes (protection SSRF).
+6. Échapper tout texte venant de la base avant de l'insérer dans le HTML (`esc()`), n'accepter que des liens `http(s)`
    et des images `https`.
 
 ## Style
@@ -35,6 +42,6 @@ Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thèm
 Texte en français simple, phrases courtes. Garder une seule colonne.
 
 ## Vérifier avant de pousser
-- `node supabase/functions/noel-preview/parse.test.mjs`
+- `node supabase/functions/noel-preview/parse.test.mjs` et `node supabase/functions/noel-preview/offers.test.mjs`
 - Ouvrir `site/index.html` avec Playwright en simulant les appels `noel_get` et `noel-preview` (aucune base réelle nécessaire),
   contrôler le rendu à 390 px de large en clair et en sombre, sans défilement horizontal ni erreur de console.
