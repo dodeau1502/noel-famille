@@ -11,6 +11,7 @@ avec le numérique, surtout sur téléphone. Langue : français.
   Si c'est un lien, elle lit la page (`parse.js`) ; dans tous les cas elle cherche les offres chez plusieurs marchands
   via Google Shopping (SerpAPI, secret `SERPAPI_KEY`) et ne garde que les offres qui correspondent au produit (`offers.js`).
   Tests : `node parse.test.mjs` et `node offers.test.mjs`.
+- `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
 - `.github/workflows/pages.yml` : publie `site/` sur GitHub Pages à chaque push sur `main`.
 
 ## Publier
@@ -23,6 +24,17 @@ garder le dossier du dépôt identique à ce qui est déployé.
 
 Le secret `SERPAPI_KEY` est stocké côté Supabase (jamais dans le dépôt). Chaque fiche ajoutée consomme une recherche SerpAPI
 (offre gratuite : environ 250 par mois). Ne pas multiplier les appels (pas de rafraîchissement automatique en boucle).
+
+## Base : conventions
+- Les fonctions `noel_*` renvoient du jsonb `{"ok":true}` ou `{"error":"denied|throttled|taken|short|same_as_owner|empty"}`,
+  elles ne lèvent pas d'exception (sinon l'enregistrement des essais de code ratés serait annulé). La page traduit ces erreurs (`MSG`, `rpc()`).
+- Limitation : 15 essais ratés par 10 minutes et par adresse (`noel_attempts`, `noel_role`).
+- Fonctions propriétaire : `noel_add`, `noel_remove`, `noel_set_top`, `noel_set_offers`, `noel_set_family_code`.
+  Fonctions famille : `noel_claim`, `noel_unclaim`, `noel_set_bought`.
+- Fonctionnalités : « Envie forte », état « Acheté », tri, « Actualiser les prix » (chaque appel = 1 recherche SerpAPI), alerte de doublon,
+  invitation de la famille (le code famille est gardé dans le navigateur du propriétaire seulement), texte agrandi.
+  Le code d'accès est mémorisé dans `localStorage` de l'appareil (bouton « Quitter »). Pas de service worker.
+  Pas prévu volontairement : participation groupée, notification de réservation, commentaires.
 
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by` ni aucune donnée de réservation. Ne pas ajouter de colonne,

@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1f5a4c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Noël">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>Liste de Noël</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,9 +40,10 @@
 
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
+  html[data-size="big"]{font-size:118%}
   body{
     margin:0; background:var(--bg); color:var(--ink);
-    font:17px/1.5 var(--f-body);
+    font:1.0625rem/1.5 var(--f-body);
     padding-block:max(20px, env(safe-area-inset-top,0px)) max(48px, env(safe-area-inset-bottom,0px));
     padding-left:max(16px, env(safe-area-inset-left,0px));
     padding-right:max(16px, env(safe-area-inset-right,0px));
@@ -44,44 +51,53 @@
   main{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:20px}
   [hidden]{display:none!important}
   h1,h2,p{margin:0}
-  button,input{font:inherit; color:inherit}
+  button,input,select{font:inherit; color:inherit}
   a{color:var(--pine); text-underline-offset:3px}
   :focus-visible{outline:3px solid var(--focus); outline-offset:2px; border-radius:8px}
+  svg.i{width:1em; height:1em; vertical-align:-.12em; flex:none}
 
   /* En-tête */
   .head{display:flex; flex-direction:column; gap:14px; padding-top:8px}
+  .toprow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
   .days{
-    align-self:flex-start; display:inline-flex; align-items:baseline; gap:8px;
+    display:inline-flex; align-items:baseline; gap:8px;
     background:var(--pine-soft); color:var(--pine); border-radius:999px; padding:6px 14px 6px 12px;
     font-weight:600; font-size:.95rem;
   }
   .days b{font:800 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
-  h1{
-    font:800 clamp(2rem,9vw,2.9rem)/1.02 var(--f-display); letter-spacing:-.02em; text-wrap:balance;
+  .tool{
+    min-height:40px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); background:transparent;
+    font-weight:600; font-size:.92rem; cursor:pointer; color:var(--ink);
   }
+  .tool[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
+  h1{font:800 clamp(2rem,9vw,2.9rem)/1.02 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
   .lead{color:var(--muted); max-width:46ch}
 
   /* Avancement */
   .progress{display:flex; flex-direction:column; gap:10px}
   .segs{display:flex; gap:4px; height:12px}
   .segs i{flex:1 1 0; min-width:4px; border-radius:3px; background:var(--seg-off)}
-  .segs i.on{background:var(--pine)}
+  .segs i.on{background:var(--pine); opacity:.5}
+  .segs i.done{background:var(--pine)}
   .segs i.me{background:var(--berry)}
   .count{display:flex; flex-wrap:wrap; gap:4px 16px; font-weight:600}
   .count span{color:var(--muted); font-weight:500}
   .count strong{font:700 1.15rem var(--f-display); font-variant-numeric:tabular-nums}
 
-  /* Cartes */
+  /* Cartes et champs */
   .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px}
   .login{display:flex; flex-direction:column; gap:12px}
   .login h2,.panel h2{font:700 1.2rem/1.2 var(--f-display)}
   label{display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem}
-  input[type=text],input[type=password],input[type=url]{
+  input[type=text],input[type=password],input[type=url],select,textarea{
     width:100%; min-height:48px; padding:10px 14px; border-radius:12px; border:1.5px solid var(--line);
     background:var(--bg); font-size:1rem; font-weight:400;
   }
+  textarea{min-height:96px; resize:vertical; line-height:1.4}
   input::placeholder{color:var(--muted); opacity:.8}
   input:focus-visible{outline-offset:1px}
+  label.check{flex-direction:row; align-items:center; gap:10px; min-height:44px; font-weight:600; cursor:pointer}
+  label.check input{width:22px; height:22px; min-height:0; accent-color:var(--pine); flex:none}
 
   .btn{
     min-height:48px; padding:10px 20px; border-radius:12px; border:0; cursor:pointer;
@@ -91,20 +107,24 @@
   .btn:active{transform:scale(.97)}
   .btn[disabled]{opacity:.55; cursor:default}
   .btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line)}
+  .btn.ghost[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
   .btn.small{min-height:40px; padding:6px 14px; font-size:.95rem}
 
   .who{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
   .who p{min-width:0}
   .who strong{font-family:var(--f-display)}
-  .linkbtn{background:none; border:0; padding:8px 4px; color:var(--pine); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+  .linkbtn{background:none; border:0; padding:8px 4px; color:var(--pine); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; font-size:inherit}
 
-  /* Filtres */
+  /* Filtres et tri */
   .tabs{display:flex; gap:6px; background:var(--pine-soft); padding:5px; border-radius:14px}
   .tabs button{
     flex:1 1 0; min-height:44px; border:0; border-radius:10px; background:transparent; cursor:pointer;
     font-weight:600; color:var(--pine);
   }
   .tabs button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+  .listbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .listbar label{flex-direction:row; align-items:center; gap:8px; font-weight:600}
+  .listbar select{width:auto; min-height:44px}
 
   /* Liste */
   .gifts{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
@@ -117,30 +137,27 @@
   .gift h3{margin:0; font:700 1.1rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .price{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 8px}
   .price b{font:800 1.3rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
-  .price span{color:var(--muted); font-size:.9rem}
   .gift .note{color:var(--muted); font-size:.95rem; overflow-wrap:anywhere}
   .gift .see{font-size:.95rem; font-weight:600}
   .gift.taken{background:transparent; border-style:dashed}
   .gift.taken h3{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1.5px; text-decoration-color:var(--seg-off)}
   .gift.taken .thumb{opacity:.55}
   .gift.mine{border-color:var(--berry)}
+  .badges{display:flex; flex-wrap:wrap; gap:6px}
   .badge{
-    display:inline-flex; align-items:center; font-size:.9rem; font-weight:700;
-    color:var(--pine); background:var(--pine-soft); padding:4px 10px; border-radius:999px; align-self:flex-start;
+    display:inline-flex; align-items:center; gap:6px; font-size:.9rem; font-weight:700;
+    color:var(--pine); background:var(--pine-soft); padding:4px 10px; border-radius:999px;
   }
-  .gift.mine .badge{color:var(--berry); background:transparent; border:1.5px solid var(--berry)}
+  .badge.star{color:var(--berry); background:transparent; border:1.5px solid var(--berry)}
+  .gift.mine .badge.who-badge{color:var(--berry); background:transparent; border:1.5px solid var(--berry)}
   .cmp summary{cursor:pointer; font-weight:600; color:var(--pine); min-height:32px; display:flex; align-items:center}
   .cmp .chips{display:flex; flex-wrap:wrap; gap:8px; padding-top:6px}
   .chips a{display:inline-flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); text-decoration:none; font-weight:600; color:var(--ink)}
   .cmp small{display:block; color:var(--muted); padding-top:8px}
-  .act{display:flex; gap:8px}
-  .act .btn{flex:1}
+  .act{display:flex; flex-wrap:wrap; gap:8px}
+  .act .btn{flex:1 1 auto; min-width:0}
   .confirm{display:flex; gap:8px; width:100%}
   .confirm .btn{flex:1}
-  .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
-  .preview .thumb{width:72px; height:72px}
-  .preview p{font-size:.95rem; overflow-wrap:anywhere}
-  .status{font-size:.95rem; color:var(--muted)}
   .offers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden}
   .offers li{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; min-height:48px; border-top:1px solid var(--line)}
   .offers li:first-child{border-top:0}
@@ -150,15 +167,25 @@
   .offers li.best{background:var(--pine-soft)}
   .offers li.best b{color:var(--pine)}
   .offers .tag{font-size:.8rem; font-weight:700; color:var(--pine); margin-left:8px; white-space:nowrap}
+
+  /* Ajout (propriétaire) */
+  .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
+  .preview .thumb{width:72px; height:72px}
+  .preview h3{margin:0; font:700 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .preview .more{display:flex; flex-direction:column; gap:2px; margin-top:4px; font-size:.92rem; color:var(--muted)}
-  .preview h3{margin:0; font:700 1rem/1.25 var(--f-display)}
+  .status{font-size:.95rem; color:var(--muted)}
+  .warn{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem}
   .search-row{display:flex; gap:8px}
   .search-row input{flex:1; min-width:0}
   #result{display:flex; flex-direction:column; gap:12px}
-  details.manual summary{cursor:pointer; font-weight:600; color:var(--pine); min-height:40px; display:flex; align-items:center}
+  details.manual summary,details.share summary{cursor:pointer; font-weight:600; color:var(--pine); min-height:40px; display:flex; align-items:center}
   details.manual .grid2{padding-top:6px}
+  details.share[open] summary{padding-bottom:6px}
+  .sharebox{display:flex; flex-direction:column; gap:12px}
+  .rowbtns{display:flex; flex-wrap:wrap; gap:8px}
+  .rowbtns .btn{flex:1 1 auto}
 
-    .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
+  .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
   .empty strong{display:block; color:var(--ink); font:700 1.1rem var(--f-display); margin-bottom:4px}
   .skeleton{height:84px; border-radius:16px; background:linear-gradient(90deg,var(--line),var(--surface),var(--line)); background-size:200% 100%; animation:sh 1.4s linear infinite}
   @keyframes sh{to{background-position:-200% 0}}
@@ -168,6 +195,7 @@
   .note-owner{color:var(--muted); font-size:.95rem; background:var(--pine-soft); border-radius:12px; padding:12px 14px}
   .panel{display:flex; flex-direction:column; gap:12px}
   .grid2{display:grid; grid-template-columns:1fr; gap:12px}
+  .foot{display:flex; justify-content:center; padding-top:4px}
 
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
@@ -175,7 +203,10 @@
 <body>
 <main>
   <header class="head">
-    <span class="days" id="days" hidden><b id="daysN">0</b> jours avant Noël</span>
+    <div class="toprow">
+      <span class="days" id="days" hidden><b id="daysN">0</b> jours avant Noël</span>
+      <button class="tool" id="sizeBtn" type="button" aria-pressed="false">Texte plus grand</button>
+    </div>
     <h1 id="title">Liste de Noël</h1>
     <p class="lead" id="lead">Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.</p>
   </header>
@@ -183,8 +214,8 @@
   <!-- Connexion de secours (le lien direct s'en passe) -->
   <form class="card login" id="login" hidden>
     <h2>Entre ton code</h2>
-    <label for="code">Code reçu avec le lien
-      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="mot-mot-mot-123">
+    <label for="code">Lien ou code reçu
+      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le lien ou le code">
     </label>
     <button class="btn" type="submit">Voir la liste</button>
     <p class="msg" id="loginErr" role="alert"></p>
@@ -223,6 +254,7 @@
       <!-- Vue propriétaire -->
       <div id="ownerTop" style="display:flex;flex-direction:column;gap:16px" hidden>
         <p class="note-owner">Tu vois uniquement tes idées. Ce que ta famille prend reste caché, c'est voulu.</p>
+
         <form class="card panel" id="addForm">
           <h2>Ajouter une idée</h2>
           <label for="gQuery">Lien ou nom du produit
@@ -237,9 +269,11 @@
               <div class="thumb" id="pvThumb"></div>
               <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
             </div>
+            <p class="warn" id="dupWarn" role="alert" hidden></p>
             <label for="gNote">Précision (facultatif)
               <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
             </label>
+            <label class="check" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
             <details class="manual" id="manual">
               <summary>Corriger à la main</summary>
               <div class="grid2">
@@ -254,13 +288,54 @@
             <button class="btn" type="submit" id="addBtn">Ajouter à la liste</button>
           </div>
         </form>
+
+        <details class="card share" id="share">
+          <summary>Inviter la famille</summary>
+          <div class="sharebox">
+            <label for="famCode">Code famille
+              <input id="famCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le code famille ou renouvelle-le">
+            </label>
+            <textarea id="shareMsg" readonly aria-label="Message à envoyer"></textarea>
+            <div class="rowbtns">
+              <button class="btn" type="button" id="copyBtn">Copier le message</button>
+              <button class="btn ghost" type="button" id="renewBtn">Renouveler le code</button>
+            </div>
+            <div class="confirm" id="renewConfirm" hidden>
+              <button class="btn small" type="button" id="renewYes">Oui, renouveler</button>
+              <button class="btn ghost small" type="button" id="renewNo">Non</button>
+            </div>
+            <p class="status" id="shareStatus" aria-live="polite"></p>
+          </div>
+        </details>
       </div>
 
       <p class="msg" id="appErr" role="alert"></p>
+      <p class="status" id="bulkStatus" aria-live="polite" hidden></p>
+      <div class="listbar" id="listbar" hidden>
+        <label for="sort">Trier
+          <select id="sort">
+            <option value="list">Ordre de la liste</option>
+            <option value="top">Envie forte d'abord</option>
+            <option value="price">Prix croissant</option>
+          </select>
+        </label>
+        <div id="bulkWrap" hidden>
+          <button class="btn ghost small" type="button" id="bulkBtn">Actualiser tous les prix</button>
+          <div class="confirm" id="bulkConfirm" hidden>
+            <button class="btn small" type="button" id="bulkYes">Lancer</button>
+            <button class="btn ghost small" type="button" id="bulkNo">Non</button>
+          </div>
+        </div>
+      </div>
+      <p class="status" id="bulkHint" hidden></p>
       <ul class="gifts" id="list"></ul>
-      <p class="status" id="priceNote" hidden>Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Touche « Comparer les prix » pour vérifier avant d'acheter.</p>
+      <p class="status" id="priceNote" hidden></p>
     </div>
   </section>
+
+  <footer class="foot" id="foot" hidden>
+    <button class="linkbtn" id="logout" type="button">Quitter cette liste sur cet appareil</button>
+  </footer>
 </main>
 
 <script>
@@ -272,11 +347,20 @@ const $ = id => document.getElementById(id);
 const store = {
   get(k){ try{ return localStorage.getItem(k) || "" }catch(e){ return "" } },
   set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} },
-  sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } },
-  sset(k,v){ try{ sessionStorage.setItem(k,v) }catch(e){} }
+  del(k){ try{ localStorage.removeItem(k) }catch(e){} },
+  sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
 };
-let code = "", role = "", gifts = [], filter = "open", who = store.get("who"), pendingDelete = null, busy = false;
+let code = "", role = "", gifts = [], filter = "open", sort = "list", who = store.get("who");
+let pendingDelete = null, busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
 
+const MSG = {
+  denied: "Ce lien n'est plus valide. Demande-en un nouveau.",
+  throttled: "Trop d'essais. Réessaie dans quelques minutes.",
+  taken: "Quelqu'un vient de prendre ce cadeau. La liste est mise à jour.",
+  short: "Ce code est trop court.",
+  same_as_owner: "Ce code est déjà utilisé. Renouvelle-le.",
+  empty: "Aucune offre trouvée."
+};
 async function rpc(fn, args){
   let r;
   try{
@@ -287,48 +371,89 @@ async function rpc(fn, args){
     });
   }catch(e){ throw new Error("Connexion impossible. Vérifie ta connexion internet puis réessaie.") }
   const data = await r.json().catch(()=>null);
-  if(!r.ok){
-    const m = data && data.message || "";
-    if(/code invalide/.test(m)) throw Object.assign(new Error("Ce lien ou ce code n'est pas valide. Demande un nouveau lien."), {bad:true});
-    if(/déjà pris/.test(m)) throw new Error("Quelqu'un vient de prendre ce cadeau. La liste est mise à jour.");
-    throw new Error("Une erreur est survenue. Réessaie dans un instant.");
+  if(!r.ok) throw new Error("Une erreur est survenue. Réessaie dans un instant.");
+  if(data && data.error){
+    throw Object.assign(new Error(MSG[data.error] || "Une erreur est survenue. Réessaie dans un instant."), {code:data.error, bad:data.error === "denied" || data.error === "throttled"});
   }
   return data;
 }
+async function callSearch(query){
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-preview`, {
+    method:"POST",
+    headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
+    body:JSON.stringify({code, query})
+  });
+  const d = await r.json().catch(()=>null);
+  if(!r.ok || !d) throw new Error("Recherche impossible pour le moment.");
+  return d;
+}
+
 const eur = n => new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits: Number.isInteger(+n)?0:2}).format(n);
 const PLACEHOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
+const STAR = '<svg class="i" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
+const CHECK = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(u||"") ? u : "";
 const same = (a,b) => String(a||"").trim().toLowerCase() === String(b||"").trim().toLowerCase();
+const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const tk = s => norm(s).split(/[^a-z0-9]+/).filter(t=>t.length>=2);
+const bestPrice = g => { const o = Array.isArray(g.offers) && g.offers.length ? g.offers[0].price : null; return o != null ? o : g.price; };
+const extractCode = v => { const m = String(v||"").match(/[#&?]c=([^&\s]+)/); return m ? decodeURIComponent(m[1]) : String(v||"").trim(); };
 
-function daysToChristmas(){
-  const now = new Date(), y = now.getFullYear();
-  const noel = new Date(y,11,25);
-  const d = Math.ceil((noel - new Date(y,now.getMonth(),now.getDate()))/86400000);
-  return d > 0 ? d : null;
+/* ---------- Texte plus grand ---------- */
+function applySize(big){
+  document.documentElement.dataset.size = big ? "big" : "";
+  $("sizeBtn").setAttribute("aria-pressed", String(big));
 }
+applySize(store.get("size") === "big");
+$("sizeBtn").addEventListener("click", ()=>{ const big = document.documentElement.dataset.size !== "big"; store.set("size", big ? "big" : ""); applySize(big); });
+
+/* ---------- Compte à rebours ---------- */
 (function(){
-  const d = daysToChristmas();
-  if(d){ $("daysN").textContent = d; $("days").hidden = false; if(d===1) $("days").lastChild.textContent = " jour avant Noël"; }
+  const now = new Date(), y = now.getFullYear();
+  const d = Math.ceil((new Date(y,11,25) - new Date(y,now.getMonth(),now.getDate()))/86400000);
+  if(d > 0){ $("daysN").textContent = d; $("days").hidden = false; if(d===1) $("days").lastChild.textContent = " jour avant Noël"; }
 })();
 
-function showSkeleton(){
-  $("list").innerHTML = '<li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>';
+/* ---------- Icône d'écran d'accueil : manifeste local contenant le lien de la liste ---------- */
+function setManifest(){
+  if(manifestSet || !code) return;
+  try{
+    const base = location.href.split("#")[0];
+    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#f1f5f4", theme_color:"#1f5a4c",
+      start_url: base + "#c=" + encodeURIComponent(code), scope: base.replace(/[^/]*$/, ""),
+      icons:[{src:new URL("icon-192.png", base).href, sizes:"192x192", type:"image/png", purpose:"any"},
+             {src:new URL("icon-512.png", base).href, sizes:"512x512", type:"image/png", purpose:"any"}]};
+    const url = URL.createObjectURL(new Blob([JSON.stringify(m)], {type:"application/manifest+json"}));
+    let l = document.querySelector('link[rel="manifest"]');
+    if(!l){ l = document.createElement("link"); l.rel = "manifest"; document.head.appendChild(l); }
+    l.href = url; manifestSet = true;
+  }catch(e){}
 }
 
-async function load(first){
+function showSkeleton(){ $("list").innerHTML = '<li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>'; }
+
+function toLogin(message){
+  code = ""; role = "";
+  $("app").hidden = true; $("foot").hidden = true; $("login").hidden = false;
+  $("loginErr").textContent = message || "";
+}
+
+async function load(){
   const d = await rpc("noel_get", {p_code:code});
   role = d.role; gifts = d.gifts || [];
   document.title = d.title;
   $("title").textContent = d.title;
-  $("login").hidden = true; $("app").hidden = false;
+  $("login").hidden = true; $("app").hidden = false; $("foot").hidden = false;
   $("familyTop").hidden = role !== "family";
   $("ownerTop").hidden = role !== "owner";
+  $("bulkWrap").hidden = role !== "owner";
   $("lead").textContent = role === "owner"
     ? "Ta liste, telle que ta famille la voit, sans les réservations."
     : "Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.";
   syncName();
   render();
+  setManifest();
 }
 
 function syncName(){
@@ -338,23 +463,39 @@ function syncName(){
   $("whoName").textContent = who;
 }
 
+function sorted(arr){
+  const a = arr.map((g,i)=>({g,i}));
+  if(sort === "top") a.sort((x,y)=> (y.g.top?1:0)-(x.g.top?1:0) || x.i-y.i);
+  if(sort === "price") a.sort((x,y)=>{ const px = bestPrice(x.g), py = bestPrice(y.g);
+    if(px == null && py == null) return x.i-y.i; if(px == null) return 1; if(py == null) return -1; return px-py || x.i-y.i; });
+  return a.map(x=>x.g);
+}
+
 function render(){
   const list = $("list");
   if(role === "family"){
-    const taken = gifts.filter(g=>g.claimed_by).length;
-    const left = gifts.length - taken;
-    const segs = $("segs");
-    segs.innerHTML = gifts.map(g => `<i class="${g.claimed_by ? (same(g.claimed_by,who)?'me':'on') : ''}"></i>`).join("");
+    const claimed = gifts.filter(g=>g.claimed_by), bought = claimed.filter(g=>g.bought).length;
+    $("segs").innerHTML = gifts.map(g => `<i class="${g.claimed_by ? (same(g.claimed_by,who) ? 'me' : (g.bought ? 'done' : 'on')) : ''}"></i>`).join("");
     $("count").innerHTML = gifts.length
-      ? `<div><strong>${left}</strong> <span>à prendre</span></div><div><strong>${taken}</strong> <span>déjà pris</span></div>`
+      ? `<div><strong>${gifts.length - claimed.length}</strong> <span>à prendre</span></div><div><strong>${claimed.length}</strong> <span>pris</span></div><div><strong>${bought}</strong> <span>achetés</span></div>`
       : "";
     document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.f===filter)));
   }
+  const stamps = gifts.map(g=>g.offers_at).filter(Boolean).sort();
+  const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
+  $("priceNote").hidden = !withPrice;
+  $("priceNote").textContent = stamps.length
+    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez plusieurs marchands. Ils peuvent avoir changé : touche un marchand pour vérifier avant d'acheter."
+    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Touche « Comparer les prix » pour vérifier avant d'acheter.";
+  $("listbar").hidden = !gifts.length;
+  $("sort").value = sort;
+
   let shown = gifts;
   if(role === "family"){
     if(filter==="open") shown = gifts.filter(g=>!g.claimed_by);
     if(filter==="mine") shown = gifts.filter(g=>g.claimed_by && same(g.claimed_by,who));
   }
+  shown = sorted(shown);
   if(!shown.length){
     let t="Rien ici pour le moment", s="";
     if(!gifts.length){ t = role==="owner" ? "Ta liste est vide" : "La liste arrive bientôt"; s = role==="owner" ? "Ajoute ta première idée avec le formulaire ci-dessus." : "Reviens un peu plus tard."; }
@@ -363,11 +504,6 @@ function render(){
     list.innerHTML = `<li class="empty"><strong>${t}</strong>${s}</li>`;
     return;
   }
-  const stamps = gifts.map(g=>g.offers_at).filter(Boolean).sort();
-  $("priceNote").hidden = !gifts.some(g=>g.price != null || (g.offers && g.offers.length));
-  $("priceNote").textContent = stamps.length
-    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez plusieurs marchands. Ils peuvent avoir changé : touche un marchand pour vérifier avant d'acheter."
-    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Touche « Comparer les prix » pour vérifier avant d'acheter.";
   list.innerHTML = shown.map(g=>{
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
@@ -375,61 +511,88 @@ function render(){
     const offs = (Array.isArray(g.offers) ? g.offers : []).filter(o=>o && /^https:\/\//.test(o.url||"") && o.price != null);
     const best = offs.length ? offs[0].price : g.price;
     const price = best != null ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b></div>` : "";
-    const hide = g.claimed_by && role==="family" && !same(g.claimed_by,who);
-    const offersHtml = (!hide && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Meilleur prix</span>':''}</a><b>${eur(o.price)}</b></li>`).join("")}</ul>` : "";
-    const img = /^https:\/\//.test(g.image||"")
-      ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
+    const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
+    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Meilleur prix</span>':''}</a><b>${eur(o.price)}</b></li>`).join("")}</ul>` : "";
+    const img = /^https:\/\//.test(g.image||"") ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
     const q = encodeURIComponent(g.title);
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
         <a href="https://www.google.com/search?tbm=shop&hl=fr&gl=fr&q=${q}" target="_blank" rel="noopener noreferrer">Google Shopping</a>
         <a href="https://www.idealo.fr/prechten.html?q=${q}" target="_blank" rel="noopener noreferrer">idealo</a>
         <a href="https://www.amazon.fr/s?k=${q}" target="_blank" rel="noopener noreferrer">Amazon</a></div>
         <small>Ouvre la recherche de ce produit chez chaque comparateur.</small></details>`;
-    let cls = "gift", extra = "", act = "";
+    let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "";
     if(role === "owner"){
       act = pendingDelete === g.id
         ? `<div class="confirm"><button class="btn small" data-delyes="${g.id}">Oui, retirer</button><button class="btn ghost small" data-delno>Non</button></div>`
-        : `<button class="btn ghost small" data-del="${g.id}">Retirer</button>`;
+        : `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
+          + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Actualiser les prix de ${esc(g.title)}">${refreshing.has(g.id) ? "Recherche…" : "Actualiser"}</button>`
+          + `<button class="btn ghost small" data-del="${g.id}">Retirer</button>`;
     } else if(g.claimed_by){
       const mine = same(g.claimed_by, who);
       cls += mine ? " mine" : " taken";
-      extra = `<span class="badge">${mine ? "C'est toi qui l'offres" : "Pris par " + esc(g.claimed_by)}</span>`;
-      if(mine) act = `<button class="btn ghost small" data-unclaim="${g.id}">Annuler</button>`;
+      const who2 = mine ? (g.bought ? "Acheté par toi" : "C'est toi qui l'offres") : (g.bought ? "Acheté par " : "Pris par ") + esc(g.claimed_by);
+      badges += `<span class="badge who-badge">${g.bought ? CHECK + " " : ""}${who2}</span>`;
+      if(mine) act = g.bought
+        ? `<button class="btn ghost small" data-unbought="${g.id}">Pas encore acheté</button>`
+        : `<button class="btn" data-bought="${g.id}">C'est acheté</button><button class="btn ghost small" data-unclaim="${g.id}">Annuler</button>`;
     } else {
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
-    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${extra}</div></div>${offersHtml}${g.claimed_by && role==="family" && !same(g.claimed_by,who) ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
+    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
   }).join("");
 }
 
 async function run(fn){
   if(busy) return; busy = true; $("appErr").textContent = "";
-  try{ await fn(); }catch(e){ $("appErr").textContent = e.message; }
-  try{ await load(); }catch(e){ if(!$("appErr").textContent) $("appErr").textContent = e.message; }
+  try{ await fn(); }catch(e){ $("appErr").textContent = e.message; if(e.bad){ busy = false; toLogin(e.message); return; } }
+  try{ await load(); }catch(e){ if(e.bad){ busy = false; toLogin(e.message); return; } if(!$("appErr").textContent) $("appErr").textContent = e.message; }
   busy = false;
 }
 
+/* ---------- Connexion, prénom, filtres ---------- */
 $("login").addEventListener("submit", async e=>{
   e.preventDefault(); $("loginErr").textContent = "";
-  code = $("code").value.trim();
-  try{ await load(); store.sset("c", code); }catch(err){ $("loginErr").textContent = err.bad ? "Code invalide. Vérifie-le et réessaie." : err.message; }
+  const c = extractCode($("code").value); if(!c) return;
+  code = c;
+  try{ await load(); store.set("c", code); $("code").value = ""; }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
 });
-
+$("logout").addEventListener("click", ()=>{ store.del("c"); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} manifestSet = false; toLogin(""); });
 $("nameForm").addEventListener("submit", e=>{
   e.preventDefault();
-  const n = $("who").value.trim(); if(!n) { $("who").focus(); return; }
+  const n = $("who").value.trim(); if(!n){ $("who").focus(); return; }
   who = n; store.set("who", n); syncName(); render();
 });
 $("changeName").addEventListener("click", ()=>{ $("whoBar").hidden = true; $("nameForm").hidden = false; $("who").value = who; $("who").focus(); });
-
 document.querySelector(".tabs").addEventListener("click", e=>{
   const b = e.target.closest("button[data-f]"); if(!b) return;
   filter = b.dataset.f; render();
 });
+$("sort").addEventListener("change", ()=>{ sort = $("sort").value; store.set("sort", sort); render(); });
+sort = store.get("sort") || "list";
 
+/* ---------- Ajout d'une idée ---------- */
 let meta = {image:"", price:null, store:"", offers:[], link:""};
 let searching = false;
 const isLink = q => !/\s/.test(q) && (/^https?:\/\//i.test(q) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(q));
+
+function dupOf(title){
+  const a = new Set(tk(title)); if(a.size < 2) return null;
+  for(const g of gifts){
+    const b = new Set(tk(g.title)); if(b.size < 2) continue;
+    const da = [...a].filter(t=>/\d/.test(t)), db = [...b].filter(t=>/\d/.test(t));
+    if(da.some(t=>!b.has(t)) || db.some(t=>!a.has(t))) continue;
+    let hit = 0; a.forEach(t=>{ if(b.has(t)) hit++; });
+    if(hit / Math.min(a.size, b.size) >= 0.8) return g;
+  }
+  return null;
+}
+function checkDup(){
+  const g = $("gTitle").value.trim() ? dupOf($("gTitle").value) : null;
+  const w = $("dupWarn");
+  if(g){ w.hidden = false; w.textContent = "Attention : « " + g.title + " » est déjà dans ta liste. Touche « Ajouter quand même » pour confirmer."; $("addBtn").textContent = "Ajouter quand même"; }
+  else { w.hidden = true; $("addBtn").textContent = "Ajouter à la liste"; dupAck = false; }
+  return g;
+}
 
 function showResult(){
   $("result").hidden = false;
@@ -445,22 +608,17 @@ function showResult(){
     more.push("Prix non trouvé : tu peux le saisir à la main.");
   }
   $("pvMore").innerHTML = more.map(x=>`<span>${x}</span>`).join("");
+  checkDup();
 }
 
 async function search(){
   const q = $("gQuery").value.trim(); const st = $("lookup");
   if(!q || searching) return;
-  searching = true; $("searchBtn").disabled = true;
+  searching = true; $("searchBtn").disabled = true; dupAck = false;
   meta = {image:"", price:null, store:"", offers:[], link: isLink(q) ? (/^https?:\/\//i.test(q) ? q : "https://" + q) : ""};
   st.hidden = false; st.textContent = "Recherche du produit et des prix…";
   try{
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-preview`, {
-      method:"POST",
-      headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-      body:JSON.stringify({code, query:q})
-    });
-    const d = await r.json().catch(()=>null);
-    if(!r.ok || !d) throw new Error("Recherche impossible pour le moment.");
+    const d = await callSearch(q);
     meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.offers = Array.isArray(d.offers) ? d.offers : [];
     $("gTitle").value = d.title || (isLink(q) ? "" : q);
     $("gPrice").value = d.price != null ? String(d.price).replace(".", ",") : "";
@@ -478,68 +636,131 @@ async function search(){
 $("searchBtn").addEventListener("click", search);
 $("gQuery").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); search(); } });
 $("gQuery").addEventListener("paste", ()=>setTimeout(()=>{ if(isLink($("gQuery").value.trim())) search(); }, 80));
-$("gTitle").addEventListener("input", ()=>{ $("pvTitle").textContent = $("gTitle").value; });
+$("gTitle").addEventListener("input", ()=>{ $("pvTitle").textContent = $("gTitle").value; checkDup(); });
 
 $("addForm").addEventListener("submit", e=>{
   e.preventDefault();
   if($("result").hidden){ search(); return; }
   const title = $("gTitle").value.trim();
   if(!title){ $("manual").open = true; $("appErr").textContent = "Donne un nom au cadeau."; $("gTitle").focus(); return; }
+  if(checkDup() && !dupAck){ dupAck = true; $("dupWarn").scrollIntoView({block:"center", behavior:"smooth"}); return; }
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
   if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
   const offers = meta.offers.length ? meta.offers.map(o=>({store:String(o.store).slice(0,60), price:o.price, url:o.url})) : null;
   run(async()=>{
     await rpc("noel_add",{p_code:code,p_title:title,p_url:meta.link,p_note:$("gNote").value,
-      p_image:meta.image||"", p_price:price, p_store:meta.store||"", p_offers:offers});
-    $("gQuery").value = $("gTitle").value = $("gNote").value = $("gPrice").value = "";
-    meta = {image:"", price:null, store:"", offers:[], link:""};
-    $("lookup").hidden = true; $("result").hidden = true; $("manual").open = false;
+      p_image:meta.image||"", p_price:price, p_store:meta.store||"", p_offers:offers, p_top:$("gTop").checked});
+    $("gQuery").value = $("gTitle").value = $("gNote").value = $("gPrice").value = ""; $("gTop").checked = false;
+    meta = {image:"", price:null, store:"", offers:[], link:""}; dupAck = false;
+    $("lookup").hidden = true; $("result").hidden = true; $("manual").open = false; $("dupWarn").hidden = true;
+    $("addBtn").textContent = "Ajouter à la liste";
   });
 });
 
+/* ---------- Actualiser les prix ---------- */
+async function refreshOne(g){
+  const d = await callSearch(g.title);
+  const offs = Array.isArray(d.offers) ? d.offers : [];
+  if(!offs.length) return false;
+  await rpc("noel_set_offers",{p_code:code,p_id:g.id,p_price:offs[0].price,p_store:offs[0].store,p_offers:offs});
+  return true;
+}
+$("bulkBtn").addEventListener("click", ()=>{
+  const n = gifts.filter(g=>!g.offers_at || Date.now() - new Date(g.offers_at).getTime() > 12*3600*1000).length;
+  const h = $("bulkHint");
+  if(!n){ h.hidden = false; h.textContent = "Tous les prix ont été relevés il y a moins de 12 heures."; return; }
+  h.hidden = false; h.textContent = n + " recherche" + (n>1?"s":"") + " seront lancée" + (n>1?"s":"") + " sur ton quota gratuit mensuel (environ 250). Continuer ?";
+  $("bulkBtn").hidden = true; $("bulkConfirm").hidden = false;
+});
+$("bulkNo").addEventListener("click", ()=>{ $("bulkConfirm").hidden = true; $("bulkBtn").hidden = false; $("bulkHint").hidden = true; });
+$("bulkYes").addEventListener("click", ()=>{
+  $("bulkConfirm").hidden = true; $("bulkHint").hidden = true;
+  const todo = gifts.filter(g=>!g.offers_at || Date.now() - new Date(g.offers_at).getTime() > 12*3600*1000).slice(0,30);
+  run(async()=>{
+    const st = $("bulkStatus"); st.hidden = false; let ok = 0, ko = 0;
+    for(let i=0;i<todo.length;i++){
+      st.textContent = "Actualisation " + (i+1) + " sur " + todo.length + "…";
+      try{ (await refreshOne(todo[i])) ? ok++ : ko++; }catch(e){ if(e.bad) throw e; ko++; }
+    }
+    st.textContent = ok + " mis à jour" + (ko ? ", " + ko + " sans nouveau prix." : ".");
+    $("bulkBtn").hidden = false;
+  });
+});
+
+/* ---------- Invitation de la famille ---------- */
+const WORDS = "sapin etoile neige cadeau bougie renne traineau guirlande cannelle chocolat flocon veillee brioche mandarine houx gui lutin boule ruban clementine marron buche nougat chalet cheminee givre hiver lumiere reveillon bonhomme couronne cloche chant manteau echarpe moufle tricot pomme poire orange noix amande miel vanille gingembre sucre glace braise nuit minuit aurore".split(" ");
+function rnd(n){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+function newCode(){ return [0,1,2,3].map(()=>WORDS[rnd(WORDS.length)]).join("-") + "-" + String(rnd(9000)+1000); }
+function shareText(){
+  const c = $("famCode").value.trim();
+  if(!c) return "";
+  return "Coucou ! Voici ma liste de Noël : " + location.href.split("#")[0] + "#c=" + encodeURIComponent(extractCode(c)) +
+    "\nChoisis ce que tu offres : les autres voient ton choix, et moi je ne vois rien. Ton prénom te sera demandé la première fois.";
+}
+function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = !$("shareMsg").value; }
+$("famCode").value = store.get("fam");
+$("famCode").addEventListener("input", ()=>{ store.set("fam", $("famCode").value.trim()); refreshShare(); });
+$("copyBtn").addEventListener("click", async ()=>{
+  const t = $("shareMsg").value; if(!t) return;
+  try{ await navigator.clipboard.writeText(t); $("shareStatus").textContent = "Message copié. Colle-le dans ta conversation familiale."; }
+  catch(e){ $("shareMsg").focus(); $("shareMsg").select(); $("shareStatus").textContent = "Sélectionne le message ci-dessus et copie-le."; }
+});
+$("renewBtn").addEventListener("click", ()=>{ $("renewConfirm").hidden = false; $("shareStatus").textContent = "Les anciens liens famille cesseront de fonctionner. Continuer ?"; });
+$("renewNo").addEventListener("click", ()=>{ $("renewConfirm").hidden = true; $("shareStatus").textContent = ""; });
+$("renewYes").addEventListener("click", ()=>{
+  $("renewConfirm").hidden = true;
+  const c = newCode();
+  run(async()=>{
+    await rpc("noel_set_family_code",{p_code:code,p_new:c});
+    $("famCode").value = c; store.set("fam", c); refreshShare();
+    $("shareStatus").textContent = "Nouveau code enregistré. Copie le message et envoie-le à tes proches.";
+  });
+});
+refreshShare();
+
+/* ---------- Actions sur les cartes ---------- */
 $("list").addEventListener("click", e=>{
   const t = e.target.closest("button"); if(!t) return;
-  if(t.dataset.del){ pendingDelete = +t.dataset.del; render(); return; }
+  const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
+  const g = gifts.find(x=>x.id===id);
+  if(t.dataset.del){ pendingDelete = id; render(); return; }
   if(t.hasAttribute("data-delno")){ pendingDelete = null; render(); return; }
-  if(t.dataset.delyes){ const id=+t.dataset.delyes; pendingDelete = null; run(()=>rpc("noel_remove",{p_code:code,p_id:id})); return; }
+  if(t.dataset.delyes){ pendingDelete = null; run(()=>rpc("noel_remove",{p_code:code,p_id:id})); return; }
+  if(t.dataset.top){ if(g) g.top = !g.top; render(); run(()=>rpc("noel_set_top",{p_code:code,p_id:id,p_top:!!(g && g.top)})); return; }
+  if(t.dataset.refresh){ if(!g) return; refreshing.add(id); render();
+    run(async()=>{ try{ if(!(await refreshOne(g))) throw new Error("Aucun nouveau prix trouvé pour « " + g.title + " »."); } finally { refreshing.delete(id); } }); return; }
   if(t.dataset.claim){
     if(!who){ $("appErr").textContent = "Indique d'abord ton prénom, en haut de la page."; $("who").focus(); window.scrollTo({top:0,behavior:"smooth"}); return; }
-    const id = +t.dataset.claim;
-    const g = gifts.find(x=>x.id===id); if(g) g.claimed_by = who; render();
-    run(()=>rpc("noel_claim",{p_code:code,p_id:id,p_name:who}));
-    return;
+    if(g) g.claimed_by = who; render();
+    run(()=>rpc("noel_claim",{p_code:code,p_id:id,p_name:who})); return;
   }
-  if(t.dataset.unclaim){
-    const id = +t.dataset.unclaim;
-    const g = gifts.find(x=>x.id===id); if(g) g.claimed_by = null; render();
-    run(()=>rpc("noel_unclaim",{p_code:code,p_id:id,p_name:who}));
-  }
+  if(t.dataset.unclaim){ if(g){ g.claimed_by = null; g.bought = false; } render(); run(()=>rpc("noel_unclaim",{p_code:code,p_id:id,p_name:who})); return; }
+  if(t.dataset.bought){ if(g) g.bought = true; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:true})); return; }
+  if(t.dataset.unbought){ if(g) g.bought = false; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:false})); }
 });
 
 document.addEventListener("error", e=>{
   const i = e.target; if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("thumb")){ i.parentElement.innerHTML = PLACEHOLDER; }
 }, true);
 
-// Démarrage : le lien contient le code (#c=...), sinon code mémorisé, sinon saisie
+/* ---------- Démarrage : lien (#c=...), sinon code mémorisé sur cet appareil, sinon saisie ---------- */
 (function start(){
   let c = "";
   try{
     const m = location.hash.match(/[#&]c=([^&]+)/);
-    if(m){ c = decodeURIComponent(m[1]); store.sset("c", c); }
+    if(m){ c = decodeURIComponent(m[1]); store.set("c", c); }
   }catch(e){}
-  if(!c) c = store.sget("c");
+  if(!c) c = store.get("c") || store.sget("c");
   if(!c){ $("login").hidden = false; return; }
   code = c; $("app").hidden = false; showSkeleton();
-  load().catch(err=>{
-    $("app").hidden = true; $("login").hidden = false;
-    $("loginErr").textContent = err.bad ? "Ce lien n'est plus valide. Demande-en un nouveau ou saisis ton code." : err.message;
-  });
+  load().catch(err=>{ toLogin(err.bad ? (err.code === "throttled" ? err.message : "Ce lien n'est plus valide. Demande-en un nouveau ou saisis ton code.") : err.message); });
 })();
 
 // Mise à jour discrète pour voir les choix des autres
-setInterval(()=>{ if(code && !busy && !document.hidden && !$("app").hidden) load().catch(()=>{}); }, 20000);
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden && code && !busy && !$("app").hidden) load().catch(()=>{}); });
+function tick(){ if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); }); }
+setInterval(tick, 20000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
 </script>
 </body>
 </html>
