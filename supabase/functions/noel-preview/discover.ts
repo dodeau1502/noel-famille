@@ -1,8 +1,9 @@
 import { readMerchant, pool } from "./net.ts";
 import { pickOffers, pickProduct, storesToOffers, mergeOffers, dropOutliers, betterTitle, looksLikeUrl, isMarketplace, isComparator, isUsed, matchesLoose, totalOf, norm } from "./offers.js";
 import { applyPage, bestOffer, rank } from "./verify.js";
+import { assess, belowMedian, ageFromRdap, isBlocked, isKnown, keyOf, registrable } from "./trust.js";
 
-export type Offer = { store: string; price: number; url: string; shipping?: number | null; verified?: boolean; at?: string; stock?: string; via?: string };
+export type Offer = { store: string; price: number; url: string; shipping?: number | null; verified?: boolean; at?: string; stock?: string; via?: string; trust?: { l: string; r: string[] } };
 
 type Serp = { ok: boolean; data?: any; reason?: string };
 // Une recherche SerpAPI = 1 crédit (les recherches en cache ou en échec ne comptent pas)
@@ -20,6 +21,42 @@ async function serp(params: Record<string, string>): Promise<Serp> {
   } catch (_) {
     return { ok: false, reason: "Le service de recherche ne répond pas." };
   }
+}
+
+// Sécurité des marchands : liste noire du propriétaire et âge des noms de domaine (cache en base, 30 jours). Aucune réservation n'est lue.
+const SB_URL = Deno.env.get("SUPABASE_URL") ?? "", SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const sbHeaders = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json" };
+
+async function loadBlocked() {
+  const out = { keys: new Set<string>(), hosts: new Set<string>() };
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/noel_blocked?select=key,host`, { headers: sbHeaders, signal: AbortSignal.timeout(4000) });
+    if (r.ok) for (const x of await r.json()) { if (x?.key) out.keys.add(String(x.key)); if (x?.host) out.hosts.add(String(x.host)); }
+  } catch (_) { /* liste indisponible : les offres restent proposées avec leurs signaux */ }
+  return out;
+}
+
+// Âge du domaine en jours (null si inconnu : jamais un motif d'exclusion)
+async function domainAge(host: string, now: Date): Promise<number | null> {
+  const dom = registrable(host);
+  if (!dom || !/^[a-z0-9.-]+$/.test(dom)) return null;
+  const days = (iso: string) => Math.floor((now.getTime() - new Date(iso).getTime()) / 86400000);
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/noel_domains?domain=eq.${dom}&select=created,checked_at`, { headers: sbHeaders, signal: AbortSignal.timeout(3000) });
+    const row = r.ok ? (await r.json())[0] : null;
+    if (row && now.getTime() - new Date(row.checked_at).getTime() < 30 * 86400000) return row.created ? days(row.created) : null;
+  } catch (_) { /* pas de cache */ }
+  try {
+    const r = await fetch(`https://rdap.org/domain/${dom}`, { headers: { Accept: "application/rdap+json" }, signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    const age = ageFromRdap(await r.json(), now);
+    const created = age === null ? null : new Date(now.getTime() - age * 86400000).toISOString();
+    fetch(`${SB_URL}/rest/v1/noel_domains`, {
+      method: "POST", headers: { ...sbHeaders, Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ domain: dom, created, checked_at: now.toISOString() }), signal: AbortSignal.timeout(3000),
+    }).catch(() => {});
+    return age;
+  } catch (_) { return null; }
 }
 
 function slugToText(u: string): string {
@@ -122,6 +159,7 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
       list: rows.slice(0, 12).map((r: any) => [String(r.source ?? "").slice(0, 30), r.extracted_price ?? null, String(r.title ?? "").slice(0, 60)]),
       stores: rawStores.slice(0, 25).map((s: any) => [String(s?.name ?? "").slice(0, 30), s?.extracted_price ?? null, why(s), String(s?.title ?? "").slice(0, 60)]),
       kept: storeOffers.length, flat: flat.length, candidates: cands.length, fiches: fichesRead, searches,
+      rated: rawStores.slice(0, 25).map((s: any) => [String(s?.name ?? "").slice(0, 30), s?.rating ?? null, s?.reviews ?? null]),
     }));
   } catch (_) { /* le diagnostic ne doit jamais gêner la recherche */ }
 
@@ -143,7 +181,26 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
     const prev = byHost.get(h);
     if (!prev || totalOf(o) < totalOf(prev)) byHost.set(h, o);
   }
-  const offers: Offer[] = rank([...byHost.values()]).slice(0, 6);
+  // 6. Sécurité des marchands : liste noire, note Google, âge du domaine, prix très bas. Un marchand connu n'est pas jugé sur ces signaux.
+  const blocked = await loadBlocked();
+  const rated = new Map<string, { rating: unknown; reviews: unknown }>();
+  for (const s of rawStores) { const k = keyOf(String(s?.name ?? "")); if (k && !rated.has(k)) rated.set(k, { rating: s?.rating, reviews: s?.reviews }); }
+  const excluded: { store: string; why: string }[] = [];
+  const cand2: Offer[] = [];
+  for (const o of byHost.values()) { if (isBlocked(o, blocked)) excluded.push({ store: o.store, why: "écarté par toi" }); else cand2.push(o); }
+  const ages = await pool(cand2, 4, async (o: Offer) => {
+    const h = isGoogle(o.url) ? "" : hostOf(o.url);
+    return h && !isKnown(o.store, o.url) ? await domainAge(h, now) : null;
+  });
+  const judged: Offer[] = [];
+  cand2.forEach((o, i) => {
+    const rt = rated.get(keyOf(o.store)) || { rating: null, reviews: null };
+    const others = cand2.filter((x) => x !== o && x.stock !== "out").map((x) => x.price);
+    const a = assess(o, { rating: rt.rating, reviews: rt.reviews, ageDays: ages[i], belowMedian: belowMedian(o.price, others) });
+    if (a.l === "out") excluded.push({ store: o.store, why: a.r.join(", ") });
+    else judged.push({ ...o, trust: { l: a.l, r: a.r } } as Offer);
+  });
+  const offers: Offer[] = rank(judged).slice(0, 6);
   const best = bestOffer(offers);
 
   if (!title) title = product?.title || (looksLikeUrl(q) ? searchText : q);
@@ -153,7 +210,7 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
   const gotSomething = !!(image || price != null || offers.length);
   return {
     ok: gotSomething || !!title,
-    title: title.slice(0, 120), image, price, store, gtin, offers,
+    title: title.slice(0, 120), image, price, store, gtin, offers, excluded,
     searched: shop.ok, searches,
     token: product?.token || "",
     alternatives: product && product.alternatives.length > 1 ? product.alternatives.map((a) => ({ token: a.token, title: a.title, image: a.image, price: a.price })) : [],

@@ -51,6 +51,20 @@ create table public.noel_prices (
 create index noel_prices_gift_at on public.noel_prices (gift_id, at);
 
 -- Essais de code ratés, pour limiter les devinettes (15 par 10 minutes et par adresse)
+-- Sécurité des marchands. Liste noire du propriétaire (nom normalisé + domaine) et cache de l'âge des domaines (RDAP, 30 jours).
+-- Aucun lien avec les réservations. Lus uniquement par la fonction noel-preview (clé de service).
+create table public.noel_blocked (
+  key   text primary key,
+  host  text,
+  label text not null,
+  at    timestamptz not null default now()
+);
+create table public.noel_domains (
+  domain     text primary key,
+  created    timestamptz,
+  checked_at timestamptz not null default now()
+);
+
 create table public.noel_attempts (
   ip text not null,
   at timestamptz not null default now()
@@ -62,8 +76,10 @@ alter table public.noel_gifts    enable row level security;
 alter table public.noel_claims   enable row level security;
 alter table public.noel_attempts enable row level security;
 alter table public.noel_prices   enable row level security;
+alter table public.noel_blocked  enable row level security;
+alter table public.noel_domains  enable row level security;
 -- Aucune policy : aucun accès direct via l'API publique.
-revoke all on public.noel_config, public.noel_gifts, public.noel_claims, public.noel_attempts, public.noel_prices from anon, authenticated;
+revoke all on public.noel_config, public.noel_gifts, public.noel_claims, public.noel_attempts, public.noel_prices, public.noel_blocked, public.noel_domains from anon, authenticated;
 
 create or replace function public.noel_client_ip()
 returns text language sql stable set search_path = public as $$
@@ -110,7 +126,11 @@ begin
     order by g.created_at), '[]'::jsonb)
   into res
   from public.noel_gifts g left join public.noel_claims c on c.gift_id = g.id;
-  return jsonb_build_object('role', r, 'title', t, 'gifts', res);
+  -- Le propriétaire reçoit en plus la liste des marchands qu'il a écartés (aucune donnée de réservation).
+  return jsonb_build_object('role', r, 'title', t, 'gifts', res)
+    || case when r = 'owner'
+            then jsonb_build_object('blocked', (select coalesce(jsonb_agg(jsonb_build_object('key', b.key, 'label', b.label) order by b.at), '[]'::jsonb) from public.noel_blocked b))
+            else '{}'::jsonb end;
 end $$;
 
 create or replace function public.noel_add(p_code text, p_title text, p_url text, p_note text, p_image text,
@@ -225,6 +245,54 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Sécurité des marchands : le propriétaire écarte un marchand (par nom normalisé et domaine) ; il disparaît des offres déjà enregistrées
+-- (toutes les fiches, de la même façon) et n'est plus proposé. Ne touche jamais aux réservations.
+create or replace function public.noel_key(p text)
+returns text language sql immutable set search_path = public as $$
+  select regexp_replace(translate(lower(coalesce(p, '')), 'àâäáãåéèêëíìîïóòôöõúùûüýÿçñ', 'aaaaaaeeeeiiiiooooouuuuyycn'), '[^a-z0-9]', '', 'g')
+$$;
+
+create or replace function public.noel_block_merchant(p_code text, p_name text, p_host text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare
+  r text := public.noel_role(p_code);
+  k text := public.noel_key(p_name);
+  h text := lower(coalesce(nullif(trim(p_host), ''), ''));
+  g record; nv jsonb; bs text; bp numeric;
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if k = '' then return jsonb_build_object('error', 'empty'); end if;
+  if h !~ '^[a-z0-9.-]{0,100}$' or h like 'www.google.%' then h := ''; end if;
+  h := regexp_replace(h, '^www\.', '');
+  insert into public.noel_blocked(key, host, label) values (k, nullif(h, ''), left(trim(p_name), 60))
+  on conflict (key) do update set host = coalesce(excluded.host, public.noel_blocked.host);
+  -- Retire ce marchand des offres déjà enregistrées (toutes les fiches, de la même façon)
+  for g in select id, offers from public.noel_gifts where offers is not null and jsonb_typeof(offers) = 'array' loop
+    select coalesce(jsonb_agg(o), '[]'::jsonb) into nv from jsonb_array_elements(g.offers) o
+     where not (public.noel_key(o->>'store') = k
+                or (h <> '' and regexp_replace(coalesce(substring(o->>'url' from '^https?://([^/:?#]+)'), ''), '^www\.', '') ~ ('(^|\.)' || replace(h, '.', '\.') || '$')));
+    if jsonb_array_length(nv) <> jsonb_array_length(g.offers) then
+      bs := null; bp := null;
+      select o->>'store', (o->>'price')::numeric + coalesce((o->>'shipping')::numeric, 0) into bs, bp
+        from jsonb_array_elements(nv) o where coalesce(o->>'stock', '') <> 'out'
+        order by (o->>'price')::numeric + coalesce((o->>'shipping')::numeric, 0) limit 1;
+      update public.noel_gifts
+         set offers = case when jsonb_array_length(nv) = 0 then null else nv end, price = bp, store = bs
+       where id = g.id;
+    end if;
+  end loop;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function public.noel_unblock_merchant(p_code text, p_key text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code);
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  delete from public.noel_blocked where key = p_key;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- Fonctions internes : jamais appelables depuis l'API publique
 revoke all on function public.noel_role(text), public.noel_deny(text), public.noel_client_ip() from public, anon, authenticated;
 
@@ -239,7 +307,9 @@ revoke all on function
   public.noel_claim(text,bigint,text),
   public.noel_unclaim(text,bigint,text),
   public.noel_set_bought(text,bigint,text,boolean),
-  public.noel_set_paid(text,bigint,text,numeric)
+  public.noel_set_paid(text,bigint,text,numeric),
+  public.noel_block_merchant(text,text,text),
+  public.noel_unblock_merchant(text,text)
 from public;
 grant execute on function
   public.noel_get(text),
@@ -251,7 +321,9 @@ grant execute on function
   public.noel_claim(text,bigint,text),
   public.noel_unclaim(text,bigint,text),
   public.noel_set_bought(text,bigint,text,boolean),
-  public.noel_set_paid(text,bigint,text,numeric)
+  public.noel_set_paid(text,bigint,text,numeric),
+  public.noel_block_merchant(text,text,text),
+  public.noel_unblock_merchant(text,text)
 to anon, authenticated;
 
 -- Initialisation (remplacer les deux codes par des phrases longues, différentes l'une de l'autre).

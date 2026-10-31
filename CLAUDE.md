@@ -20,7 +20,8 @@ avec le numérique, surtout sur téléphone. Langue : français.
   Elle écrit le prix, l'état de vérification, le stock et l'historique (`noel_prices`).
 - `supabase/functions/noel-preview/{parse.js,offers.js,verify.js,net.ts}` sont copiés à l'identique dans `noel-refresh/`
   (`node supabase/functions/shared.test.mjs` le vérifie). Après une modification, recopier puis redéployer les deux fonctions.
-  Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
+  Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
+  `trust.js` (sécurité des marchands) n'existe que dans `noel-preview/` ; `noel-refresh` conserve le champ `trust` des offres sans le recalculer.
 - `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
 - `.github/workflows/pages.yml` : publie `site/` sur GitHub Pages à chaque push sur `main`.
 
@@ -83,6 +84,22 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
 6. Échapper tout texte venant de la base avant de l'insérer dans le HTML (`esc()`), n'accepter que des liens `http(s)`
    et des images `https`.
 
+## Sécurité des marchands
+But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie (un escroc peut avoir un vieux domaine ou de faux avis).
+Étape 6 de `discover.ts`, logique dans `trust.js` (testée par `trust.test.mjs`). Niveaux affichés avec chaque offre :
+- « known » : marchand de la liste `KNOWN` de `trust.js` (tenue à la main). Reconnu par le domaine quand l'adresse est celle du marchand,
+  par le nom seulement quand l'adresse est un lien Google. Limite : « Amazon.fr » désigne le site, pas chaque vendeur tiers.
+- « unknown » : aucun signal. « caution » (« Prudence », raisons affichées) : note Google < 3,5 avec au moins 20 avis, site créé il y a moins de
+  6 mois (RDAP, cache `noel_domains`, 30 jours), prix au moins 25 % sous la médiane des autres offres (2 autres offres au moins).
+- « out » (écarté, non proposé, signalé à l'ajout) : note Google < 3 avec au moins 50 avis, site créé il y a moins de 3 mois.
+  Un âge ou une note inconnus n'écartent jamais.
+- Liste noire du propriétaire : `noel_blocked` (clé de nom normalisée `noel_key` + domaine), fonctions `noel_block_merchant` /
+  `noel_unblock_merchant` (propriétaire seulement, retirent le marchand de toutes les fiches de la même façon, sans lien avec les réservations).
+  `noel_get` renvoie `blocked` au propriétaire seulement. Tables sans policy, comme les autres.
+- Page : les offres « Prudence » restent visibles avec leurs raisons mais ne sont jamais choisies comme « Le moins cher » (`inStock`).
+- Limites : Google ne donne la note d'un marchand que si la fiche la contient (journal `noel-diag`, champ `rated`) ; RDAP peut être absent ;
+  `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
+
 ## Style
 Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thème clair et sombre via variables CSS.
 Texte en français simple, phrases courtes. Garder une seule colonne.
@@ -106,6 +123,6 @@ Texte en français simple, phrases courtes. Garder une seule colonne.
   la conversation n'a pas été enregistré ni utilisé ; il ne doit jamais entrer dans le dépôt.
 
 ## Vérifier avant de pousser
-- `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs` et `node supabase/functions/shared.test.mjs`
+- `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` et `node supabase/functions/shared.test.mjs`
 - Ouvrir `site/index.html` avec Playwright en simulant les appels `noel_get`, `noel-preview` et `noel-refresh` (aucune base réelle nécessaire),
   contrôler le rendu à 390 px de large en clair et en sombre, sans défilement horizontal ni erreur de console.
