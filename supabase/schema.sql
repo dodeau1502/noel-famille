@@ -1,8 +1,8 @@
--- Liste de Noël famille : état actuel complet de la base (v4)
+-- Liste de Noël famille : état actuel complet de la base (v5)
 -- Les tables ne sont lisibles par personne via l'API ; tout passe par des fonctions
 -- qui vérifient un code (propriétaire ou famille). Le propriétaire ne reçoit
 -- jamais les informations de réservation (claimed_by, bought, paid).
--- Convention : les fonctions API renvoient du jsonb {"ok":true} ou {"error":"denied|throttled|taken|short|same_as_owner|empty"}
+-- Convention : les fonctions API renvoient du jsonb {"ok":true} ou {"error":"denied|throttled|taken|short|same_as_owner|empty|invalid"}
 -- au lieu de lever une exception (sinon l'enregistrement des essais ratés serait annulé).
 
 create extension if not exists pgcrypto with schema extensions;
@@ -11,7 +11,9 @@ create table public.noel_config (
   id int primary key default 1 check (id = 1),
   title text not null default 'Ma liste de Noël',
   owner_hash text not null,
-  family_hash text not null
+  family_hash text not null,
+  featured jsonb not null default '[]'::jsonb,                 -- sites mis en avant par le propriétaire : [{key,label}]
+  order_mode text not null default 'price' check (order_mode in ('price', 'featured'))   -- ordre des prix proposé par défaut
 );
 
 create table public.noel_gifts (
@@ -27,7 +29,8 @@ create table public.noel_gifts (
   offers_at timestamptz,
   top boolean not null default false,
   gtin text check (gtin is null or gtin ~ '^[0-9]{8,14}$'),   -- code-barres lu sur la page collée
-  checked_at timestamptz                                       -- dernière relecture des pages des marchands
+  checked_at timestamptz,                                      -- dernière relecture des pages des marchands
+  pinned text[] not null default '{}'                          -- sites mis en avant sur cette fiche (clés de nom normalisées, 3 au plus)
 );
 
 create table public.noel_claims (
@@ -50,7 +53,6 @@ create table public.noel_prices (
 );
 create index noel_prices_gift_at on public.noel_prices (gift_id, at);
 
--- Essais de code ratés, pour limiter les devinettes (15 par 10 minutes et par adresse)
 -- Sécurité des marchands. Liste noire du propriétaire (nom normalisé + domaine) et cache de l'âge des domaines (RDAP, 30 jours).
 -- Aucun lien avec les réservations. Lus uniquement par la fonction noel-preview (clé de service).
 create table public.noel_blocked (
@@ -65,6 +67,7 @@ create table public.noel_domains (
   checked_at timestamptz not null default now()
 );
 
+-- Essais de code ratés, pour limiter les devinettes (15 par 10 minutes et par adresse)
 create table public.noel_attempts (
   ip text not null,
   at timestamptz not null default now()
@@ -110,15 +113,15 @@ end $$;
 
 create or replace function public.noel_get(p_code text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
-declare r text := public.noel_role(p_code); t text; res jsonb;
+declare r text := public.noel_role(p_code); t text; f jsonb; m text; res jsonb;
 begin
   if r is null or r = 'throttled' then return public.noel_deny(r); end if;
-  select title into t from public.noel_config where id = 1;
+  select title, featured, order_mode into t, f, m from public.noel_config where id = 1;
   select coalesce(jsonb_agg(
     jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
                        'image', g.image_url, 'price', g.price, 'store', g.store,
                        'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
-                       'gtin', g.gtin, 'checked_at', g.checked_at,
+                       'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned),
                        'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
                                               from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
     || case when r = 'owner' then '{}'::jsonb
@@ -127,7 +130,7 @@ begin
   into res
   from public.noel_gifts g left join public.noel_claims c on c.gift_id = g.id;
   -- Le propriétaire reçoit en plus la liste des marchands qu'il a écartés (aucune donnée de réservation).
-  return jsonb_build_object('role', r, 'title', t, 'gifts', res)
+  return jsonb_build_object('role', r, 'title', t, 'gifts', res, 'display', jsonb_build_object('featured', f, 'mode', m))
     || case when r = 'owner'
             then jsonb_build_object('blocked', (select coalesce(jsonb_agg(jsonb_build_object('key', b.key, 'label', b.label) order by b.at), '[]'::jsonb) from public.noel_blocked b))
             else '{}'::jsonb end;
@@ -245,6 +248,98 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Modification manuelle (propriétaire) : fiche, offres, sites en avant.
+create or replace function public.noel_update_gift(p_code text, p_id bigint, p_title text, p_url text, p_note text, p_image text, p_gtin text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code); t text := trim(coalesce(p_title, '')); u text := nullif(trim(coalesce(p_url, '')), '');
+        n text := nullif(trim(coalesce(p_note, '')), ''); i text := nullif(trim(coalesce(p_image, '')), '');
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if char_length(t) < 1 or char_length(t) > 120 then return jsonb_build_object('error', 'empty'); end if;
+  if u is not null and (u !~* '^https?://' or char_length(u) > 500) then return jsonb_build_object('error', 'invalid'); end if;
+  if n is not null and char_length(n) > 500 then return jsonb_build_object('error', 'invalid'); end if;
+  if i is not null and (i !~* '^https://' or char_length(i) > 1000) then return jsonb_build_object('error', 'invalid'); end if;
+  update public.noel_gifts
+     set title = t, url = u, note = n, image_url = i,
+         gtin = case when trim(coalesce(p_gtin, '')) ~ '^[0-9]{8,14}$' then trim(p_gtin) end
+   where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Modification manuelle des offres d'une fiche (ajout, correction, retrait). Le prix et le marchand de la fiche sont recalculés.
+create or replace function public.noel_edit_offers(p_code text, p_id bigint, p_offers jsonb)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare
+  r text := public.noel_role(p_code); o jsonb; clean jsonb := '[]'::jsonb; bad boolean;
+  bs text; bp numeric; bv boolean := false; l record;
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if p_offers is null or jsonb_typeof(p_offers) <> 'array' or jsonb_array_length(p_offers) > 12 then return jsonb_build_object('error', 'invalid'); end if;
+  for o in select * from jsonb_array_elements(p_offers) loop
+    bad := jsonb_typeof(o) <> 'object'
+       or char_length(trim(coalesce(o->>'store', ''))) not between 1 and 60
+       or case when coalesce(o->>'price', '') ~ '^[0-9]{1,5}(\.[0-9]{1,2})?$' then (o->>'price')::numeric <= 0 else true end
+       or coalesce(o->>'url', '') !~* '^https://' or char_length(o->>'url') > 500
+       or (o->>'shipping' is not null and o->>'shipping' !~ '^[0-9]{1,3}(\.[0-9]{1,2})?$');
+    if bad then return jsonb_build_object('error', 'invalid'); end if;
+    clean := clean || jsonb_build_array(jsonb_build_object(
+      'store', trim(o->>'store'), 'price', (o->>'price')::numeric, 'url', o->>'url',
+      'shipping', case when o->>'shipping' is not null then (o->>'shipping')::numeric end,
+      'verified', coalesce(o->>'verified', '') = 'true',
+      'at', case when coalesce(o->>'at', '') ~ '^[0-9T:.+Z-]{10,40}$' then o->>'at' end,
+      'stock', case when o->>'stock' in ('in', 'out', 'pre') then o->>'stock' else '' end,
+      'via', case when o->>'via' in ('google', 'page', 'manual') then o->>'via' else '' end,
+      'trust', case when jsonb_typeof(o->'trust') = 'object' then o->'trust' end));
+  end loop;
+  select x->>'store', (x->>'price')::numeric + coalesce((x->>'shipping')::numeric, 0), (x->>'verified')::boolean into bs, bp, bv
+    from jsonb_array_elements(clean) x where x->>'stock' <> 'out'
+   order by (coalesce(x->'trust'->>'l', '') = 'caution'), (x->>'price')::numeric + coalesce((x->>'shipping')::numeric, 0) limit 1;
+  update public.noel_gifts
+     set offers = case when jsonb_array_length(clean) = 0 then null else clean end,
+         offers_at = case when jsonb_array_length(clean) = 0 then null else now() end,
+         price = bp, store = bs
+   where id = p_id;
+  if found and bp is not null then
+    select price, at into l from public.noel_prices where gift_id = p_id order by at desc limit 1;
+    if l.price is null or l.price <> bp or l.at < now() - interval '20 hours' then
+      insert into public.noel_prices(gift_id, price, store, verified) values (p_id, bp, bs, coalesce(bv, false));
+    end if;
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Sites mis en avant sur une fiche (3 au plus, clés de nom normalisées)
+create or replace function public.noel_set_pinned(p_code text, p_id bigint, p_keys text[])
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code); k text; ks text[] := '{}';
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  foreach k in array coalesce(p_keys, '{}') loop
+    if k !~ '^[a-z0-9]{1,60}$' then return jsonb_build_object('error', 'invalid'); end if;
+    if not (k = any(ks)) then ks := ks || k; end if;
+  end loop;
+  if coalesce(array_length(ks, 1), 0) > 3 then return jsonb_build_object('error', 'invalid'); end if;
+  update public.noel_gifts set pinned = ks where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Affichage commun à toute la famille : sites favoris du propriétaire et ordre par défaut (« price » ou « featured »)
+create or replace function public.noel_set_display(p_code text, p_featured jsonb, p_mode text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code); f jsonb := '[]'::jsonb; x jsonb; k text;
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if p_mode is null or p_mode not in ('price', 'featured') then return jsonb_build_object('error', 'invalid'); end if;
+  if p_featured is null or jsonb_typeof(p_featured) <> 'array' or jsonb_array_length(p_featured) > 10 then return jsonb_build_object('error', 'invalid'); end if;
+  for x in select * from jsonb_array_elements(p_featured) loop
+    k := public.noel_key(x->>'label');
+    if jsonb_typeof(x) <> 'object' or k = '' or char_length(x->>'label') > 60 then return jsonb_build_object('error', 'invalid'); end if;
+    f := f || jsonb_build_array(jsonb_build_object('key', k, 'label', trim(x->>'label')));
+  end loop;
+  update public.noel_config set featured = f, order_mode = p_mode where id = 1;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- Sécurité des marchands : le propriétaire écarte un marchand (par nom normalisé et domaine) ; il disparaît des offres déjà enregistrées
 -- (toutes les fiches, de la même façon) et n'est plus proposé. Ne touche jamais aux réservations.
 create or replace function public.noel_key(p text)
@@ -309,7 +404,11 @@ revoke all on function
   public.noel_set_bought(text,bigint,text,boolean),
   public.noel_set_paid(text,bigint,text,numeric),
   public.noel_block_merchant(text,text,text),
-  public.noel_unblock_merchant(text,text)
+  public.noel_unblock_merchant(text,text),
+  public.noel_update_gift(text,bigint,text,text,text,text,text),
+  public.noel_edit_offers(text,bigint,jsonb),
+  public.noel_set_pinned(text,bigint,text[]),
+  public.noel_set_display(text,jsonb,text)
 from public;
 grant execute on function
   public.noel_get(text),
@@ -323,7 +422,11 @@ grant execute on function
   public.noel_set_bought(text,bigint,text,boolean),
   public.noel_set_paid(text,bigint,text,numeric),
   public.noel_block_merchant(text,text,text),
-  public.noel_unblock_merchant(text,text)
+  public.noel_unblock_merchant(text,text),
+  public.noel_update_gift(text,bigint,text,text,text,text,text),
+  public.noel_edit_offers(text,bigint,jsonb),
+  public.noel_set_pinned(text,bigint,text[]),
+  public.noel_set_display(text,jsonb,text)
 to anon, authenticated;
 
 -- Initialisation (remplacer les deux codes par des phrases longues, différentes l'une de l'autre).

@@ -226,6 +226,19 @@
   .grid2{display:grid; grid-template-columns:1fr; gap:12px}
   .foot{display:flex; justify-content:center; padding-top:4px}
 
+  /* Liste de prix déroulante, sites en avant, modification d'une fiche */
+  .offers .tag.fav{color:var(--berry)}
+  .allp summary{cursor:pointer; font-weight:600; color:var(--pine); min-height:44px; display:flex; align-items:center}
+  .allp .offers{margin-top:2px}
+  .chipx{display:inline-flex; align-items:center; gap:2px; padding:2px 4px 2px 14px; border-radius:999px; border:1.5px solid var(--line); font-weight:600}
+  .chipx button{padding:8px 10px}
+  #favList{display:flex; flex-wrap:wrap; gap:8px}
+  .edit{border-color:var(--pine)}
+  .edit h4{margin:0; font:700 1.05rem var(--f-display)}
+  .edit .erow{display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px}
+  .edit .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .edit .addrow{display:flex; flex-direction:column; gap:10px; background:var(--pine-soft); border-radius:12px; padding:12px}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
 </head>
@@ -338,6 +351,24 @@
           </div>
         </details>
 
+        <details class="card share" id="dispBox">
+          <summary>Sites en avant et ordre des prix</summary>
+          <div class="sharebox">
+            <p class="status">Les sites choisis ici passent en premier quand l'ordre « Choix de Dorian d'abord » est actif, et portent la mention « Choix de Dorian ». Ils ne changent ni les prix ni la mention « Le moins cher ». Chaque personne peut aussi changer l'ordre sur son appareil.</p>
+            <div id="favList"></div>
+            <div class="search-row">
+              <input id="favName" type="text" maxlength="60" placeholder="Nom du site (ex. Darty)" autocomplete="off" aria-label="Nom du site à mettre en avant">
+              <button class="btn" type="button" id="favAdd">Ajouter</button>
+            </div>
+            <label for="favMode">Ordre proposé par défaut
+              <select id="favMode">
+                <option value="price">Moins cher d'abord</option>
+                <option value="featured">Choix de Dorian d'abord</option>
+              </select>
+            </label>
+          </div>
+        </details>
+
         <details class="card share" id="blockedBox" hidden>
           <summary>Marchands écartés</summary>
           <div class="sharebox">
@@ -356,6 +387,12 @@
             <option value="list">Ordre de la liste</option>
             <option value="top">Envie forte d'abord</option>
             <option value="price">Prix croissant</option>
+          </select>
+        </label>
+        <label for="omode">Prix
+          <select id="omode">
+            <option value="price">Moins cher d'abord</option>
+            <option value="featured">Choix de Dorian d'abord</option>
           </select>
         </label>
         <div id="bulkWrap" hidden>
@@ -386,6 +423,7 @@ const store = {
   sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
 };
 let code = "", role = "", gifts = [], filter = "open", sort = "list", who = store.get("who");
+let display = {featured:[], mode:"price"}, editing = null; const openPrices = new Set();
 let pendingDelete = null, pendingResearch = null, pendingBlock = null, blocked = [], busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
 
 const MSG = {
@@ -394,7 +432,8 @@ const MSG = {
   taken: "Quelqu'un vient de prendre ce cadeau. La liste est mise à jour.",
   short: "Ce code est trop court.",
   same_as_owner: "Ce code est déjà utilisé. Renouvelle-le.",
-  empty: "Aucune offre trouvée."
+  empty: "Aucune offre trouvée.",
+  invalid: "Une valeur n'est pas valide. Vérifie les champs puis réessaie."
 };
 async function rpc(fn, args){
   let r;
@@ -463,6 +502,19 @@ const cleanOffers = g => (Array.isArray(g.offers) ? g.offers : [])
   .filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url))
   .sort((a,b) => rankKey(a) - rankKey(b));
 const bestOf = g => inStock(cleanOffers(g))[0] || null;
+// Sites mis en avant : ceux de la fiche d'abord, puis ceux de la liste commune. Seul l'ordre change, jamais « Le moins cher ».
+const keyOf = s => norm(s).replace(/[^a-z0-9]/g,"");
+const orderMode = () => { const m = store.get("om"); return m === "price" || m === "featured" ? m : display.mode; };
+const favKeys = g => [...new Set((Array.isArray(g.pinned) ? g.pinned : []).concat(display.featured.map(f => f.key)))].filter(k => typeof k === "string");
+// « Fnac » désigne aussi « Fnac.com » : même nom, ou l'un commence par l'autre (4 lettres au moins)
+const favIdx = (fk, o) => { const k = keyOf(o.store); return fk.findIndex(f => f === k || (Math.min(f.length, k.length) >= 4 && (k.startsWith(f) || f.startsWith(k)))); };
+function orderedOffers(g, offs){
+  const fk = favKeys(g);
+  if(orderMode() !== "featured" || !fk.length) return offs;
+  const live = offs.filter(o => o.stock !== "out"), gone = offs.filter(o => o.stock === "out");
+  const favs = live.filter(o => favIdx(fk, o) >= 0).sort((a,b) => favIdx(fk, a) - favIdx(fk, b));
+  return [...favs, ...live.filter(o => favIdx(fk, o) < 0), ...gone];
+}
 const bestPrice = g => {
   const all = cleanOffers(g);
   if(all.length){ const b = inStock(all)[0]; return b ? totalOf(b) : null; }
@@ -475,6 +527,7 @@ const dayD = d => D(d + "T12:00:00");
 // État d'un prix : lu sur la page du marchand (« vérifié ») ou seulement donné par Google (« non vérifié »)
 function chkText(o, g){
   if(o.stock === "out") return `<small class="chk out">Rupture de stock${o.verified && o.at ? " · vu le " + D(o.at) : ""}</small>`;
+  if(o.via === "manual" && !o.verified) return `<small class="chk">Prix saisi à la main${o.at ? " le " + D(o.at) : ""}, non vérifié</small>`;
   if(o.verified) return `<small class="chk ok">${CHECK} Vérifié sur le site${o.at ? " le " + D(o.at) : ""}${o.stock === "pre" ? " · précommande" : ""}</small>`;
   return `<small class="chk">Non vérifié · ${o.at ? "dernier contrôle le " + D(o.at) : (g.offers_at ? "prix Google du " + D(g.offers_at) : "prix Google")}</small>`;
 }
@@ -595,6 +648,11 @@ function toLogin(message){
 async function load(){
   const d = await rpc("noel_get", {p_code:code});
   role = d.role; gifts = d.gifts || []; blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
+  const dp = d.display && typeof d.display === "object" ? d.display : {};
+  display = {
+    featured: (Array.isArray(dp.featured) ? dp.featured : []).filter(f => f && typeof f.key === "string" && typeof f.label === "string").slice(0,10),
+    mode: dp.mode === "featured" ? "featured" : "price"
+  };
   document.title = d.title;
   $("title").textContent = d.title;
   $("login").hidden = true; $("app").hidden = false; $("foot").hidden = false;
@@ -607,6 +665,7 @@ async function load(){
   syncName();
   render();
   renderBlocked();
+  renderFav();
   setManifest();
 }
 
@@ -639,10 +698,11 @@ function render(){
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
   $("priceNote").hidden = !withPrice;
   $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
-    + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
+    + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Choix de Dorian » : site mis en avant par le propriétaire, sans effet sur les prix ; « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
   renderDrops();
   $("listbar").hidden = !gifts.length;
   $("sort").value = sort;
+  $("omode").value = orderMode();
 
   let shown = gifts;
   if(role === "family"){
@@ -662,13 +722,19 @@ function render(){
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
-    const offs = cleanOffers(g), bo = inStock(offs)[0] || null, bi = bo ? offs.indexOf(bo) : -1;
+    if(role === "owner" && editing && editing.id === g.id) return editLi(g);
+    const offs = cleanOffers(g), bo = inStock(offs)[0] || null;
     const best = bestPrice(g);
     const price = best != null
       ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b>${offs.length ? `<span class="note">${typeof bo.shipping === "number" ? "livraison comprise" : "hors livraison"}</span>` : ""}</div>`
       : (offs.length ? `<div class="price"><span class="note">En rupture chez les marchands lus</span></div>` : "");
     const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
-    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,5).map((o,i)=>`<li class="${i===bi?'best':''}${o.stock==='out'?' out':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===bi?'<span class="tag">Le moins cher</span>':''}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`).join("")}</ul>` : "";
+    const all = orderedOffers(g, offs), fk = favKeys(g);
+    const li = o => `<li class="${o===bo?'best':''}${o.stock==='out'?' out':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${o===bo?'<span class="tag">Le moins cher</span>':''}${favIdx(fk, o)>=0?'<span class="tag fav">Choix de Dorian</span>':''}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
+    const offersHtml = (!other && offs.length)
+      ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${all.slice(0,3).map(li).join("")}</ul>`
+        + (all.length > 3 ? `<details class="allp" data-g="${g.id}"${openPrices.has(g.id) ? " open" : ""}><summary>Voir les ${all.length - 3} autres prix</summary><ul class="offers">${all.slice(3).map(li).join("")}</ul></details>` : "")
+      : "";
     const blockHtml = role === "owner" && offs.length ? blockBox(g, offs) : "";
     const dr = dropOf(g);
     const histBlock = other ? "" : histHtml(g);
@@ -690,7 +756,8 @@ function render(){
         ? `<div class="confirm"><button class="btn small" data-delyes="${g.id}">Oui, retirer</button><button class="btn ghost small" data-delno>Non</button></div>`
         : pendingResearch === g.id
         ? `<p class="status" style="width:100%">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button class="btn ghost small" data-researchno>Non</button></div>`
-        : `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
+        : `<button class="btn ghost small" data-edit="${g.id}">Modifier</button>`
+          + `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
           + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Relire les prix de ${esc(g.title)} (gratuit)">${refreshing.has(g.id) ? "Lecture…" : "Actualiser"}</button>`
           + `<button class="btn ghost small" data-research="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Chercher d'autres marchands pour ${esc(g.title)}">Autres marchands</button>`
           + `<button class="btn ghost small" data-del="${g.id}">Retirer</button>`;
@@ -914,9 +981,152 @@ $("renewYes").addEventListener("click", ()=>{
 });
 refreshShare();
 
+/* ---------- Modifier une fiche (propriétaire) ---------- */
+const numTxt = n => n == null ? "" : String(n).replace(".", ",");
+const parseNum = t => { const r = String(t ?? "").trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,""); return r === "" ? null : parseFloat(r); };
+function newDraft(g){
+  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
+    offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out"})),
+    add:{store:"", price:"", ship:"", url:""}};
+}
+function editLi(g){
+  const d = editing.d, err = editing.err ? `<p class="msg" role="alert">${esc(editing.err)}</p>` : "";
+  const rows = d.offers.map((r,i) => { const k = keyOf(r.store); return `<div class="erow"><strong>${esc(r.store)}</strong>
+      <div class="two"><label>Prix (€)<input type="text" inputmode="decimal" maxlength="9" data-ef="price" data-i="${i}" value="${esc(r.price)}"></label>
+      <label>Livraison (€)<input type="text" inputmode="decimal" maxlength="7" placeholder="à vérifier" data-ef="ship" data-i="${i}" value="${esc(r.ship)}"></label></div>
+      <label>Lien du produit<input type="url" maxlength="500" data-ef="url" data-i="${i}" value="${esc(r.url)}"></label>
+      <label class="check"><input type="checkbox" data-ef="out" data-i="${i}"${r.out ? " checked" : ""}> En rupture de stock</label>
+      <label class="check"><input type="checkbox" data-epin="${esc(k)}"${d.pinned.includes(k) ? " checked" : ""}> Mettre en avant sur cette fiche</label>
+      <button type="button" class="btn ghost small" data-edel="${i}">Retirer ce marchand</button></div>`; }).join("");
+  return `<li class="gift edit"><h4>Modifier la fiche</h4>
+    <label>Nom du cadeau<input type="text" maxlength="120" data-et="title" value="${esc(d.title)}"></label>
+    <label>Lien du produit<input type="url" maxlength="500" data-et="url" value="${esc(d.url)}"></label>
+    <label>Photo (adresse https)<input type="url" maxlength="1000" data-et="image" value="${esc(d.image)}"></label>
+    <label>Précision<input type="text" maxlength="500" data-et="note" value="${esc(d.note)}"></label>
+    <label>Code-barres (facultatif)<input type="text" inputmode="numeric" maxlength="14" data-et="gtin" value="${esc(d.gtin)}"></label>
+    <h4>Prix par marchand</h4>
+    <p class="status">Un prix modifié ou ajouté ici est marqué « saisi à la main, non vérifié » tant qu'une lecture de la page du marchand ne l'a pas confirmé. Les places de marché, comparateurs et marchands écartés sont refusés.</p>
+    ${rows || '<p class="status">Aucun marchand pour l\'instant.</p>'}
+    <div class="addrow"><strong>Ajouter un marchand</strong>
+      <label>Nom du marchand<input type="text" maxlength="60" data-ea="store" value="${esc(d.add.store)}"></label>
+      <div class="two"><label>Prix (€)<input type="text" inputmode="decimal" maxlength="9" data-ea="price" value="${esc(d.add.price)}"></label>
+      <label>Livraison (€)<input type="text" inputmode="decimal" maxlength="7" placeholder="à vérifier" data-ea="ship" value="${esc(d.add.ship)}"></label></div>
+      <label>Lien du produit chez ce marchand<input type="url" maxlength="500" placeholder="https://" data-ea="url" value="${esc(d.add.url)}"></label>
+      <button type="button" class="btn ghost small" data-eadd>Ajouter ce marchand</button></div>
+    ${err}
+    <div class="act"><button type="button" class="btn" data-esave>Enregistrer</button><button type="button" class="btn ghost" data-ecancel>Annuler</button></div></li>`;
+}
+function buildOffers(d){
+  const now = new Date().toISOString(), out = [];
+  for(const r of d.offers){
+    const p = parseNum(r.price), sh = String(r.ship).trim() === "" ? null : parseNum(r.ship), u = String(r.url).trim();
+    if(!(p > 0 && p < 100000)) throw new Error("Le prix de « " + r.store + " » n'est pas valide.");
+    if(sh !== null && !(sh >= 0 && sh < 1000)) throw new Error("La livraison de « " + r.store + " » n'est pas valide.");
+    if(!/^https:\/\//i.test(u) || u.length > 500) throw new Error("Le lien de « " + r.store + " » doit commencer par https://.");
+    if(isMarket(r.store, u)) throw new Error("« " + r.store + " » est une place de marché ou un comparateur : il n'est pas proposé.");
+    const o = r.o, price = Math.round(p * 100) / 100, ship = sh === null ? null : Math.round(sh * 100) / 100;
+    const stock = r.out ? "out" : (o && o.stock !== "out" ? (o.stock || "") : "");
+    const changed = !o || price !== o.price || ship !== (typeof o.shipping === "number" ? o.shipping : null) || u !== o.url || (stock === "out") !== (o.stock === "out");
+    out.push(changed ? offerOut({...(o || {}), store:r.store, price, shipping:ship, url:u, stock, via:"manual", verified:false, at:now, trust:null}) : offerOut(o));
+  }
+  return out;
+}
+function handleEdit(t){
+  if(t.dataset.edit){
+    const g = gifts.find(x => x.id === +t.dataset.edit); if(!g) return true;
+    pendingDelete = pendingResearch = pendingBlock = null;
+    editing = {id:g.id, d:newDraft(g), err:""}; render();
+    const el = document.querySelector("#list .edit"); if(el) el.scrollIntoView({block:"start", behavior:"smooth"});
+    return true;
+  }
+  if(!editing) return false;
+  const d = editing.d;
+  if(t.hasAttribute("data-ecancel")){ editing = null; render(); return true; }
+  if(t.dataset.edel !== undefined){ d.offers.splice(+t.dataset.edel, 1); d.dirty = true; editing.err = ""; render(); return true; }
+  if(t.hasAttribute("data-eadd")){
+    const a = d.add, store = a.store.trim(), p = parseNum(a.price), sh = String(a.ship).trim() === "" ? null : parseNum(a.ship), u = a.url.trim();
+    let err = "";
+    if(!store) err = "Donne le nom du marchand.";
+    else if(!(p > 0 && p < 100000)) err = "Le prix n'est pas valide.";
+    else if(sh !== null && !(sh >= 0 && sh < 1000)) err = "La livraison n'est pas valide.";
+    else if(!/^https:\/\//i.test(u) || u.length > 500) err = "Le lien doit commencer par https://.";
+    else if(isMarket(store, u)) err = "Ce site est une place de marché ou un comparateur : il n'est pas proposé.";
+    else if(blocked.some(b => b.key === keyOf(store))) err = "Ce marchand est écarté. Réautorise-le d'abord.";
+    else if(d.offers.some(r => keyOf(r.store) === keyOf(store))) err = "Ce marchand est déjà dans la liste : modifie sa ligne.";
+    else if(d.offers.length >= 12) err = "12 marchands au plus par fiche.";
+    editing.err = err;
+    if(!err){ d.offers.push({o:null, store, price:numTxt(Math.round(p * 100) / 100), ship:sh === null ? "" : numTxt(sh), url:u, out:false}); d.add = {store:"", price:"", ship:"", url:""}; d.dirty = true; }
+    render(); return true;
+  }
+  if(t.hasAttribute("data-esave")){
+    const g = gifts.find(x => x.id === editing.id); if(!g){ editing = null; render(); return true; }
+    const title = d.title.trim();
+    if(!title){ editing.err = "Donne un nom au cadeau."; render(); return true; }
+    let offers = null;
+    if(d.dirty){ try{ offers = buildOffers(d); }catch(err){ editing.err = err.message; render(); return true; } }
+    const id = editing.id, pins = d.pinned.filter(k => d.offers.some(r => keyOf(r.store) === k) || (g.pinned || []).includes(k)), pinsChanged = JSON.stringify(pins) !== JSON.stringify(g.pinned || []);
+    editing.err = "";
+    run(async()=>{
+      await rpc("noel_update_gift",{p_code:code,p_id:id,p_title:title,p_url:d.url.trim(),p_note:d.note,p_image:d.image.trim(),p_gtin:d.gtin.trim()});
+      if(offers) await rpc("noel_edit_offers",{p_code:code,p_id:id,p_offers:offers});
+      if(pinsChanged) await rpc("noel_set_pinned",{p_code:code,p_id:id,p_keys:pins});
+      editing = null;
+    });
+    return true;
+  }
+  return false;
+}
+$("list").addEventListener("input", e=>{
+  const t = e.target; if(!editing || !t.dataset) return;
+  if(t.dataset.et){ editing.d[t.dataset.et] = t.value; return; }
+  if(t.dataset.ea){ editing.d.add[t.dataset.ea] = t.value; return; }
+  if(t.dataset.ef && t.type !== "checkbox"){ const r = editing.d.offers[+t.dataset.i]; if(r){ r[t.dataset.ef] = t.value; editing.d.dirty = true; } }
+});
+$("list").addEventListener("change", e=>{
+  const t = e.target; if(!editing || !t.dataset) return;
+  if(t.dataset.ef === "out"){ const r = editing.d.offers[+t.dataset.i]; if(r){ r.out = t.checked; editing.d.dirty = true; } return; }
+  if(t.dataset.epin !== undefined){
+    const k = t.dataset.epin, p = editing.d.pinned;
+    if(t.checked){ if(p.length >= 3 && !p.includes(k)){ editing.err = "3 sites en avant au plus par fiche."; render(); return; } if(!p.includes(k)) p.push(k); }
+    else editing.d.pinned = p.filter(x => x !== k);
+  }
+});
+// Liste de prix déroulante : son état est gardé quand la liste est redessinée
+$("list").addEventListener("toggle", e=>{
+  const d = e.target; if(!d || !d.classList || !d.classList.contains("allp")) return;
+  const id = +d.dataset.g; if(d.open) openPrices.add(id); else openPrices.delete(id);
+}, true);
+
+/* ---------- Sites en avant et ordre des prix ---------- */
+function renderFav(){
+  const box = $("dispBox"); if(!box) return;
+  box.hidden = role !== "owner";
+  $("favList").innerHTML = display.featured.length
+    ? display.featured.map(f => `<span class="chipx">${esc(f.label)}<button type="button" class="linkbtn" data-favdel="${esc(f.key)}" aria-label="Retirer ${esc(f.label)}">✕</button></span>`).join("")
+    : '<span class="status">Aucun site choisi.</span>';
+  $("favMode").value = display.mode;
+}
+const saveDisplay = (featured, mode) => run(()=>rpc("noel_set_display",{p_code:code, p_featured:featured.map(f => ({label:f.label})), p_mode:mode}));
+$("favAdd").addEventListener("click", ()=>{
+  const name = $("favName").value.trim();
+  if(!name) { $("favName").focus(); return; }
+  if(display.featured.length >= 10){ $("appErr").textContent = "10 sites au plus."; return; }
+  if(display.featured.some(f => f.key === keyOf(name))){ $("favName").value = ""; return; }
+  $("favName").value = "";
+  saveDisplay([...display.featured, {label:name}], display.mode);
+});
+$("favName").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); $("favAdd").click(); } });
+$("favList").addEventListener("click", e=>{
+  const b = e.target.closest("button[data-favdel]"); if(!b) return;
+  saveDisplay(display.featured.filter(f => f.key !== b.dataset.favdel), display.mode);
+});
+$("favMode").addEventListener("change", ()=> saveDisplay(display.featured, $("favMode").value === "featured" ? "featured" : "price"));
+$("omode").addEventListener("change", ()=>{ store.set("om", $("omode").value === "featured" ? "featured" : "price"); render(); });
+
 /* ---------- Actions sur les cartes ---------- */
 $("list").addEventListener("click", e=>{
   const t = e.target.closest("button"); if(!t) return;
+  if(handleEdit(t)) return;
   const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.block || t.dataset.paidsave || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
   const g = gifts.find(x=>x.id===id);
   if(t.dataset.block){ pendingBlock = {gid:id, name:t.dataset.name || "", host:t.dataset.host || ""}; render(); return; }
@@ -976,6 +1186,7 @@ document.addEventListener("error", e=>{
 // Mise à jour discrète pour voir les choix des autres
 function tick(){
   // pas de mise à jour pendant qu'on saisit un prix payé : elle effacerait la saisie
+  if(editing) return;
   const a = document.activeElement;
   if(a && a.tagName === "INPUT" && a.closest && a.closest("#list")) return;
   if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); });
