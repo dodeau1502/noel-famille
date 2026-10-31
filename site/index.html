@@ -679,10 +679,10 @@ function render(){
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
         <a href="https://www.google.com/search?tbm=shop&hl=fr&gl=fr&q=${q}" target="_blank" rel="noopener noreferrer">Google Shopping</a>
         <a href="https://www.idealo.fr/prechten.html?q=${qc}" target="_blank" rel="noopener noreferrer">idealo</a>
-        <a href="https://ledenicheur.fr/search?search=${qc}" target="_blank" rel="noopener noreferrer">Le Dénicheur</a>
+        <a href="https://ledenicheur.fr/" target="_blank" rel="noopener noreferrer">Le Dénicheur (accueil)</a>
         <a href="https://www.dealabs.com/search?q=${q}" target="_blank" rel="noopener noreferrer">Dealabs</a>
         <a href="https://www.amazon.fr/s?k=${q}" target="_blank" rel="noopener noreferrer">Amazon</a></div>
-        <small>Ouvre la recherche de ce produit chez chaque comparateur${gt ? " (code-barres pour idealo et Le Dénicheur)" : ""}. Les prix y sont ceux du comparateur, à vérifier sur place.</small></details>`;
+        <small>Ouvre la recherche de ce produit chez chaque comparateur (Le Dénicheur : page d'accueil, à rechercher sur place)${gt ? " (code-barres pour idealo)" : ""}. Les prix y sont ceux du comparateur, à vérifier sur place.</small></details>`;
     let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "", extra = "";
     if(dr && !other) badges += `<span class="badge drop">Baisse de ${eur(dr.by)}</span>`;
     if(role === "owner"){

@@ -114,6 +114,7 @@ Texte en français simple, phrases courtes. Garder une seule colonne.
 - Pas de seconde source de prix (Kelkoo/idealo via Apify) ni de copie locale de la photo du marchand ; pas de test quotidien automatique.
 - Les formats d'URL de recherche d'idealo et du Dénicheur n'ont pas pu être testés depuis l'environnement de développement (idealo refusé,
   robots.txt du Dénicheur interdit la lecture automatique de ses recherches) : à contrôler à la main sur téléphone, avec et sans code-barres.
+  Le 31 octobre, `ledenicheur.fr/search?search=…` renvoie une erreur 404 : le lien Le Dénicheur pointe donc vers l'accueil, jusqu'à ce que le propriétaire donne la bonne adresse de recherche.
 - Journal de diagnostic : `noel-preview` écrit une ligne `noel-diag` par recherche (marchands renvoyés par Google, prix, raison de
   conservation ou d'écart : « titre différent », « comparateur », « place de marché… », « occasion »). Ni clé ni code. À lire dans les
   journaux de la fonction ; à retirer une fois le filtrage réglé.
