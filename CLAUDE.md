@@ -40,10 +40,10 @@ des recherches. L'actualisation des prix (automatique ou bouton) lit les pages d
 Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
 
 ## Base : conventions
-- Les fonctions `noel_*` renvoient du jsonb `{"ok":true}` ou `{"error":"denied|throttled|taken|short|same_as_owner|empty"}`,
+- Les fonctions `noel_*` renvoient du jsonb `{"ok":true}` ou `{"error":"denied|throttled|taken|short|same_as_owner|empty|invalid"}`,
   elles ne lèvent pas d'exception (sinon l'enregistrement des essais de code ratés serait annulé). La page traduit ces erreurs (`MSG`, `rpc()`).
 - Limitation : 15 essais ratés par 10 minutes et par adresse (`noel_attempts`, `noel_role`).
-- Fonctions propriétaire : `noel_add`, `noel_remove`, `noel_set_top`, `noel_set_offers`, `noel_set_family_code`.
+- Fonctions propriétaire : `noel_add`, `noel_remove`, `noel_set_top`, `noel_set_offers`, `noel_set_family_code`, `noel_update_gift`, `noel_edit_offers`, `noel_set_pinned`, `noel_set_display`, `noel_block_merchant`, `noel_unblock_merchant`.
   Fonctions famille : `noel_claim`, `noel_unclaim`, `noel_set_bought`, `noel_set_paid`.
 - Tables : `noel_gifts` (dont `gtin`, `checked_at`), `noel_claims` (dont `paid`), `noel_prices` (historique : un point par jour ou à chaque
   changement du meilleur prix, 60 derniers points renvoyés par `noel_get`, identiques pour le propriétaire et la famille).
@@ -57,6 +57,19 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
   ces sites, aucun de leurs prix n'est stocké dans `offers` (règle 4 : les comparateurs ne sont pas des marchands).
   Le code d'accès est mémorisé dans `localStorage` de l'appareil (bouton « Quitter »). Pas de service worker.
   Pas prévu volontairement : participation groupée, notification de réservation, commentaires.
+
+## Modifier une fiche, liste de prix déroulante, sites en avant
+- « Modifier » (propriétaire) : nom, lien, photo https, précision, code-barres (`noel_update_gift`) et offres par marchand (`noel_edit_offers`, 12 au plus :
+  prix, livraison, lien https, rupture, ajout, retrait). Une offre ajoutée ou changée à la main porte `via:"manual"`, `verified:false` et la date : la page
+  affiche « Prix saisi à la main, non vérifié » jusqu'à ce que la relecture (`noel-refresh`) confirme le prix sur la page du marchand. Le prix et le marchand de
+  la fiche sont recalculés (hors rupture, hors « Prudence » si possible) et un point d'historique est ajouté. La page ne se met pas à jour toute seule pendant
+  une modification (`tick`). Les offres manuelles passent les mêmes filtres que la recherche (`isMarket` côté page, règle 4) : pas de place de marché,
+  de comparateur ni de marchand écarté. Les offres que la page masque déjà (place de marché, lien non https) ne sont pas conservées à l'enregistrement.
+- Liste de prix : 3 offres visibles, les autres dans « Voir les N autres prix » (état ouvert gardé dans `openPrices`).
+- Sites en avant : liste commune `noel_config.featured` et ordre par défaut `order_mode` (`noel_set_display`), plus `noel_gifts.pinned` par fiche (`noel_set_pinned`,
+  3 au plus). Ils ne changent que l'ORDRE (option « Choix de Dorian d'abord », choisie par chaque appareil dans `localStorage` `om`, sinon l'ordre par défaut) et
+  portent la mention « Choix de Dorian ». « Le moins cher » reste calculé sur le prix. Un nom favori correspond à un marchand de même nom ou dont le nom
+  commence pareil (« Fnac » et « Fnac.com »). Ces données sont les mêmes pour tous : aucun lien avec les réservations (règle 1).
 
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by`, `bought`, `paid` ni aucune donnée de réservation. Ne pas ajouter de colonne,
