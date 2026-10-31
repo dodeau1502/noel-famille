@@ -276,6 +276,12 @@
   .edit .stick{position:sticky; bottom:0; display:flex; gap:8px; background:var(--surface); border-top:1px solid var(--line); padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px)); margin-top:4px}
   .edit .stick .btn{flex:1}
 
+  /* Version souhaitée, catégorie */
+  .variant{font-size:.95rem; background:var(--pine-soft); border-radius:10px; padding:8px 12px}
+  .variant b{display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine)}
+  .cat{font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+  .edit input[list]{width:100%}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
 </head>
@@ -432,6 +438,19 @@
             <option value="featured">Choix de Dorian</option>
           </select>
         </label>
+        <label for="catf" id="catWrap" hidden>Catégorie
+          <select id="catf"><option value="">Toutes</option></select>
+        </label>
+        <label for="budf">Budget
+          <select id="budf">
+            <option value="0">Sans limite</option>
+            <option value="25">Jusqu'à 25 €</option>
+            <option value="50">Jusqu'à 50 €</option>
+            <option value="100">Jusqu'à 100 €</option>
+            <option value="200">Jusqu'à 200 €</option>
+            <option value="500">Jusqu'à 500 €</option>
+          </select>
+        </label>
         <div id="bulkWrap" hidden>
           <button class="btn ghost small" type="button" id="bulkBtn">Actualiser tous les prix</button>
         </div>
@@ -460,6 +479,7 @@ const store = {
   sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
 };
 let code = "", role = "", gifts = [], filter = "open", sort = "list", who = store.get("who");
+let catFilter = store.get("cat"), budget = +store.get("bud") || 0;
 let display = {featured:[], mode:"price"}, editing = null; const openPrices = new Set();
 let pendingDelete = null, pendingResearch = null, pendingBlock = null, blocked = [], busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
 
@@ -747,9 +767,18 @@ function render(){
     if(filter==="mine") shown = gifts.filter(g=>g.claimed_by && same(g.claimed_by,who));
   }
   shown = sorted(shown);
+  const cats = [...new Set(gifts.map(g => g.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, "fr"));
+  if(catFilter && !cats.includes(catFilter)){ catFilter = ""; store.del("cat"); }
+  $("catWrap").hidden = !cats.length;
+  const catSig = cats.join("|");   // ne reconstruit la liste que si elle change (un menu ouvert ne doit pas se refermer)
+  if($("catf").dataset.sig !== catSig){ $("catf").dataset.sig = catSig; $("catf").innerHTML = '<option value="">Toutes</option>' + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join(""); }
+  $("catf").value = catFilter; $("budf").value = String(budget);
+  if(catFilter) shown = shown.filter(g => g.category === catFilter);
+  if(budget) shown = shown.filter(g => { const b = bestPrice(g); return b == null || b <= budget; });
   if(!shown.length){
     let t="Rien ici pour le moment", s="";
     if(!gifts.length){ t = role==="owner" ? "Ta liste est vide" : "La liste arrive bientôt"; s = role==="owner" ? "Ajoute ta première idée avec le formulaire ci-dessus." : "Reviens un peu plus tard."; }
+    else if(catFilter || budget){ t="Rien ne correspond à ces filtres"; s="Change la catégorie ou le budget."; }
     else if(filter==="open"){ t="Tout a été pris"; s="Chaque cadeau a trouvé preneur. Merci à tous."; }
     else if(filter==="mine"){ t="Tu n'as encore rien pris"; s="Va dans « À prendre » et choisis un cadeau."; }
     list.innerHTML = `<li class="empty"><strong>${t}</strong>${s}</li>`;
@@ -784,13 +813,15 @@ function render(){
     const q = encodeURIComponent(g.title);
     const gt = /^\d{8,14}$/.test(g.gtin || "") ? g.gtin : "";   // code-barres lu sur la page du marchand, quand il existe
     const qc = gt || q;                                          // idealo et Le Dénicheur : code-barres d'abord, sinon le nom
+    const cl = g.cmp && typeof g.cmp === "object" ? g.cmp : {};
+    const idUrl = /^https:\/\/(www\.)?idealo\.[a-z]{2,3}\//i.test(cl.idealo || "") ? cl.idealo : "", dnUrl = /^https:\/\/(www\.)?ledenicheur\.fr\//i.test(cl.denicheur || "") ? cl.denicheur : "";
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
         <a href="https://www.google.com/search?tbm=shop&hl=fr&gl=fr&q=${q}" target="_blank" rel="noopener noreferrer">Google Shopping</a>
-        <a href="https://www.idealo.fr/prechten.html?q=${qc}" target="_blank" rel="noopener noreferrer">idealo</a>
-        <a href="https://ledenicheur.fr/" target="_blank" rel="noopener noreferrer">Le Dénicheur (accueil)</a>
+        <a href="${idUrl ? esc(idUrl) : "https://www.idealo.fr/prechten.html?q=" + qc}" target="_blank" rel="noopener noreferrer">idealo${idUrl ? " (fiche du produit)" : ""}</a>
+        <a href="${dnUrl ? esc(dnUrl) : "https://ledenicheur.fr/"}" target="_blank" rel="noopener noreferrer">Le Dénicheur ${dnUrl ? "(fiche du produit)" : "(accueil)"}</a>
         <a href="https://www.dealabs.com/search?q=${q}" target="_blank" rel="noopener noreferrer">Dealabs</a>
         <a href="https://www.amazon.fr/s?k=${q}" target="_blank" rel="noopener noreferrer">Amazon</a></div>
-        <small>Ouvre la recherche de ce produit chez chaque comparateur (Le Dénicheur : page d'accueil, à rechercher sur place)${gt ? " (code-barres pour idealo)" : ""}. Les prix y sont ceux du comparateur, à vérifier sur place.</small></details>`;
+        <small>Ouvre la fiche ou la recherche de ce produit chez chaque comparateur${dnUrl ? "" : " (Le Dénicheur : page d'accueil, à rechercher sur place)"}${gt && !idUrl ? " (code-barres pour idealo)" : ""}. Les prix y sont ceux du comparateur, à vérifier sur place.</small></details>`;
     let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "", extra = "";
     if(dr && !other) badges += `<span class="badge drop">Baisse de ${eur(dr.by)}</span>`;
     if(role === "owner"){
@@ -817,7 +848,7 @@ function render(){
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
     const lastRead = offersHtml && (g.checked_at || g.offers_at) ? `<p class="note">Dernière lecture des prix le ${D(g.checked_at || g.offers_at, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}, marchands neufs uniquement.</p>` : "";
-    return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body"><div class="txt"><h3>${esc(g.title)}</h3>${note}</div>${price}${cta}${see}${offersHtml}${blockHtml}${histBlock}${lastRead}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}${extra}</div></li>`;
+    return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body"><div class="txt">${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h3>${esc(g.title)}</h3>${note}${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}</div>${price}${cta}${see}${offersHtml}${blockHtml}${histBlock}${lastRead}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}${extra}</div></li>`;
   }).join("");
 }
 
@@ -1029,7 +1060,8 @@ refreshShare();
 const numTxt = n => n == null ? "" : String(n).replace(".", ",");
 const parseNum = t => { const r = String(t ?? "").trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,""); return r === "" ? null : parseFloat(r); };
 function newDraft(g){
-  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
+  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", variant:g.variant || "", category:g.category || "",
+    idealo:(g.cmp && g.cmp.idealo) || "", denicheur:(g.cmp && g.cmp.denicheur) || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
     offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out", open:false})),
     add:{store:"", price:"", ship:"", url:""}};
 }
@@ -1048,6 +1080,11 @@ function editLi(g){
     <label>Photo (adresse https)<input type="url" maxlength="1000" data-et="image" value="${esc(d.image)}"></label>
     <label>Précision<input type="text" maxlength="500" data-et="note" value="${esc(d.note)}"></label>
     <label>Code-barres (facultatif)<input type="text" inputmode="numeric" maxlength="14" data-et="gtin" value="${esc(d.gtin)}"></label>
+    <label>Version souhaitée (facultatif)<input type="text" maxlength="120" placeholder="Ex. noir, taille M, 256 Go" data-et="variant" value="${esc(d.variant)}"></label>
+    <label>Catégorie (facultatif)<input type="text" maxlength="30" list="catlist" placeholder="Ex. Tech, Maison, Sport" data-et="category" value="${esc(d.category)}"></label>
+    <datalist id="catlist">${[...new Set(["Tech","Maison","Cuisine","Sport","Jeux","Loisirs","Mode","Livres"].concat(gifts.map(x => x.category).filter(Boolean)))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <label>Fiche idealo (facultatif)<input type="url" maxlength="500" placeholder="https://www.idealo.fr/prix/…" data-et="idealo" value="${esc(d.idealo)}"></label>
+    <label>Fiche Le Dénicheur (facultatif)<input type="url" maxlength="500" placeholder="https://ledenicheur.fr/product.php?p=…" data-et="denicheur" value="${esc(d.denicheur)}"></label>
     <h4>Prix par marchand</h4>
     <p class="status">Un prix modifié ou ajouté ici est marqué « saisi à la main, non vérifié » tant qu'une lecture de la page du marchand ne l'a pas confirmé. Les places de marché, comparateurs et marchands écartés sont refusés.</p>
     ${rows || '<p class="status">Aucun marchand pour l\'instant.</p>'}
@@ -1106,12 +1143,16 @@ function handleEdit(t){
     const g = gifts.find(x => x.id === editing.id); if(!g){ editing = null; render(); return true; }
     const title = d.title.trim();
     if(!title){ editing.err = "Donne un nom au cadeau."; render(); return true; }
+    const idl = d.idealo.trim(), dnl = d.denicheur.trim();
+    if(idl && !/^https:\/\/(www\.)?idealo\.[a-z]{2,3}\//i.test(idl)){ editing.err = "Le lien idealo doit commencer par https://www.idealo.fr/."; render(); return true; }
+    if(dnl && !/^https:\/\/(www\.)?ledenicheur\.fr\//i.test(dnl)){ editing.err = "Le lien du Dénicheur doit commencer par https://ledenicheur.fr/."; render(); return true; }
     let offers = null;
     if(d.dirty){ try{ offers = buildOffers(d); }catch(err){ editing.err = err.message; render(); return true; } }
     const id = editing.id, pins = d.pinned.filter(k => d.offers.some(r => keyOf(r.store) === k) || (g.pinned || []).includes(k)), pinsChanged = JSON.stringify(pins) !== JSON.stringify(g.pinned || []);
     editing.err = "";
     run(async()=>{
       await rpc("noel_update_gift",{p_code:code,p_id:id,p_title:title,p_url:d.url.trim(),p_note:d.note,p_image:d.image.trim(),p_gtin:d.gtin.trim()});
+      await rpc("noel_set_extras",{p_code:code,p_id:id,p_variant:d.variant,p_category:d.category,p_idealo:idl,p_denicheur:dnl});
       if(offers) await rpc("noel_edit_offers",{p_code:code,p_id:id,p_offers:offers});
       if(pinsChanged) await rpc("noel_set_pinned",{p_code:code,p_id:id,p_keys:pins});
       editing = null;
@@ -1167,6 +1208,8 @@ $("favList").addEventListener("click", e=>{
   saveDisplay(display.featured.filter(f => f.key !== b.dataset.favdel), display.mode);
 });
 $("favMode").addEventListener("change", ()=> saveDisplay(display.featured, $("favMode").value === "featured" ? "featured" : "price"));
+$("catf").addEventListener("change", ()=>{ catFilter = $("catf").value; if(catFilter) store.set("cat", catFilter); else store.del("cat"); render(); });
+$("budf").addEventListener("change", ()=>{ budget = +$("budf").value || 0; store.set("bud", String(budget)); render(); });
 $("omode").addEventListener("change", ()=>{ store.set("om", $("omode").value === "featured" ? "featured" : "price"); render(); });
 
 /* ---------- Actions sur les cartes ---------- */

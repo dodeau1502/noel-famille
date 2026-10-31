@@ -71,6 +71,14 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
   portent la mention « Choix de Dorian ». « Le moins cher » reste calculé sur le prix. Un nom favori correspond à un marchand de même nom ou dont le nom
   commence pareil (« Fnac » et « Fnac.com »). Ces données sont les mêmes pour tous : aucun lien avec les réservations (règle 1).
 
+## Version souhaitée, catégories, budget, fiches comparateurs
+- `noel_set_extras` (propriétaire, via « Modifier ») : `variant` (« Version souhaitée », 120 caractères), `category` (libre, 30 caractères), `cmp` (`idealo`, `denicheur` :
+  liens https saisis à la main, hôtes validés côté base et côté page : `idealo.*` et `ledenicheur.fr`). Aucun lien avec les réservations (règle 1).
+- La catégorie se règle dans « Modifier » (pas dans le formulaire d'ajout). Filtres « Catégorie » et « Budget » de la barre de liste : choix gardé par appareil dans
+  `localStorage` (`cat`, `bud`). Le budget compare au meilleur prix en stock (livraison comprise si connue) ; un cadeau sans prix reste affiché.
+- « Comparer les prix » : si une fiche idealo / Dénicheur est saisie, le lien pointe vers elle (« fiche du produit ») ; sinon recherche (idealo) ou accueil (Le Dénicheur).
+  Ce sont de simples liens : aucune lecture automatique ni prix stocké.
+
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by`, `bought`, `paid` ni aucune donnée de réservation. Ne pas ajouter de colonne,
    de fonction ou d'affichage qui permette de le déduire (ni compteur de cadeaux pris, ni ordre qui change). Le relevé automatique

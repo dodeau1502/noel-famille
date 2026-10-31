@@ -30,7 +30,10 @@ create table public.noel_gifts (
   top boolean not null default false,
   gtin text check (gtin is null or gtin ~ '^[0-9]{8,14}$'),   -- code-barres lu sur la page collée
   checked_at timestamptz,                                      -- dernière relecture des pages des marchands
-  pinned text[] not null default '{}'                          -- sites mis en avant sur cette fiche (clés de nom normalisées, 3 au plus)
+  pinned text[] not null default '{}',                         -- sites mis en avant sur cette fiche (clés de nom normalisées, 3 au plus)
+  variant text,                                                -- version souhaitée (120 caractères au plus)
+  category text,                                               -- catégorie libre (30 caractères au plus)
+  cmp jsonb                                                    -- liens de fiche {idealo, denicheur}, https, saisis à la main
 );
 
 create table public.noel_claims (
@@ -121,7 +124,7 @@ begin
     jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
                        'image', g.image_url, 'price', g.price, 'store', g.store,
                        'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
-                       'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned),
+                       'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned), 'variant', g.variant, 'category', g.category, 'cmp', g.cmp,
                        'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
                                               from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
     || case when r = 'owner' then '{}'::jsonb
@@ -309,6 +312,23 @@ begin
 end $$;
 
 -- Sites mis en avant sur une fiche (3 au plus, clés de nom normalisées)
+-- Version souhaitée, catégorie et liens de fiche idealo / Le Dénicheur (propriétaire seulement ; aucun lien avec les réservations)
+create or replace function public.noel_set_extras(p_code text, p_id bigint, p_variant text, p_category text, p_idealo text, p_denicheur text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code); v text := nullif(trim(coalesce(p_variant, '')), ''); c text := nullif(trim(coalesce(p_category, '')), '');
+        i text := nullif(trim(coalesce(p_idealo, '')), ''); d text := nullif(trim(coalesce(p_denicheur, '')), ''); cm jsonb := '{}'::jsonb;
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if v is not null and char_length(v) > 120 then return jsonb_build_object('error', 'invalid'); end if;
+  if c is not null and char_length(c) > 30 then return jsonb_build_object('error', 'invalid'); end if;
+  if i is not null and (char_length(i) > 500 or i !~* '^https://(www\.)?idealo\.[a-z]{2,3}/') then return jsonb_build_object('error', 'invalid'); end if;
+  if d is not null and (char_length(d) > 500 or d !~* '^https://(www\.)?ledenicheur\.fr/') then return jsonb_build_object('error', 'invalid'); end if;
+  if i is not null then cm := cm || jsonb_build_object('idealo', i); end if;
+  if d is not null then cm := cm || jsonb_build_object('denicheur', d); end if;
+  update public.noel_gifts set variant = v, category = c, cmp = case when cm = '{}'::jsonb then null else cm end where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
 create or replace function public.noel_set_pinned(p_code text, p_id bigint, p_keys text[])
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare r text := public.noel_role(p_code); k text; ks text[] := '{}';
@@ -408,6 +428,7 @@ revoke all on function
   public.noel_update_gift(text,bigint,text,text,text,text,text),
   public.noel_edit_offers(text,bigint,jsonb),
   public.noel_set_pinned(text,bigint,text[]),
+  public.noel_set_extras(text,bigint,text,text,text,text),
   public.noel_set_display(text,jsonb,text)
 from public;
 grant execute on function
@@ -426,6 +447,7 @@ grant execute on function
   public.noel_update_gift(text,bigint,text,text,text,text,text),
   public.noel_edit_offers(text,bigint,jsonb),
   public.noel_set_pinned(text,bigint,text[]),
+  public.noel_set_extras(text,bigint,text,text,text,text),
   public.noel_set_display(text,jsonb,text)
 to anon, authenticated;
 
