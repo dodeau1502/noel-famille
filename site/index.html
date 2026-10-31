@@ -239,6 +239,43 @@
   .edit .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .edit .addrow{display:flex; flex-direction:column; gap:10px; background:var(--pine-soft); border-radius:12px; padding:12px}
 
+  /* Refonte : grande photo, meilleur prix en évidence, actions regroupées */
+  .gift{padding:0; gap:0; overflow:hidden; border-radius:18px; box-shadow:0 1px 2px rgb(0 0 0 / .05)}
+  .gift .media{position:relative; height:196px; background:var(--pine-soft); display:grid; place-items:center; color:var(--pine)}
+  .gift .media img{width:100%; height:100%; object-fit:contain; display:block; padding:8px}
+  .gift .media svg{width:56px; height:56px}
+  .gift .media .badges{position:absolute; left:10px; top:10px; right:10px}
+  .gift .media .badge{background:var(--surface); box-shadow:0 1px 3px rgb(0 0 0 / .18)}
+  .gift .media .badge.star{border-color:var(--berry)}
+  .gift .body{display:flex; flex-direction:column; gap:14px; padding:16px}
+  .gift.taken .media{height:92px; opacity:.6}
+  .gift.taken .media svg{width:32px; height:32px}
+  .gift h3{font-size:1.2rem}
+  .hp{display:flex; flex-direction:column; gap:3px; background:var(--pine-soft); border-radius:14px; padding:12px 14px}
+  .hp .lbl{font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine); font-weight:800}
+  .hp b{font:800 1.9rem/1.05 var(--f-display); font-variant-numeric:tabular-nums}
+  .hp .at{font-weight:600}
+  .hp small{color:var(--muted); font-size:.85rem}
+  .hp .chk{display:flex; align-items:center; gap:5px; color:var(--muted)}
+  .hp .chk.ok{color:var(--pine)}
+  .hp .save{font-weight:700; color:var(--pine); font-size:.95rem}
+  .cta{display:flex; align-items:center; justify-content:center; min-height:48px; padding:10px 18px; border-radius:12px; border:1.5px solid var(--pine); color:var(--pine); font-weight:700; text-decoration:none; text-align:center}
+  .more summary{cursor:pointer; font-weight:600; color:var(--muted); min-height:44px; display:flex; align-items:center}
+  .more .act{padding-top:4px}
+  .act .more{flex:1 1 100%}
+  #priceNoteBox{padding:12px 16px}
+  .listbar{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .listbar label{flex-direction:column; align-items:stretch; gap:4px; font-size:.85rem; color:var(--muted)}
+  .listbar select{width:100%}
+  #bulkWrap{grid-column:1 / -1}
+  #bulkWrap .btn{width:100%}
+  .gift.edit{padding:16px; gap:12px; box-shadow:none}
+  .edit details.erow{display:block; padding:0}
+  .edit .erow summary{cursor:pointer; display:flex; justify-content:space-between; gap:10px; align-items:center; min-height:52px; padding:0 12px; font-weight:600}
+  .edit .erow .fields{display:flex; flex-direction:column; gap:10px; padding:0 12px 12px}
+  .edit .stick{position:sticky; bottom:0; display:flex; gap:8px; background:var(--surface); border-top:1px solid var(--line); padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px)); margin-top:4px}
+  .edit .stick .btn{flex:1}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
 </head>
@@ -363,7 +400,7 @@
             <label for="favMode">Ordre proposé par défaut
               <select id="favMode">
                 <option value="price">Moins cher d'abord</option>
-                <option value="featured">Choix de Dorian d'abord</option>
+                <option value="featured">Choix de Dorian</option>
               </select>
             </label>
           </div>
@@ -392,7 +429,7 @@
         <label for="omode">Prix
           <select id="omode">
             <option value="price">Moins cher d'abord</option>
-            <option value="featured">Choix de Dorian d'abord</option>
+            <option value="featured">Choix de Dorian</option>
           </select>
         </label>
         <div id="bulkWrap" hidden>
@@ -401,7 +438,7 @@
       </div>
       <p class="status" id="bulkHint" hidden></p>
       <ul class="gifts" id="list"></ul>
-      <p class="status" id="priceNote" hidden></p>
+      <details class="card share" id="priceNoteBox" hidden><summary>Comment lire les prix</summary><p class="status" id="priceNote"></p></details>
     </div>
   </section>
 
@@ -696,7 +733,7 @@ function render(){
   }
   const stamps = gifts.map(g=>g.checked_at || g.offers_at).filter(Boolean).sort();
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
-  $("priceNote").hidden = !withPrice;
+  $("priceNoteBox").hidden = !withPrice;
   $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
     + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Choix de Dorian » : site mis en avant par le propriétaire, sans effet sur les prix ; « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
   renderDrops();
@@ -725,9 +762,14 @@ function render(){
     if(role === "owner" && editing && editing.id === g.id) return editLi(g);
     const offs = cleanOffers(g), bo = inStock(offs)[0] || null;
     const best = bestPrice(g);
+    const other0 = g.claimed_by && role==="family" && !same(g.claimed_by,who);
+    const sv = (() => { if(!bo) return null; const o2 = offs.filter(o => o !== bo && o.stock !== "out").map(totalOf).sort((x,y)=>x-y);
+      if(o2.length < 2) return null; const m = Math.floor(o2.length/2), med = o2.length % 2 ? o2[m] : (o2[m-1] + o2[m]) / 2, d = med - totalOf(bo);
+      return d >= 1 ? {by:d, n:o2.length} : null; })();
     const price = best != null
-      ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b>${offs.length ? `<span class="note">${typeof bo.shipping === "number" ? "livraison comprise" : "hors livraison"}</span>` : ""}</div>`
-      : (offs.length ? `<div class="price"><span class="note">En rupture chez les marchands lus</span></div>` : "");
+      ? `<div class="hp"><span class="lbl">${offs.length ? "Meilleur prix" : "Prix"}</span><b>${eur(best)}</b>${bo ? `<span class="at">chez ${esc(bo.store)}</span>${chkText(bo, g)}<small>${typeof bo.shipping === "number" ? "livraison comprise" : "hors livraison"}</small>` : ""}${sv ? `<span class="save">${eur(sv.by)} de moins que chez les ${sv.n} autres marchands (prix médian)</span>` : ""}</div>`
+      : (offs.length ? `<div class="hp"><span class="at">En rupture chez les marchands lus</span></div>` : "");
+    const cta = bo && !other0 ? `<a class="cta" href="${esc(bo.url)}" target="_blank" rel="noopener noreferrer">Voir l'offre chez ${esc(bo.store)}</a>` : "";
     const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
     const all = orderedOffers(g, offs), fk = favKeys(g);
     const li = o => `<li class="${o===bo?'best':''}${o.stock==='out'?' out':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${o===bo?'<span class="tag">Le moins cher</span>':''}${favIdx(fk, o)>=0?'<span class="tag fav">Choix de Dorian</span>':''}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
@@ -758,9 +800,10 @@ function render(){
         ? `<p class="status" style="width:100%">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button class="btn ghost small" data-researchno>Non</button></div>`
         : `<button class="btn ghost small" data-edit="${g.id}">Modifier</button>`
           + `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
+          + `<details class="more"><summary>Plus d'actions</summary><div class="act">`
           + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Relire les prix de ${esc(g.title)} (gratuit)">${refreshing.has(g.id) ? "Lecture…" : "Actualiser"}</button>`
           + `<button class="btn ghost small" data-research="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Chercher d'autres marchands pour ${esc(g.title)}">Autres marchands</button>`
-          + `<button class="btn ghost small" data-del="${g.id}">Retirer</button>`;
+          + `<button class="btn ghost small" data-del="${g.id}">Retirer</button></div></details>`;
     } else if(g.claimed_by){
       const mine = same(g.claimed_by, who);
       cls += mine ? " mine" : " taken";
@@ -773,7 +816,8 @@ function render(){
     } else {
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
-    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${blockHtml}${histBlock}${offersHtml && (g.checked_at || g.offers_at) ? `<p class="note">Dernière lecture des prix le ${D(g.checked_at || g.offers_at, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}, marchands neufs uniquement.</p>` : ""}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}${extra}</li>`;
+    const lastRead = offersHtml && (g.checked_at || g.offers_at) ? `<p class="note">Dernière lecture des prix le ${D(g.checked_at || g.offers_at, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}, marchands neufs uniquement.</p>` : "";
+    return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body"><div class="txt"><h3>${esc(g.title)}</h3>${note}</div>${price}${cta}${see}${offersHtml}${blockHtml}${histBlock}${lastRead}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}${extra}</div></li>`;
   }).join("");
 }
 
@@ -986,18 +1030,18 @@ const numTxt = n => n == null ? "" : String(n).replace(".", ",");
 const parseNum = t => { const r = String(t ?? "").trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,""); return r === "" ? null : parseFloat(r); };
 function newDraft(g){
   return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
-    offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out"})),
+    offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out", open:false})),
     add:{store:"", price:"", ship:"", url:""}};
 }
 function editLi(g){
   const d = editing.d, err = editing.err ? `<p class="msg" role="alert">${esc(editing.err)}</p>` : "";
-  const rows = d.offers.map((r,i) => { const k = keyOf(r.store); return `<div class="erow"><strong>${esc(r.store)}</strong>
+  const rows = d.offers.map((r,i) => { const k = keyOf(r.store); return `<details class="erow" data-i="${i}"${r.open ? " open" : ""}><summary><strong>${esc(r.store)}</strong><span>${esc(r.price)} €</span></summary><div class="fields">
       <div class="two"><label>Prix (€)<input type="text" inputmode="decimal" maxlength="9" data-ef="price" data-i="${i}" value="${esc(r.price)}"></label>
       <label>Livraison (€)<input type="text" inputmode="decimal" maxlength="7" placeholder="à vérifier" data-ef="ship" data-i="${i}" value="${esc(r.ship)}"></label></div>
       <label>Lien du produit<input type="url" maxlength="500" data-ef="url" data-i="${i}" value="${esc(r.url)}"></label>
       <label class="check"><input type="checkbox" data-ef="out" data-i="${i}"${r.out ? " checked" : ""}> En rupture de stock</label>
       <label class="check"><input type="checkbox" data-epin="${esc(k)}"${d.pinned.includes(k) ? " checked" : ""}> Mettre en avant sur cette fiche</label>
-      <button type="button" class="btn ghost small" data-edel="${i}">Retirer ce marchand</button></div>`; }).join("");
+      <button type="button" class="btn ghost small" data-edel="${i}">Retirer ce marchand</button></div></details>`; }).join("");
   return `<li class="gift edit"><h4>Modifier la fiche</h4>
     <label>Nom du cadeau<input type="text" maxlength="120" data-et="title" value="${esc(d.title)}"></label>
     <label>Lien du produit<input type="url" maxlength="500" data-et="url" value="${esc(d.url)}"></label>
@@ -1014,7 +1058,7 @@ function editLi(g){
       <label>Lien du produit chez ce marchand<input type="url" maxlength="500" placeholder="https://" data-ea="url" value="${esc(d.add.url)}"></label>
       <button type="button" class="btn ghost small" data-eadd>Ajouter ce marchand</button></div>
     ${err}
-    <div class="act"><button type="button" class="btn" data-esave>Enregistrer</button><button type="button" class="btn ghost" data-ecancel>Annuler</button></div></li>`;
+    <div class="stick"><button type="button" class="btn" data-esave>Enregistrer</button><button type="button" class="btn ghost" data-ecancel>Annuler</button></div></li>`;
 }
 function buildOffers(d){
   const now = new Date().toISOString(), out = [];
@@ -1055,7 +1099,7 @@ function handleEdit(t){
     else if(d.offers.some(r => keyOf(r.store) === keyOf(store))) err = "Ce marchand est déjà dans la liste : modifie sa ligne.";
     else if(d.offers.length >= 12) err = "12 marchands au plus par fiche.";
     editing.err = err;
-    if(!err){ d.offers.push({o:null, store, price:numTxt(Math.round(p * 100) / 100), ship:sh === null ? "" : numTxt(sh), url:u, out:false}); d.add = {store:"", price:"", ship:"", url:""}; d.dirty = true; }
+    if(!err){ d.offers.push({o:null, store, price:numTxt(Math.round(p * 100) / 100), ship:sh === null ? "" : numTxt(sh), url:u, out:false, open:true}); d.add = {store:"", price:"", ship:"", url:""}; d.dirty = true; }
     render(); return true;
   }
   if(t.hasAttribute("data-esave")){
@@ -1093,7 +1137,9 @@ $("list").addEventListener("change", e=>{
 });
 // Liste de prix déroulante : son état est gardé quand la liste est redessinée
 $("list").addEventListener("toggle", e=>{
-  const d = e.target; if(!d || !d.classList || !d.classList.contains("allp")) return;
+  const d = e.target; if(!d || !d.classList) return;
+  if(d.classList.contains("erow") && editing){ const r = editing.d.offers[+d.dataset.i]; if(r) r.open = d.open; return; }
+  if(!d.classList.contains("allp")) return;
   const id = +d.dataset.g; if(d.open) openPrices.add(id); else openPrices.delete(id);
 }, true);
 

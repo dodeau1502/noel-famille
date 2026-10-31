@@ -114,6 +114,9 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
   `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
 
 ## Style
+Carte d'un cadeau (étape 2) : grande photo (196 px, `object-fit:contain`, 92 px si le cadeau est pris), badges sur la photo, bloc « Meilleur prix » (prix, marchand, état de vérification,
+économie par rapport au prix médian des autres marchands en stock, 2 autres au moins, 1 € au moins), bouton « Voir l'offre », liste de prix, puis actions. Propriétaire : « Modifier » et « Envie forte »
+visibles, le reste dans « Plus d'actions ». La note sur les prix est repliée (« Comment lire les prix »). Formulaire de modification : marchands repliés, barre Enregistrer / Annuler fixe en bas.
 Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thème clair et sombre via variables CSS.
 Texte en français simple, phrases courtes. Garder une seule colonne.
 
