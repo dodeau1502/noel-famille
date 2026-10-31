@@ -166,6 +166,7 @@
   .offers b{font:700 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
   .offers li.best{background:var(--pine-soft)}
   .offers li.best b{color:var(--pine)}
+  .offers a small{display:block; font-weight:500; font-size:.82rem; color:var(--muted)}
   .offers .tag{font-size:.8rem; font-weight:700; color:var(--pine); margin-left:8px; white-space:nowrap}
 
   /* Ajout (propriétaire) */
@@ -397,7 +398,19 @@ const safeUrl = u => /^https?:\/\//i.test(u||"") ? u : "";
 const same = (a,b) => String(a||"").trim().toLowerCase() === String(b||"").trim().toLowerCase();
 const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const tk = s => norm(s).split(/[^a-z0-9]+/).filter(t=>t.length>=2);
-const bestPrice = g => { const o = Array.isArray(g.offers) && g.offers.length ? g.offers[0].price : null; return o != null ? o : g.price; };
+// Places de marché et sites d'occasion : jamais affichés (même pour des offres enregistrées avant cette règle)
+const MARKET = ["leboncoin","vinted","ebay","backmarket","facebook","marketplace","cashconverters","easycash","rakuten","aliexpress","alibaba","temu","rebuy","momox","recommerce","etsy","shein","olx","ricardo","kleinanzeigen","2ememain"];
+const isMarket = (store, url) => {
+  const s = norm(store).replace(/[^a-z0-9]/g,"");
+  let h = ""; try{ h = new URL(url).hostname.toLowerCase().replace(/[^a-z0-9]/g,""); }catch(e){}
+  return MARKET.some(m => s.includes(m) || (h && h.includes(m))) || /^[a-z0-9]+([-_][a-z0-9]+)+$/.test(String(store||"").trim());
+};
+const totalOf = o => o.price + (typeof o.shipping === "number" ? o.shipping : 0);
+const cleanOffers = g => (Array.isArray(g.offers) ? g.offers : [])
+  .filter(o => o && /^https:\/\//.test(o.url||"") && o.price != null && !isMarket(o.store, o.url))
+  .sort((a,b) => totalOf(a) - totalOf(b));
+const bestPrice = g => { const o = cleanOffers(g); return o.length ? totalOf(o[0]) : (g.price != null && !isMarket(g.store, g.url) ? g.price : null); };
+const shipText = o => typeof o.shipping !== "number" ? "Livraison à vérifier" : (o.shipping === 0 ? "Livraison offerte" : "dont " + eur(o.shipping) + " de livraison");
 const extractCode = v => { const m = String(v||"").match(/[#&?]c=([^&\s]+)/); return m ? decodeURIComponent(m[1]) : String(v||"").trim(); };
 
 /* ---------- Texte plus grand ---------- */
@@ -485,8 +498,8 @@ function render(){
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
   $("priceNote").hidden = !withPrice;
   $("priceNote").textContent = stamps.length
-    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez plusieurs marchands. Ils peuvent avoir changé : touche un marchand pour vérifier avant d'acheter."
-    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Touche « Comparer les prix » pour vérifier avant d'acheter.";
+    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez des marchands neufs (occasion et places de marché exclues). Les prix changent : vérifie sur le site du marchand avant d'acheter."
+    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Vérifie sur le site du marchand avant d'acheter.";
   $("listbar").hidden = !gifts.length;
   $("sort").value = sort;
 
@@ -508,11 +521,11 @@ function render(){
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
-    const offs = (Array.isArray(g.offers) ? g.offers : []).filter(o=>o && /^https:\/\//.test(o.url||"") && o.price != null);
-    const best = offs.length ? offs[0].price : g.price;
-    const price = best != null ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b></div>` : "";
+    const offs = cleanOffers(g);
+    const best = bestPrice(g);
+    const price = best != null ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b>${offs.length ? `<span class="note">${typeof offs[0].shipping === "number" ? "livraison comprise" : "hors livraison"}</span>` : ""}</div>` : "";
     const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
-    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Meilleur prix</span>':''}</a><b>${eur(o.price)}</b></li>`).join("")}</ul>` : "";
+    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Le moins cher</span>':''}<small>${shipText(o)}</small></a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`).join("")}</ul>` : "";
     const img = /^https:\/\//.test(g.image||"") ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
     const q = encodeURIComponent(g.title);
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
@@ -538,7 +551,7 @@ function render(){
     } else {
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
-    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
+    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${offersHtml && g.offers_at ? `<p class="note">Prix relevés le ${new Date(g.offers_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}, marchands neufs uniquement.</p>` : ""}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
   }).join("");
 }
 
@@ -619,7 +632,7 @@ async function search(){
   st.hidden = false; st.textContent = "Recherche du produit et des prix…";
   try{
     const d = await callSearch(q);
-    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.offers = Array.isArray(d.offers) ? d.offers : [];
+    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.offers = (Array.isArray(d.offers) ? d.offers : []).filter(o => !isMarket(o.store, o.url));
     $("gTitle").value = d.title || (isLink(q) ? "" : q);
     $("gPrice").value = d.price != null ? String(d.price).replace(".", ",") : "";
     const found = meta.image || d.price != null || meta.offers.length;
@@ -647,7 +660,7 @@ $("addForm").addEventListener("submit", e=>{
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
   if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
-  const offers = meta.offers.length ? meta.offers.map(o=>({store:String(o.store).slice(0,60), price:o.price, url:o.url})) : null;
+  const offers = meta.offers.length ? meta.offers.map(o=>({store:String(o.store).slice(0,60), price:o.price, url:o.url, shipping: typeof o.shipping === "number" ? o.shipping : null})) : null;
   run(async()=>{
     await rpc("noel_add",{p_code:code,p_title:title,p_url:meta.link,p_note:$("gNote").value,
       p_image:meta.image||"", p_price:price, p_store:meta.store||"", p_offers:offers, p_top:$("gTop").checked});
@@ -661,7 +674,7 @@ $("addForm").addEventListener("submit", e=>{
 /* ---------- Actualiser les prix ---------- */
 async function refreshOne(g){
   const d = await callSearch(g.title);
-  const offs = Array.isArray(d.offers) ? d.offers : [];
+  const offs = (Array.isArray(d.offers) ? d.offers : []).filter(o => !isMarket(o.store, o.url)).sort((a,b)=>totalOf(a)-totalOf(b));
   if(!offs.length) return false;
   await rpc("noel_set_offers",{p_code:code,p_id:g.id,p_price:offs[0].price,p_store:offs[0].store,p_offers:offs});
   return true;

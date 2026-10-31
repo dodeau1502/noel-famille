@@ -43,8 +43,12 @@ Le secret `SERPAPI_KEY` est stocké côté Supabase (jamais dans le dépôt). Ch
    `authenticated`. Tout passe par les fonctions `noel_*` qui vérifient un code.
 3. Ne jamais écrire les codes d'accès (propriétaire ou famille) dans le dépôt, un commit, une issue ou un message de PR.
    Ils ne sont stockés que sous forme d'empreinte en base. La clé « anon » de Supabase dans `index.html` est publique par conception.
-4. Les offres affichées doivent correspondre au produit : une référence chiffrée (modèle) doit être identique, les prix
-   aberrants sont écartés. Ne pas assouplir ces règles sans ajouter un test dans `offers.test.mjs`.
+4. Les offres affichées doivent correspondre au produit et être fiables (`offers.js`, doublé côté page par `isMarket`) :
+   tous les mots-clés et toutes les références chiffrées de la requête présents (un chiffre seul compte), même version
+   (pro, max, combo, pack…), neuf uniquement (occasion, reconditionné, `second_hand_condition` écartés), places de marché et
+   identifiants de vendeur écartés (Leboncoin, eBay, Vinted, Back Market, Rakuten…), prix suspects écartés (hors 0,6 à 1,8 fois la
+   médiane dès 3 prix), classement par prix + livraison quand elle est connue. Ne pas assouplir ces règles sans ajouter un test
+   dans `offers.test.mjs` ; pour un nouveau site à exclure, l'ajouter aux deux listes (`MARKET` dans `offers.js` et dans `index.html`).
 5. La fonction `noel-preview` ne doit répondre qu'au code propriétaire et refuser les adresses internes (protection SSRF).
 6. Échapper tout texte venant de la base avant de l'insérer dans le HTML (`esc()`), n'accepter que des liens `http(s)`
    et des images `https`.

@@ -1,5 +1,5 @@
 import { extract, isPrivateIp, badHostname } from "./parse.js";
-import { pickOffers, cleanTitle, betterTitle, looksLikeUrl } from "./offers.js";
+import { pickOffers, betterTitle, looksLikeUrl, isMarketplace, totalOf } from "./offers.js";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +9,7 @@ const CORS = {
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-type Offer = { store: string; price: number; url: string };
+type Offer = { store: string; price: number; url: string; shipping?: number | null };
 
 async function isOwner(code: string): Promise<boolean> {
   const url = Deno.env.get("SUPABASE_URL")!, key = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -117,12 +117,13 @@ Deno.serve(async (req) => {
   if (looksLikeUrl(q)) {
     const { url, info } = await readPage(q);
     if (info) {
-      store = info.store;
+      store = isMarketplace(info.store, url || q) ? "" : info.store;
       title = betterTitle(info.title, info.heading, info.store);
-      image = info.image;
-      price = info.price;
+      const market = isMarketplace(info.store, url || q); // place de marché : ni sa photo ni son prix
+      image = market ? "" : info.image;
+      price = market ? null : info.price;
       searchText = title || slugToText(url || q) || q;
-      if (info.price != null && url) pageOffer = { store: info.store || new URL(url).hostname.replace(/^www\./, ""), price: info.price, url };
+      if (info.price != null && url && !market) pageOffer = { store: info.store || new URL(url).hostname.replace(/^www\./, ""), price: info.price, url };
     } else {
       searchText = slugToText(url || (/^https?:/i.test(q) ? q : "https://" + q)) || q;
     }
@@ -131,7 +132,7 @@ Deno.serve(async (req) => {
   const found = await searchOffers(searchText);
   let offers = found.offers.slice();
   if (pageOffer && !offers.some((o) => o.store.toLowerCase() === pageOffer!.store.toLowerCase())) offers.push(pageOffer);
-  offers.sort((a, b) => a.price - b.price);
+  offers.sort((a, b) => totalOf(a) - totalOf(b));
   offers = offers.slice(0, 5);
 
   if (!title) title = found.title || (looksLikeUrl(q) ? searchText : q);
