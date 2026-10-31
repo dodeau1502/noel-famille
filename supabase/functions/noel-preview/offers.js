@@ -35,6 +35,14 @@ export function optionalTokens(query) {
   while ((m = re.exec(q))) {
     if (tokens(q.slice(0, m.index)).some(t => BUNDLE_WORDS.has(t))) tokens(m[0]).forEach(t => out.add(t));
   }
+  // Même référence sans trait d'union : un nom tiré d'une adresse perd le tiret (« combo dji rc n3 », cas réel du 31 octobre).
+  // Seulement en fin de requête, après un mot de lot : un mot de 1 ou 2 lettres puis un code lettre+chiffre (« rc n3 »).
+  // « Xbox 360 », « Sony A7 », « set 75192 » restent obligatoires.
+  const tk = tokens(q), n = tk.length;
+  if (n >= 3 && /^[a-z]\d[a-z0-9]*$/.test(tk[n - 1]) && /^[a-z]{1,2}$/.test(tk[n - 2])) {
+    const before = tk.slice(0, n - 2);
+    if (before.some(t => BUNDLE_WORDS.has(t)) && !before.includes(tk[n - 1]) && !before.includes(tk[n - 2])) { out.add(tk[n - 2]); out.add(tk[n - 1]); }
+  }
   return out;
 }
 

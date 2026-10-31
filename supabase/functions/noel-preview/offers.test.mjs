@@ -260,4 +260,22 @@ assert.equal(pickOffers([R("Sony WF-1000XM5", "Sony Store Online FR", 199)], "So
 assert.equal(pickProduct([T("Sony WH-1000XM5", 250, "tXM5")], "Sony WH-1000XM6"), null);
 assert.equal(pickProduct([T("Sony WH-1000XM4 Casque sans fil", 199, "tXM4")], QX), null);
 assert.equal(pickOffers([R("Sony Casque sans fil WH-1000XM5SA", "Darty", 243.66)], "Sony WH-1000XM5").offers.length, 1);   // suffixe de coloris : même produit
+// Même cas, requête tirée d'une adresse (« rc n3 » sans trait d'union) : lignes réelles relevées dans le journal du 31 octobre
+const QSLUG = "dji lito x1 fly more combo dji rc n3";
+assert.deepEqual([...optionalTokens(QSLUG)].sort(), ["n3", "rc"]);
+assert.deepEqual(keyTokens(QSLUG), ["dji", "lito", "x1", "fly", "more", "combo", "dji"].slice(0, 6));
+for (const q of ["Console Xbox 360 Pack", "Combo Sony A7", "LEGO Set 75192", "Pack Xbox 360", "Combo drone Mini 4 Pro RC 2"]) assert.equal(optionalTokens(q).size, 0, q);
+const slugRows = [
+  D("DJI Lito X1 Fly More Combo", "Fnac.com", 519.99, "tFnac"),
+  D("DJI Bundle Fly More DJI Lito X1", "DJI Official Store", 579, "tDji"),
+  D("DJI Lito X1 Fly More Combo RC-N3", "Patrick Modélisme", 579, "tPatrick"),
+  D("DJI Lito X1 Fly More Combo Plus", "Amazon.fr", 713, "tPlus"),
+  D("DJI Lito 1 Fly More Combo", "studioSPORT.fr", 429, "tLito1"),
+];
+const psl = pickProduct(slugRows, QSLUG);
+assert.ok(psl && psl.rows.some(r => r.source === "Fnac.com"));
+assert.ok(![...psl.rows, ...slugRows.filter(r => psl.backups.includes(r.immersive_product_page_token))].some(r => /Plus|Lito 1 /.test(r.title)));
+assert.equal(pickOffers(slugRows, QSLUG).offers.some(o => o.store === "Fnac.com"), true);
+assert.equal(storesToOffers(fiche0, QSLUG).length, 3);
+assert.deepEqual(storesToOffers(fiche1, QSLUG), []);
 console.log("offers OK");

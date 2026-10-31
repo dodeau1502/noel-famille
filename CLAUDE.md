@@ -72,8 +72,8 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
    identifiants de vendeur écartés (Leboncoin, eBay, Vinted, Back Market, Rakuten…), prix suspects écartés (hors 0,6 à 1,8 fois la
    médiane dès 3 prix), comparateurs écartés (idealo, Kelkoo, Dealabs… : ce ne sont pas des marchands), classement par prix +
    livraison quand elle est connue, rupture de stock en dernier. Exception encadrée : la référence d'une pièce incluse dans un lot
-   (« Fly More Combo RC-N3 ») est facultative, mais seulement si elle suit un mot de lot (`optionalTokens`) ; une référence de modèle
-   (WH-1000XM5, X-T5) reste obligatoire. Les mots « batterie, chargeur, câble… » ne font pas un accessoire quand ils décrivent le
+   (« Fly More Combo RC-N3 ») est facultative, mais seulement si elle suit un mot de lot (`optionalTokens`), avec ou sans trait d'union
+   (un nom tiré d'une adresse donne « rc n3 ») ; une référence de modèle (WH-1000XM5, X-T5, Xbox 360, Sony A7) reste obligatoire. Les mots « batterie, chargeur, câble… » ne font pas un accessoire quand ils décrivent le
    contenu d'un lot (« avec chargeur », « deux batteries »). Les fiches de secours (`backups`) n'ont pas plus de mots en trop que la
    fiche choisie et sont dans la même fourchette de prix (0,5 à 2 fois). Ne pas assouplir ces règles sans ajouter un test dans `offers.test.mjs` ;
    pour un nouveau site à exclure, l'ajouter aux listes `MARKET` / `COMPARATOR` de `offers.js` (et de sa copie dans `noel-refresh`) et de `index.html`.
@@ -100,8 +100,10 @@ Texte en français simple, phrases courtes. Garder une seule colonne.
 - Journal de diagnostic : `noel-preview` écrit une ligne `noel-diag` par recherche (marchands renvoyés par Google, prix, raison de
   conservation ou d'écart : « titre différent », « comparateur », « place de marché… », « occasion »). Ni clé ni code. À lire dans les
   journaux de la fonction ; à retirer une fois le filtrage réglé.
-- Pas de lecture des prix d'idealo (point d'accès non documenté, non vérifiable) : à ne pas ajouter sans échantillon réel de réponse et
-  sans accord explicite du propriétaire sur la règle 4.
+- Lecture automatique d'idealo, de Kelkoo et de Le Dénicheur : NON, même avec l'accord du propriétaire (31 octobre). idealo et Kelkoo
+  refusent l'accès automatisé (accès bloqué ou `robots.txt` restrictif), et le `robots.txt` du Dénicheur interdit `/search?`. Ne pas
+  contourner (ni Apify, ni mirroir, ni cache). Ces sites restent de simples liens « Comparer les prix ». Le jeton Apify transmis dans
+  la conversation n'a pas été enregistré ni utilisé ; il ne doit jamais entrer dans le dépôt.
 
 ## Vérifier avant de pousser
 - `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs` et `node supabase/functions/shared.test.mjs`
