@@ -1,5 +1,5 @@
 import { readMerchant, pool } from "./net.ts";
-import { pickOffers, pickProduct, storesToOffers, mergeOffers, dropOutliers, betterTitle, looksLikeUrl, isMarketplace, totalOf, norm } from "./offers.js";
+import { pickOffers, pickProduct, storesToOffers, mergeOffers, dropOutliers, betterTitle, looksLikeUrl, isMarketplace, isComparator, isUsed, matchesLoose, totalOf, norm } from "./offers.js";
 import { applyPage, bestOffer, rank } from "./verify.js";
 
 export type Offer = { store: string; price: number; url: string; shipping?: number | null; verified?: boolean; at?: string; stock?: string; via?: string };
@@ -96,6 +96,29 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
   const pageKey = pageOffer ? norm(pageOffer.store).replace(/[^a-z0-9]/g, "") : "";
   const google = dropOutliers(mergeOffers(storeOffers, flat)).filter((o: Offer) => !pageKey || norm(o.store).replace(/[^a-z0-9]/g, "") !== pageKey);
   let cands: Offer[] = mergeOffers(google, pageOffer ? [pageOffer] : []).sort((a: Offer, b: Offer) => totalOf(a) - totalOf(b));
+
+  // Diagnostic (journal de la fonction ; ni clé ni code) : pourquoi chaque marchand renvoyé par Google est gardé ou écarté
+  try {
+    const why = (s: any) => {
+      const name = String(s?.name ?? "").trim(), price = Number(s?.extracted_price);
+      if (!name) return "sans nom";
+      if (!(price > 0)) return "sans prix";
+      let url = "";
+      try { const u = new URL(String(s.link || ""), "https://www.google.fr"); if (u.protocol === "https:") url = u.toString(); } catch (_) { /* lien invalide */ }
+      if (!url) return "sans lien";
+      if (isMarketplace(name, url)) return isComparator(name, url) ? "comparateur" : "place de marché ou identifiant vendeur";
+      const info = [s.title, ...(Array.isArray(s.details_and_offers) ? s.details_and_offers : [])].filter(Boolean).join(" ");
+      if (isUsed({ title: info, second_hand_condition: s.second_hand_condition }, searchText)) return "occasion";
+      if (s.title && !matchesLoose(searchText, s.title, { variants: false })) return "titre différent";
+      return "gardé";
+    };
+    console.log("noel-diag " + JSON.stringify({
+      q: searchText.slice(0, 120), rows: rows.length, product: product?.title ? product.title.slice(0, 80) : null, token: !!opts.token,
+      list: rows.slice(0, 12).map((r: any) => [String(r.source ?? "").slice(0, 30), r.extracted_price ?? null, String(r.title ?? "").slice(0, 60)]),
+      stores: rawStores.slice(0, 25).map((s: any) => [String(s?.name ?? "").slice(0, 30), s?.extracted_price ?? null, why(s), String(s?.title ?? "").slice(0, 60)]),
+      kept: storeOffers.length, flat: flat.length, candidates: cands.length,
+    }));
+  } catch (_) { /* le diagnostic ne doit jamais gêner la recherche */ }
 
   // 5. Vérification gratuite : lecture directe des pages des 5 offres les moins chères
   const top = cands.slice(0, 5);
