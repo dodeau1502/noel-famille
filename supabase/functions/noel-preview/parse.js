@@ -98,7 +98,51 @@ export function extract(html, finalUrl) {
   if (!store) { try { store = new URL(finalUrl).hostname.replace(/^www\./, ""); } catch (e) {} }
   const h = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
   const heading = h ? decode(h[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ")).slice(0, 160) : "";
-  return { title: title.slice(0, 120), heading, image, price, store: store.slice(0, 80) };
+  return {
+    title: title.slice(0, 120), heading, image, price, store: store.slice(0, 80),
+    gtin: findGtin(prod, ld, html), stock: findStock(ld, prod), name: String(prod.name || "").slice(0, 160),
+    prices: distinctPrices(cand),
+  };
+}
+
+// Code-barres (EAN/GTIN) : 8, 12, 13 ou 14 chiffres
+export function cleanGtin(v) {
+  const d = String(v ?? "").replace(/\D/g, "");
+  return [8, 12, 13, 14].includes(d.length) && !/^0+$/.test(d) ? d : "";
+}
+function findGtin(prod, ld, html) {
+  const offers = ld.offers.concat([].concat(prod.offers || []));
+  for (const o of [prod, ...offers]) {
+    for (const k of ["gtin13", "gtin", "gtin14", "gtin12", "gtin8", "ean", "isbn"]) {
+      const g = cleanGtin(o?.[k]);
+      if (g) return g;
+    }
+  }
+  const m = html.match(/"gtin(?:8|12|13|14)?"\s*:\s*"?(\d{8,14})"?/i);
+  return m ? cleanGtin(m[1]) : "";
+}
+
+// Disponibilité annoncée par la page : "in", "out", "pre" ou "" (inconnue)
+export function findStock(ld, prod = {}) {
+  const list = ld.offers.concat([].concat(prod.offers || []));
+  const seen = new Set();
+  for (const o of list) {
+    const a = String(o?.availability ?? "").toLowerCase();
+    if (/instock|limitedavailability|onlineonly|instoreonly/.test(a)) seen.add("in");
+    else if (/outofstock|soldout|discontinued/.test(a)) seen.add("out");
+    else if (/preorder|backorder|presale/.test(a)) seen.add("pre");
+  }
+  if (seen.has("in")) return "in";
+  if (seen.has("out")) return "out";
+  if (seen.has("pre")) return "pre";
+  return "";
+}
+
+// Nombre de prix différents lus dans la page : s'il y en a plusieurs, la lecture est ambiguë
+function distinctPrices(cand) {
+  const s = new Set();
+  for (const [p] of cand) { const n = parsePrice(p); if (n !== null && n > 0) s.add(n); }
+  return s.size;
 }
 
 export function isPrivateIp(ip) {

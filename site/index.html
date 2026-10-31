@@ -169,6 +169,28 @@
   .offers a small{display:block; font-weight:500; font-size:.82rem; color:var(--muted)}
   .offers .tag{font-size:.8rem; font-weight:700; color:var(--pine); margin-left:8px; white-space:nowrap}
 
+  .offers .chk{display:flex; align-items:center; gap:5px}
+  .offers .chk.ok{color:var(--pine)}
+  .offers .chk.out{color:var(--err)}
+  .offers li.out b{color:var(--muted); text-decoration:line-through}
+  .hist{display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; font-size:.92rem; color:var(--muted)}
+  .spark{width:96px; height:28px; flex:none; overflow:visible}
+  .spark polyline{fill:none; stroke:var(--pine); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+  .badge.drop{color:var(--pine); background:var(--pine-soft)}
+  .paid{display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--line); padding-top:12px}
+  .paid .row{display:flex; gap:8px; align-items:flex-end}
+  .paid .row label{flex:1; min-width:0}
+  .paid .note{color:var(--muted); font-size:.9rem}
+  .cheaper{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem; border-left:4px solid var(--pine)}
+  .dropbar ul{margin:6px 0 0; padding-left:1.1em; font-weight:500}
+  .dropbar li{margin-top:2px; overflow-wrap:anywhere}
+  .alts{display:flex; flex-direction:column; gap:8px}
+  .alts p{font-size:.95rem; color:var(--muted)}
+  .alt{display:grid; grid-template-columns:48px minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; min-height:56px; text-align:left; padding:8px 12px; border-radius:12px; border:1.5px solid var(--line); background:transparent; cursor:pointer; color:var(--ink)}
+  .alt .thumb{width:48px; height:48px; border-radius:8px}
+  .alt .t{overflow-wrap:anywhere; font-weight:600; font-size:.95rem; line-height:1.3}
+  .alt b{font:700 1rem var(--f-display); white-space:nowrap}
+
   /* Ajout (propriétaire) */
   .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
   .preview .thumb{width:72px; height:72px}
@@ -270,6 +292,7 @@
               <div class="thumb" id="pvThumb"></div>
               <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
             </div>
+            <div class="alts" id="alts" hidden></div>
             <p class="warn" id="dupWarn" role="alert" hidden></p>
             <label for="gNote">Précision (facultatif)
               <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
@@ -312,6 +335,7 @@
 
       <p class="msg" id="appErr" role="alert"></p>
       <p class="status" id="bulkStatus" aria-live="polite" hidden></p>
+      <div class="warn dropbar" id="dropBar" hidden></div>
       <div class="listbar" id="listbar" hidden>
         <label for="sort">Trier
           <select id="sort">
@@ -322,10 +346,6 @@
         </label>
         <div id="bulkWrap" hidden>
           <button class="btn ghost small" type="button" id="bulkBtn">Actualiser tous les prix</button>
-          <div class="confirm" id="bulkConfirm" hidden>
-            <button class="btn small" type="button" id="bulkYes">Lancer</button>
-            <button class="btn ghost small" type="button" id="bulkNo">Non</button>
-          </div>
         </div>
       </div>
       <p class="status" id="bulkHint" hidden></p>
@@ -352,7 +372,7 @@ const store = {
   sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
 };
 let code = "", role = "", gifts = [], filter = "open", sort = "list", who = store.get("who");
-let pendingDelete = null, busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
+let pendingDelete = null, pendingResearch = null, busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
 
 const MSG = {
   denied: "Ce lien n'est plus valide. Demande-en un nouveau.",
@@ -378,14 +398,27 @@ async function rpc(fn, args){
   }
   return data;
 }
-async function callSearch(query){
+// Recherche complète (2 recherches SerpAPI au plus). « token » : fiche produit choisie parmi les propositions.
+async function callSearch(query, token){
   const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-preview`, {
     method:"POST",
     headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-    body:JSON.stringify({code, query})
+    body:JSON.stringify(token ? {code, query, token} : {code, query})
   });
   const d = await r.json().catch(()=>null);
   if(!r.ok || !d) throw new Error("Recherche impossible pour le moment.");
+  return d;
+}
+// Relecture gratuite des pages des marchands déjà connus (aucune recherche SerpAPI)
+async function callRefresh(id){
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-refresh`, {
+    method:"POST",
+    headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
+    body:JSON.stringify({code, id})
+  });
+  const d = await r.json().catch(()=>null);
+  if(r.status === 403) throw Object.assign(new Error(MSG.denied), {code:"denied", bad:true});
+  if(!r.ok || !d) throw new Error("Actualisation impossible pour le moment.");
   return d;
 }
 
@@ -398,19 +431,87 @@ const safeUrl = u => /^https?:\/\//i.test(u||"") ? u : "";
 const same = (a,b) => String(a||"").trim().toLowerCase() === String(b||"").trim().toLowerCase();
 const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const tk = s => norm(s).split(/[^a-z0-9]+/).filter(t=>t.length>=2);
-// Places de marché et sites d'occasion : jamais affichés (même pour des offres enregistrées avant cette règle)
-const MARKET = ["leboncoin","vinted","ebay","backmarket","facebook","marketplace","cashconverters","easycash","rakuten","aliexpress","alibaba","temu","rebuy","momox","recommerce","etsy","shein","olx","ricardo","kleinanzeigen","2ememain"];
+// Places de marché, sites d'occasion et comparateurs : jamais affichés comme marchands
+// (même liste que MARKET et COMPARATOR dans supabase/functions/noel-preview/offers.js : à garder identiques)
+const MARKET = ["leboncoin","vinted","ebay","backmarket","facebook","marketplace","cashconverters","easycash","rakuten","aliexpress","alibaba","temu","rebuy","momox","recommerce","etsy","shein","olx","ricardo","kleinanzeigen","2ememain","ubuy","onbuy","beebs","wish","joom","banggood","dhgate","brickowl","bricklink","stockx","madeinchina","seller","vendeur"];
+const COMPARATOR = ["achatmoinscher","kulturegeek","idealo","kelkoo","leguide","shopzilla","pricerunner","dealabs","pricespy","twenga","shopmania","googleshopping","comparer"];
 const isMarket = (store, url) => {
-  const s = norm(store).replace(/[^a-z0-9]/g,"");
+  const raw = String(store||"").trim();
+  const s = norm(raw).replace(/[^a-z0-9]/g,"");
   let h = ""; try{ h = new URL(url).hostname.toLowerCase().replace(/[^a-z0-9]/g,""); }catch(e){}
-  return MARKET.some(m => s.includes(m) || (h && h.includes(m))) || /^[a-z0-9]+([-_][a-z0-9]+)+$/.test(String(store||"").trim());
+  return MARKET.concat(COMPARATOR).some(m => s.includes(m) || (h && h.includes(m))) || /^[a-z0-9]+([-_][a-z0-9]+)+$/.test(raw);
 };
 const totalOf = o => o.price + (typeof o.shipping === "number" ? o.shipping : 0);
+const rankKey = o => (o.stock === "out" ? 1e9 : 0) + totalOf(o);          // en rupture : à la fin
+const inStock = arr => arr.filter(o => o.stock !== "out");
 const cleanOffers = g => (Array.isArray(g.offers) ? g.offers : [])
-  .filter(o => o && /^https:\/\//.test(o.url||"") && o.price != null && !isMarket(o.store, o.url))
-  .sort((a,b) => totalOf(a) - totalOf(b));
-const bestPrice = g => { const o = cleanOffers(g); return o.length ? totalOf(o[0]) : (g.price != null && !isMarket(g.store, g.url) ? g.price : null); };
+  .filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url))
+  .sort((a,b) => rankKey(a) - rankKey(b));
+const bestOf = g => inStock(cleanOffers(g))[0] || null;
+const bestPrice = g => {
+  const all = cleanOffers(g);
+  if(all.length){ const b = inStock(all)[0]; return b ? totalOf(b) : null; }
+  return g.price != null && !isMarket(g.store, g.url) ? g.price : null;
+};
 const shipText = o => typeof o.shipping !== "number" ? "Livraison à vérifier" : (o.shipping === 0 ? "Livraison offerte" : "dont " + eur(o.shipping) + " de livraison");
+const D = (iso, opt) => { try{ return new Date(iso).toLocaleDateString("fr-FR", opt || {day:"numeric", month:"long"}); }catch(e){ return ""; } };
+const dayD = d => D(d + "T12:00:00");
+
+// État d'un prix : lu sur la page du marchand (« vérifié ») ou seulement donné par Google (« non vérifié »)
+function chkText(o, g){
+  if(o.stock === "out") return `<small class="chk out">Rupture de stock${o.verified && o.at ? " · vu le " + D(o.at) : ""}</small>`;
+  if(o.verified) return `<small class="chk ok">${CHECK} Vérifié sur le site${o.at ? " le " + D(o.at) : ""}${o.stock === "pre" ? " · précommande" : ""}</small>`;
+  return `<small class="chk">Non vérifié · ${o.at ? "dernier contrôle le " + D(o.at) : (g.offers_at ? "prix Google du " + D(g.offers_at) : "prix Google")}</small>`;
+}
+
+/* ---------- Historique des prix (identique pour tous, sans lien avec les réservations) ---------- */
+function histInfo(g){
+  const list = (Array.isArray(g.history) ? g.history : []).filter(x => x && +x.p > 0 && x.d).map(x => ({d:x.d, p:+x.p, v:!!x.v}));
+  if(list.length < 2) return null;
+  const cur = list[list.length-1];
+  const min = list.reduce((m,x) => x.p < m.p ? x : m, list[0]);
+  let pi = -1; for(let i = list.length-2; i >= 0; i--){ if(list[i].p !== cur.p){ pi = i; break; } }
+  return {list, cur, min, first:list[0], prev: pi >= 0 ? list[pi] : null, dropDate: pi >= 0 ? list[pi+1].d : "", stable: list.every(x => x.p === cur.p)};
+}
+// Une baisse n'est annoncée que si les deux prix ont été lus sur le site du marchand (sinon c'est peut-être une simple correction)
+function dropOf(g){
+  const h = histInfo(g);
+  if(!h || !h.prev || !h.cur.v || !h.prev.v || h.prev.p - h.cur.p < 1) return null;
+  const age = (Date.now() - new Date(h.dropDate + "T12:00:00").getTime()) / 86400000;
+  return age <= 14 ? {by:h.prev.p - h.cur.p, from:h.prev.p, to:h.cur.p, when:h.dropDate} : null;
+}
+function sparkSvg(h){
+  const ps = h.list.map(x => x.p), lo = Math.min(...ps), hi = Math.max(...ps);
+  if(ps.length < 3 || lo === hi) return "";
+  const pts = ps.map((p,i) => (i/(ps.length-1)*100).toFixed(1) + "," + (26 - (p-lo)/(hi-lo)*24).toFixed(1)).join(" ");
+  return `<svg class="spark" viewBox="0 0 100 28" role="img" aria-label="Évolution du prix relevé"><polyline points="${pts}"/></svg>`;
+}
+function histHtml(g){
+  const h = histInfo(g); if(!h) return "";
+  let t;
+  if(h.stable) t = `Prix stable depuis le ${dayD(h.first.d)}`;
+  else if(h.cur.p <= h.min.p) t = `Le plus bas relevé ici depuis le ${dayD(h.first.d)}`;
+  else t = `Plus bas relevé : ${eur(h.min.p)} le ${dayD(h.min.d)}${h.min.v ? "" : " (non vérifié)"}`;
+  return `<div class="hist">${sparkSvg(h)}<span>${t}</span></div>`;
+}
+function renderDrops(){
+  const el = $("dropBar");
+  // Pour la famille, on ne montre pas les cadeaux pris par quelqu'un d'autre ; pour le propriétaire, tous (il ne connaît aucune réservation)
+  const rows = gifts.filter(g => !(role === "family" && g.claimed_by && !same(g.claimed_by, who)))
+    .map(g => ({g, d:dropOf(g)})).filter(x => x.d).sort((a,b) => b.d.by - a.d.by).slice(0,4);
+  el.hidden = !rows.length;
+  el.innerHTML = rows.length ? "<strong>Prix en baisse</strong><ul>" + rows.map(x => `<li>${esc(x.g.title)} : ${eur(x.d.from)} → ${eur(x.d.to)} (relevé le ${dayD(x.d.when)})</li>`).join("") + "</ul>" : "";
+}
+
+/* ---------- Prix payé et « prix moins cher trouvé » (famille, sur le cadeau qu'elle a pris) ---------- */
+function paidHtml(g, bo){
+  const id = g.id, paid = g.paid != null ? +g.paid : null;
+  let msg = "";
+  if(paid != null && bo && totalOf(bo) <= paid - 1){
+    msg = `<p class="cheaper">Prix moins cher trouvé : ${eur(totalOf(bo))} chez ${esc(bo.store)}, soit ${eur(paid - totalOf(bo))} de moins que ce que tu as payé. ${bo.verified ? "Prix lu sur le site" + (bo.at ? " le " + D(bo.at) : "") : "Prix non vérifié sur le site"}. Contrôle-le sur le site du marchand et regarde ses conditions de retour ou d'échange.</p>`;
+  }
+  return `<div class="paid">${msg}<div class="row"><label for="paid${id}">Prix payé (facultatif)<input id="paid${id}" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off" value="${paid != null ? esc(String(paid).replace(".", ",")) : ""}"></label><button class="btn ghost small" type="button" data-paidsave="${id}">Enregistrer</button></div><p class="note">Sert à te prévenir si un prix plus bas apparaît. Le propriétaire de la liste ne voit jamais cette information.</p></div>`;
+}
 const extractCode = v => { const m = String(v||"").match(/[#&?]c=([^&\s]+)/); return m ? decodeURIComponent(m[1]) : String(v||"").trim(); };
 
 /* ---------- Texte plus grand ---------- */
@@ -494,12 +595,12 @@ function render(){
       : "";
     document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.f===filter)));
   }
-  const stamps = gifts.map(g=>g.offers_at).filter(Boolean).sort();
+  const stamps = gifts.map(g=>g.checked_at || g.offers_at).filter(Boolean).sort();
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
   $("priceNote").hidden = !withPrice;
-  $("priceNote").textContent = stamps.length
-    ? "Prix relevés le " + new Date(stamps[stamps.length-1]).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) + " chez des marchands neufs (occasion et places de marché exclues). Les prix changent : vérifie sur le site du marchand avant d'acheter."
-    : "Les prix sont ceux relevés quand le cadeau a été ajouté et peuvent avoir changé. Vérifie sur le site du marchand avant d'acheter.";
+  $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
+    + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
+  renderDrops();
   $("listbar").hidden = !gifts.length;
   $("sort").value = sort;
 
@@ -521,37 +622,47 @@ function render(){
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
-    const offs = cleanOffers(g);
+    const offs = cleanOffers(g), bo = inStock(offs)[0] || null, bi = bo ? offs.indexOf(bo) : -1;
     const best = bestPrice(g);
-    const price = best != null ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b>${offs.length ? `<span class="note">${typeof offs[0].shipping === "number" ? "livraison comprise" : "hors livraison"}</span>` : ""}</div>` : "";
+    const price = best != null
+      ? `<div class="price"><b>${offs.length ? "dès " : ""}${eur(best)}</b>${offs.length ? `<span class="note">${typeof bo.shipping === "number" ? "livraison comprise" : "hors livraison"}</span>` : ""}</div>`
+      : (offs.length ? `<div class="price"><span class="note">En rupture chez les marchands lus</span></div>` : "");
     const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
-    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,4).map((o,i)=>`<li class="${i===0?'best':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===0?'<span class="tag">Le moins cher</span>':''}<small>${shipText(o)}</small></a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`).join("")}</ul>` : "";
+    const offersHtml = (!other && offs.length) ? `<ul class="offers" aria-label="Prix chez plusieurs marchands">${offs.slice(0,5).map((o,i)=>`<li class="${i===bi?'best':''}${o.stock==='out'?' out':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${i===bi?'<span class="tag">Le moins cher</span>':''}<small>${shipText(o)}</small>${chkText(o, g)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`).join("")}</ul>` : "";
+    const dr = dropOf(g);
+    const histBlock = other ? "" : histHtml(g);
     const img = /^https:\/\//.test(g.image||"") ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
     const q = encodeURIComponent(g.title);
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
         <a href="https://www.google.com/search?tbm=shop&hl=fr&gl=fr&q=${q}" target="_blank" rel="noopener noreferrer">Google Shopping</a>
         <a href="https://www.idealo.fr/prechten.html?q=${q}" target="_blank" rel="noopener noreferrer">idealo</a>
+        <a href="https://www.dealabs.com/search?q=${q}" target="_blank" rel="noopener noreferrer">Dealabs</a>
         <a href="https://www.amazon.fr/s?k=${q}" target="_blank" rel="noopener noreferrer">Amazon</a></div>
         <small>Ouvre la recherche de ce produit chez chaque comparateur.</small></details>`;
-    let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "";
+    let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "", extra = "";
+    if(dr && !other) badges += `<span class="badge drop">Baisse de ${eur(dr.by)}</span>`;
     if(role === "owner"){
       act = pendingDelete === g.id
         ? `<div class="confirm"><button class="btn small" data-delyes="${g.id}">Oui, retirer</button><button class="btn ghost small" data-delno>Non</button></div>`
+        : pendingResearch === g.id
+        ? `<p class="status" style="width:100%">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button class="btn ghost small" data-researchno>Non</button></div>`
         : `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
-          + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Actualiser les prix de ${esc(g.title)}">${refreshing.has(g.id) ? "Recherche…" : "Actualiser"}</button>`
+          + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Relire les prix de ${esc(g.title)} (gratuit)">${refreshing.has(g.id) ? "Lecture…" : "Actualiser"}</button>`
+          + `<button class="btn ghost small" data-research="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Chercher d'autres marchands pour ${esc(g.title)}">Autres marchands</button>`
           + `<button class="btn ghost small" data-del="${g.id}">Retirer</button>`;
     } else if(g.claimed_by){
       const mine = same(g.claimed_by, who);
       cls += mine ? " mine" : " taken";
       const who2 = mine ? (g.bought ? "Acheté par toi" : "C'est toi qui l'offres") : (g.bought ? "Acheté par " : "Pris par ") + esc(g.claimed_by);
       badges += `<span class="badge who-badge">${g.bought ? CHECK + " " : ""}${who2}</span>`;
+      if(mine && g.bought) extra = paidHtml(g, bo);
       if(mine) act = g.bought
         ? `<button class="btn ghost small" data-unbought="${g.id}">Pas encore acheté</button>`
         : `<button class="btn" data-bought="${g.id}">C'est acheté</button><button class="btn ghost small" data-unclaim="${g.id}">Annuler</button>`;
     } else {
       act = `<button class="btn" data-claim="${g.id}">Je le prends</button>`;
     }
-    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${offersHtml && g.offers_at ? `<p class="note">Prix relevés le ${new Date(g.offers_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}, marchands neufs uniquement.</p>` : ""}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}</li>`;
+    return `<li class="${cls}"><div class="top"><div class="thumb">${img}</div><div class="txt"><h3>${esc(g.title)}</h3>${price}${note}${see}${badges ? `<div class="badges">${badges}</div>` : ""}</div></div>${offersHtml}${histBlock}${offersHtml && (g.checked_at || g.offers_at) ? `<p class="note">Dernière lecture des prix le ${D(g.checked_at || g.offers_at, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}, marchands neufs uniquement.</p>` : ""}${other ? "" : cmp}${act ? `<div class="act">${act}</div>` : ""}${extra}</li>`;
   }).join("");
 }
 
@@ -584,8 +695,11 @@ $("sort").addEventListener("change", ()=>{ sort = $("sort").value; store.set("so
 sort = store.get("sort") || "list";
 
 /* ---------- Ajout d'une idée ---------- */
-let meta = {image:"", price:null, store:"", offers:[], link:""};
+let meta = {image:"", price:null, store:"", offers:[], link:"", gtin:"", alts:[]};
 let searching = false;
+// Offre telle qu'elle est enregistrée : prix, livraison, état de vérification, date de lecture, stock
+const offerOut = o => ({store:String(o.store).slice(0,60), price:o.price, url:o.url, shipping: typeof o.shipping === "number" ? o.shipping : null,
+  verified: !!o.verified, at: o.at || null, stock: o.stock || "", via: o.via || ""});
 const isLink = q => !/\s/.test(q) && (/^https?:\/\//i.test(q) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(q));
 
 function dupOf(title){
@@ -612,29 +726,47 @@ function showResult(){
   $("pvThumb").innerHTML = meta.image ? `<img src="${esc(meta.image)}" alt="" referrerpolicy="no-referrer">` : PLACEHOLDER;
   $("pvTitle").textContent = $("gTitle").value;
   const more = [];
-  if(meta.offers.length){
-    more.push(`<b style="color:var(--ink)">À partir de ${eur(meta.offers[0].price)}</b> chez ${esc(meta.offers[0].store)}`);
-    if(meta.offers.length > 1) more.push(`${meta.offers.length} marchands comparés`);
+  const bo = inStock(meta.offers)[0];
+  if(bo){
+    more.push(`<b style="color:var(--ink)">À partir de ${eur(totalOf(bo))}</b> chez ${esc(bo.store)}${typeof bo.shipping === "number" ? " (livraison comprise)" : ""}`);
+    const nv = meta.offers.filter(o => o.verified).length;
+    more.push(`${meta.offers.length} marchand${meta.offers.length > 1 ? "s" : ""} comparé${meta.offers.length > 1 ? "s" : ""}, ${nv} vérifié${nv > 1 ? "s" : ""} sur leur site`);
+  } else if(meta.offers.length){
+    more.push("Tous les marchands trouvés sont en rupture de stock.");
   } else if(meta.price != null){
     more.push(`<b style="color:var(--ink)">${eur(meta.price)}</b>${meta.store ? " chez " + esc(meta.store) : ""}`);
   } else {
     more.push("Prix non trouvé : tu peux le saisir à la main.");
   }
   $("pvMore").innerHTML = more.map(x=>`<span>${x}</span>`).join("");
+  renderAlts();
   checkDup();
 }
 
-async function search(){
+// Autres fiches produit proposées par Google : le propriétaire corrige le choix en un geste (1 recherche de plus)
+function renderAlts(){
+  const el = $("alts"), a = meta.alts || [];
+  el.hidden = !a.length;
+  if(!a.length){ el.innerHTML = ""; return; }
+  el.innerHTML = `<p>Ce n'est pas le bon produit ? Touche le bon. Cela relance une recherche.</p>` + a.map(x =>
+    `<button type="button" class="alt" data-token="${esc(x.token)}"><span class="thumb">${/^https:\/\//.test(x.image||"") ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER}</span><span class="t">${esc(x.title)}</span><b>${x.price != null ? eur(x.price) : ""}</b></button>`).join("");
+}
+
+async function search(token){
   const q = $("gQuery").value.trim(); const st = $("lookup");
   if(!q || searching) return;
   searching = true; $("searchBtn").disabled = true; dupAck = false;
-  meta = {image:"", price:null, store:"", offers:[], link: isLink(q) ? (/^https?:\/\//i.test(q) ? q : "https://" + q) : ""};
-  st.hidden = false; st.textContent = "Recherche du produit et des prix…";
+  meta = {image:"", price:null, store:"", offers:[], link: isLink(q) ? (/^https?:\/\//i.test(q) ? q : "https://" + q) : "", gtin:"", alts:[]};
+  st.hidden = false; st.textContent = "Recherche du produit et des prix, puis lecture des pages des marchands…";
   try{
-    const d = await callSearch(q);
-    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.offers = (Array.isArray(d.offers) ? d.offers : []).filter(o => !isMarket(o.store, o.url));
+    const d = await callSearch(q, typeof token === "string" ? token : undefined);
+    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.gtin = /^\d{8,14}$/.test(d.gtin || "") ? d.gtin : "";
+    meta.offers = (Array.isArray(d.offers) ? d.offers : []).filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url));
+    meta.alts = (Array.isArray(d.alternatives) ? d.alternatives : []).filter(a => a && a.token && a.token !== d.token).slice(0,3);
+    const bo = inStock(meta.offers)[0];
     $("gTitle").value = d.title || (isLink(q) ? "" : q);
-    $("gPrice").value = d.price != null ? String(d.price).replace(".", ",") : "";
+    // Le prix enregistré est le total (livraison comprise quand elle est connue), comme l'historique
+    $("gPrice").value = bo ? String(totalOf(bo)).replace(".", ",") : (d.price != null ? String(d.price).replace(".", ",") : "");
     const found = meta.image || d.price != null || meta.offers.length;
     $("manual").open = !found || !$("gTitle").value;
     st.textContent = found ? (d.reason ? d.reason + " Vérifie la fiche avant d'ajouter." : "Fiche remplie. Vérifie-la puis ajoute-la.")
@@ -646,7 +778,8 @@ async function search(){
   searching = false; $("searchBtn").disabled = false;
   showResult();
 }
-$("searchBtn").addEventListener("click", search);
+$("searchBtn").addEventListener("click", ()=>search());
+$("alts").addEventListener("click", e=>{ const b = e.target.closest("button[data-token]"); if(b) search(b.dataset.token); });
 $("gQuery").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); search(); } });
 $("gQuery").addEventListener("paste", ()=>setTimeout(()=>{ if(isLink($("gQuery").value.trim())) search(); }, 80));
 $("gTitle").addEventListener("input", ()=>{ $("pvTitle").textContent = $("gTitle").value; checkDup(); });
@@ -660,44 +793,43 @@ $("addForm").addEventListener("submit", e=>{
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
   if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
-  const offers = meta.offers.length ? meta.offers.map(o=>({store:String(o.store).slice(0,60), price:o.price, url:o.url, shipping: typeof o.shipping === "number" ? o.shipping : null})) : null;
+  const offers = meta.offers.length ? meta.offers.map(offerOut) : null;
+  const bo = inStock(meta.offers)[0];
   run(async()=>{
     await rpc("noel_add",{p_code:code,p_title:title,p_url:meta.link,p_note:$("gNote").value,
-      p_image:meta.image||"", p_price:price, p_store:meta.store||"", p_offers:offers, p_top:$("gTop").checked});
+      p_image:meta.image||"", p_price:price, p_store:(bo ? bo.store : meta.store) || "", p_offers:offers, p_top:$("gTop").checked, p_gtin:meta.gtin || null});
     $("gQuery").value = $("gTitle").value = $("gNote").value = $("gPrice").value = ""; $("gTop").checked = false;
-    meta = {image:"", price:null, store:"", offers:[], link:""}; dupAck = false;
-    $("lookup").hidden = true; $("result").hidden = true; $("manual").open = false; $("dupWarn").hidden = true;
+    meta = {image:"", price:null, store:"", offers:[], link:"", gtin:"", alts:[]}; dupAck = false;
+    $("lookup").hidden = true; $("result").hidden = true; $("alts").hidden = true; $("manual").open = false; $("dupWarn").hidden = true;
     $("addBtn").textContent = "Ajouter à la liste";
   });
 });
 
-/* ---------- Actualiser les prix ---------- */
-async function refreshOne(g){
+/* ---------- Actualiser les prix ----------
+   « Actualiser » relit gratuitement les pages des marchands déjà connus (aucune recherche SerpAPI).
+   La relecture automatique tourne aussi toute seule côté serveur, de la même façon pour toutes les fiches.
+   « Autres marchands » relance une vraie recherche (2 recherches SerpAPI) et demande confirmation. */
+const FRESH_MS = 10 * 60 * 1000;
+const isFresh = g => g.checked_at && Date.now() - new Date(g.checked_at).getTime() < FRESH_MS;
+async function researchOne(g){
   const d = await callSearch(g.title);
-  const offs = (Array.isArray(d.offers) ? d.offers : []).filter(o => !isMarket(o.store, o.url)).sort((a,b)=>totalOf(a)-totalOf(b));
-  if(!offs.length) return false;
-  await rpc("noel_set_offers",{p_code:code,p_id:g.id,p_price:offs[0].price,p_store:offs[0].store,p_offers:offs});
+  const offs = (Array.isArray(d.offers) ? d.offers : []).filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url));
+  const best = inStock(offs)[0];
+  if(!best) return false;
+  await rpc("noel_set_offers",{p_code:code,p_id:g.id,p_price:totalOf(best),p_store:best.store,p_offers:offs.map(offerOut)});
   return true;
 }
 $("bulkBtn").addEventListener("click", ()=>{
-  const n = gifts.filter(g=>!g.offers_at || Date.now() - new Date(g.offers_at).getTime() > 12*3600*1000).length;
-  const h = $("bulkHint");
-  if(!n){ h.hidden = false; h.textContent = "Tous les prix ont été relevés il y a moins de 12 heures."; return; }
-  h.hidden = false; h.textContent = n + " recherche" + (n>1?"s":"") + " seront lancée" + (n>1?"s":"") + " sur ton quota gratuit mensuel (environ 250). Continuer ?";
-  $("bulkBtn").hidden = true; $("bulkConfirm").hidden = false;
-});
-$("bulkNo").addEventListener("click", ()=>{ $("bulkConfirm").hidden = true; $("bulkBtn").hidden = false; $("bulkHint").hidden = true; });
-$("bulkYes").addEventListener("click", ()=>{
-  $("bulkConfirm").hidden = true; $("bulkHint").hidden = true;
-  const todo = gifts.filter(g=>!g.offers_at || Date.now() - new Date(g.offers_at).getTime() > 12*3600*1000).slice(0,30);
+  const todo = gifts.filter(g => !isFresh(g)).slice(0,30);
+  const st = $("bulkStatus");
+  if(!todo.length){ st.hidden = false; st.textContent = "Tous les prix ont été relus il y a moins de 10 minutes."; return; }
   run(async()=>{
-    const st = $("bulkStatus"); st.hidden = false; let ok = 0, ko = 0;
-    for(let i=0;i<todo.length;i++){
-      st.textContent = "Actualisation " + (i+1) + " sur " + todo.length + "…";
-      try{ (await refreshOne(todo[i])) ? ok++ : ko++; }catch(e){ if(e.bad) throw e; ko++; }
+    st.hidden = false;
+    for(let i = 0; i < todo.length; i++){
+      st.textContent = "Lecture des sites des marchands : " + (i+1) + " sur " + todo.length + "…";
+      try{ await callRefresh(todo[i].id); }catch(e){ if(e.bad) throw e; }
     }
-    st.textContent = ok + " mis à jour" + (ko ? ", " + ko + " sans nouveau prix." : ".");
-    $("bulkBtn").hidden = false;
+    st.textContent = "Prix relus sur les sites des marchands (gratuit).";
   });
 });
 
@@ -735,14 +867,27 @@ refreshShare();
 /* ---------- Actions sur les cartes ---------- */
 $("list").addEventListener("click", e=>{
   const t = e.target.closest("button"); if(!t) return;
-  const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
+  const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.paidsave || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
   const g = gifts.find(x=>x.id===id);
-  if(t.dataset.del){ pendingDelete = id; render(); return; }
+  if(t.dataset.del){ pendingDelete = id; pendingResearch = null; render(); return; }
   if(t.hasAttribute("data-delno")){ pendingDelete = null; render(); return; }
   if(t.dataset.delyes){ pendingDelete = null; run(()=>rpc("noel_remove",{p_code:code,p_id:id})); return; }
   if(t.dataset.top){ if(g) g.top = !g.top; render(); run(()=>rpc("noel_set_top",{p_code:code,p_id:id,p_top:!!(g && g.top)})); return; }
-  if(t.dataset.refresh){ if(!g) return; refreshing.add(id); render();
-    run(async()=>{ try{ if(!(await refreshOne(g))) throw new Error("Aucun nouveau prix trouvé pour « " + g.title + " »."); } finally { refreshing.delete(id); } }); return; }
+  if(t.dataset.refresh){ if(!g) return;
+    if(isFresh(g)){ const st = $("bulkStatus"); st.hidden = false; st.textContent = "« " + g.title + " » a été relu il y a moins de 10 minutes."; return; }
+    refreshing.add(id); render();
+    run(async()=>{ try{ await callRefresh(id); } finally { refreshing.delete(id); } }); return; }
+  if(t.dataset.research){ pendingResearch = id; pendingDelete = null; render(); return; }
+  if(t.hasAttribute("data-researchno")){ pendingResearch = null; render(); return; }
+  if(t.dataset.researchyes){ if(!g) return; pendingResearch = null; refreshing.add(id); render();
+    run(async()=>{ try{ if(!(await researchOne(g))) throw new Error("Aucun marchand fiable trouvé pour « " + g.title + " »."); } finally { refreshing.delete(id); } }); return; }
+  if(t.dataset.paidsave){
+    const inp = document.getElementById("paid" + id); if(!inp) return;
+    const raw = inp.value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
+    const v = raw === "" ? null : parseFloat(raw);
+    if(v !== null && !(v > 0 && v < 100000)){ $("appErr").textContent = "Le prix payé n'est pas valide."; inp.focus(); return; }
+    run(()=>rpc("noel_set_paid",{p_code:code,p_id:id,p_name:who,p_paid:v})); return;
+  }
   if(t.dataset.claim){
     if(!who){ $("appErr").textContent = "Indique d'abord ton prénom, en haut de la page."; $("who").focus(); window.scrollTo({top:0,behavior:"smooth"}); return; }
     if(g) g.claimed_by = who; render();
@@ -771,7 +916,12 @@ document.addEventListener("error", e=>{
 })();
 
 // Mise à jour discrète pour voir les choix des autres
-function tick(){ if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); }); }
+function tick(){
+  // pas de mise à jour pendant qu'on saisit un prix payé : elle effacerait la saisie
+  const a = document.activeElement;
+  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list")) return;
+  if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); });
+}
 setInterval(tick, 20000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
 </script>

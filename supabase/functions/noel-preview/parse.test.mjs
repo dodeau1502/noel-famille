@@ -17,3 +17,14 @@ assert.ok(isPrivateIp("10.0.0.5")&&isPrivateIp("127.0.0.1")&&isPrivateIp("169.25
 assert.ok(!isPrivateIp("93.184.216.34"));
 assert.ok(badHostname("localhost")&&badHostname("192.168.0.1")&&badHostname("intranet")&&badHostname("x.internal")&&!badHostname("www.amazon.fr"));
 console.log("parse OK");
+// --- v6 : code-barres, stock ---
+import { cleanGtin, findStock } from './parse.js';
+const d = `<script type="application/ld+json">{"@type":"Product","name":"Sony WH-1000XM5","gtin13":"4548736132580","offers":{"@type":"Offer","price":299.95,"priceCurrency":"EUR","availability":"https://schema.org/InStock"}}</script>`;
+r = extract(d, "https://www.ldlc.com/fiche/1"); assert.equal(r.gtin, "4548736132580"); assert.equal(r.stock, "in"); assert.equal(r.name, "Sony WH-1000XM5"); assert.equal(r.prices, 1);
+const e = `<script type="application/ld+json">{"@type":"Product","offers":[{"@type":"Offer","price":10,"availability":"http://schema.org/OutOfStock"},{"@type":"Offer","price":12}]}</script>`;
+r = extract(e, "https://x.fr/p"); assert.equal(r.stock, "out"); assert.equal(r.prices, 2);
+assert.equal(extract(`<script type="application/ld+json">{"@type":"Product","offers":{"price":5,"availability":"https://schema.org/PreOrder"}}</script>`, "https://x.fr/p").stock, "pre");
+assert.equal(extract("<html></html>", "https://x.fr/p").stock, "");
+assert.equal(cleanGtin("0 0000 0000 0000"), ""); assert.equal(cleanGtin("abc"), ""); assert.equal(cleanGtin("6941565969903"), "6941565969903");
+assert.equal(extract(`<script>var x={"gtin13":"6941565969903"}</script>`, "https://x.fr/p").gtin, "6941565969903");
+console.log("parse v6 OK");

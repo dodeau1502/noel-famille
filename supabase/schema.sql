@@ -1,7 +1,7 @@
--- Liste de Noël famille : état actuel complet de la base (v3)
+-- Liste de Noël famille : état actuel complet de la base (v4)
 -- Les tables ne sont lisibles par personne via l'API ; tout passe par des fonctions
 -- qui vérifient un code (propriétaire ou famille). Le propriétaire ne reçoit
--- jamais les informations de réservation (claimed_by, bought).
+-- jamais les informations de réservation (claimed_by, bought, paid).
 -- Convention : les fonctions API renvoient du jsonb {"ok":true} ou {"error":"denied|throttled|taken|short|same_as_owner|empty"}
 -- au lieu de lever une exception (sinon l'enregistrement des essais ratés serait annulé).
 
@@ -25,15 +25,30 @@ create table public.noel_gifts (
   store text,
   offers jsonb,
   offers_at timestamptz,
-  top boolean not null default false
+  top boolean not null default false,
+  gtin text check (gtin is null or gtin ~ '^[0-9]{8,14}$'),   -- code-barres lu sur la page collée
+  checked_at timestamptz                                       -- dernière relecture des pages des marchands
 );
 
 create table public.noel_claims (
   gift_id bigint primary key references public.noel_gifts(id) on delete cascade,
   claimed_by text not null check (char_length(claimed_by) between 1 and 40),
   claimed_at timestamptz not null default now(),
-  bought boolean not null default false
+  bought boolean not null default false,
+  paid numeric check (paid is null or (paid > 0 and paid < 100000))   -- prix payé, saisi par la famille, jamais renvoyé au propriétaire
 );
+
+-- Historique des prix : meilleur prix (livraison comprise si connue), au plus un point par jour ou à chaque changement.
+-- Alimenté par noel_add, noel_set_offers et la fonction noel-refresh. Identique pour tous : aucun lien avec les réservations.
+create table public.noel_prices (
+  id bigint generated always as identity primary key,
+  gift_id bigint not null references public.noel_gifts(id) on delete cascade,
+  price numeric not null check (price > 0),
+  store text,
+  verified boolean not null default false,   -- prix lu sur la page du marchand
+  at timestamptz not null default now()
+);
+create index noel_prices_gift_at on public.noel_prices (gift_id, at);
 
 -- Essais de code ratés, pour limiter les devinettes (15 par 10 minutes et par adresse)
 create table public.noel_attempts (
@@ -46,8 +61,9 @@ alter table public.noel_config   enable row level security;
 alter table public.noel_gifts    enable row level security;
 alter table public.noel_claims   enable row level security;
 alter table public.noel_attempts enable row level security;
+alter table public.noel_prices   enable row level security;
 -- Aucune policy : aucun accès direct via l'API publique.
-revoke all on public.noel_config, public.noel_gifts, public.noel_claims, public.noel_attempts from anon, authenticated;
+revoke all on public.noel_config, public.noel_gifts, public.noel_claims, public.noel_attempts, public.noel_prices from anon, authenticated;
 
 create or replace function public.noel_client_ip()
 returns text language sql stable set search_path = public as $$
@@ -83,32 +99,39 @@ begin
   if r is null or r = 'throttled' then return public.noel_deny(r); end if;
   select title into t from public.noel_config where id = 1;
   select coalesce(jsonb_agg(
-    case when r = 'owner'
-      then jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
-                              'image', g.image_url, 'price', g.price, 'store', g.store,
-                              'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top)
-      else jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
-                              'image', g.image_url, 'price', g.price, 'store', g.store,
-                              'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
-                              'claimed_by', c.claimed_by, 'bought', coalesce(c.bought, false))
-    end order by g.created_at), '[]'::jsonb)
+    jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
+                       'image', g.image_url, 'price', g.price, 'store', g.store,
+                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
+                       'gtin', g.gtin, 'checked_at', g.checked_at,
+                       'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
+                                              from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
+    || case when r = 'owner' then '{}'::jsonb
+            else jsonb_build_object('claimed_by', c.claimed_by, 'bought', coalesce(c.bought, false), 'paid', c.paid) end
+    order by g.created_at), '[]'::jsonb)
   into res
   from public.noel_gifts g left join public.noel_claims c on c.gift_id = g.id;
   return jsonb_build_object('role', r, 'title', t, 'gifts', res);
 end $$;
 
 create or replace function public.noel_add(p_code text, p_title text, p_url text, p_note text, p_image text,
-                                           p_price numeric, p_store text, p_offers jsonb, p_top boolean)
+                                           p_price numeric, p_store text, p_offers jsonb, p_top boolean, p_gtin text default null)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
-declare r text := public.noel_role(p_code);
+declare r text := public.noel_role(p_code); v_id bigint; v_has boolean;
 begin
   if r is distinct from 'owner' then return public.noel_deny(r); end if;
-  insert into public.noel_gifts(title, url, note, image_url, price, store, offers, offers_at, top)
+  v_has := p_offers is not null and jsonb_typeof(p_offers) = 'array' and jsonb_array_length(p_offers) > 0;
+  insert into public.noel_gifts(title, url, note, image_url, price, store, offers, offers_at, checked_at, top, gtin)
   values (trim(p_title), nullif(trim(p_url), ''), nullif(trim(p_note), ''),
           nullif(trim(p_image), ''), p_price, nullif(trim(p_store), ''),
-          case when p_offers is not null and jsonb_typeof(p_offers) = 'array' and jsonb_array_length(p_offers) > 0 then p_offers end,
-          case when p_offers is not null and jsonb_typeof(p_offers) = 'array' and jsonb_array_length(p_offers) > 0 then now() end,
-          coalesce(p_top, false));
+          case when v_has then p_offers end,
+          case when v_has then now() end,
+          case when v_has then now() end,
+          coalesce(p_top, false),
+          case when p_gtin ~ '^[0-9]{8,14}$' then p_gtin end)
+  returning id into v_id;
+  if p_price is not null and p_price > 0 then
+    insert into public.noel_prices(gift_id, price, store, verified) values (v_id, p_price, nullif(trim(p_store), ''), false);
+  end if;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -139,8 +162,11 @@ begin
     return jsonb_build_object('error', 'empty');
   end if;
   update public.noel_gifts
-     set price = p_price, store = nullif(trim(p_store), ''), offers = p_offers, offers_at = now()
+     set price = p_price, store = nullif(trim(p_store), ''), offers = p_offers, offers_at = now(), checked_at = now()
    where id = p_id;
+  if found and p_price is not null and p_price > 0 then
+    insert into public.noel_prices(gift_id, price, store, verified) values (p_id, p_price, nullif(trim(p_store), ''), false);
+  end if;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -187,31 +213,45 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Prix payé : enregistré par la famille sur le cadeau qu'elle a pris. Jamais renvoyé au propriétaire (voir noel_get).
+create or replace function public.noel_set_paid(p_code text, p_id bigint, p_name text, p_paid numeric)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code);
+begin
+  if r is distinct from 'family' then return public.noel_deny(r); end if;
+  if p_paid is not null and (p_paid <= 0 or p_paid >= 100000) then return jsonb_build_object('error', 'empty'); end if;
+  update public.noel_claims set paid = p_paid
+   where gift_id = p_id and lower(claimed_by) = lower(trim(p_name));
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- Fonctions internes : jamais appelables depuis l'API publique
 revoke all on function public.noel_role(text), public.noel_deny(text), public.noel_client_ip() from public, anon, authenticated;
 
 -- Fonctions de l'API
 revoke all on function
   public.noel_get(text),
-  public.noel_add(text,text,text,text,text,numeric,text,jsonb,boolean),
+  public.noel_add(text,text,text,text,text,numeric,text,jsonb,boolean,text),
   public.noel_remove(text,bigint),
   public.noel_set_top(text,bigint,boolean),
   public.noel_set_offers(text,bigint,numeric,text,jsonb),
   public.noel_set_family_code(text,text),
   public.noel_claim(text,bigint,text),
   public.noel_unclaim(text,bigint,text),
-  public.noel_set_bought(text,bigint,text,boolean)
+  public.noel_set_bought(text,bigint,text,boolean),
+  public.noel_set_paid(text,bigint,text,numeric)
 from public;
 grant execute on function
   public.noel_get(text),
-  public.noel_add(text,text,text,text,text,numeric,text,jsonb,boolean),
+  public.noel_add(text,text,text,text,text,numeric,text,jsonb,boolean,text),
   public.noel_remove(text,bigint),
   public.noel_set_top(text,bigint,boolean),
   public.noel_set_offers(text,bigint,numeric,text,jsonb),
   public.noel_set_family_code(text,text),
   public.noel_claim(text,bigint,text),
   public.noel_unclaim(text,bigint,text),
-  public.noel_set_bought(text,bigint,text,boolean)
+  public.noel_set_bought(text,bigint,text,boolean),
+  public.noel_set_paid(text,bigint,text,numeric)
 to anon, authenticated;
 
 -- Initialisation (remplacer les deux codes par des phrases longues, différentes l'une de l'autre).
@@ -220,3 +260,14 @@ to anon, authenticated;
 -- values ('Liste de Noël de Dorian',
 --         extensions.crypt('CODE_PROPRIETAIRE', extensions.gen_salt('bf')),
 --         extensions.crypt('CODE_FAMILLE',      extensions.gen_salt('bf')));
+
+-- Relevé automatique gratuit des prix : toutes les 2 heures, la fonction noel-refresh relit les pages des marchands de 3 fiches au plus
+-- (celles dont la dernière lecture est la plus ancienne). Elle ne lit jamais les réservations : toutes les fiches sont traitées de la même façon.
+-- Aucune recherche SerpAPI n'est utilisée. La clé « anon » (publique) est celle de index.html ; ne pas la remplacer par une clé secrète.
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+-- select cron.schedule('noel-refresh', '17 */2 * * *', $job$
+--   select net.http_post(
+--     url := 'https://pegojglksepcfvispcrs.supabase.co/functions/v1/noel-refresh',
+--     headers := jsonb_build_object('Content-Type', 'application/json', 'apikey', 'CLE_ANON_PUBLIQUE', 'Authorization', 'Bearer CLE_ANON_PUBLIQUE'),
+--     body := '{"cron":true}'::jsonb) $job$);
