@@ -122,9 +122,17 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
   `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
 
 ## Style
-Carte d'un cadeau (étape 2) : grande photo (196 px, `object-fit:contain`, 92 px si le cadeau est pris), badges sur la photo, bloc « Meilleur prix » (prix, marchand, état de vérification,
-économie par rapport au prix médian des autres marchands en stock, 2 autres au moins, 1 € au moins), bouton « Voir l'offre », liste de prix, puis actions. Propriétaire : « Modifier » et « Envie forte »
-visibles, le reste dans « Plus d'actions ». La note sur les prix est repliée (« Comment lire les prix »). Formulaire de modification : marchands repliés, barre Enregistrer / Annuler fixe en bas.
+Mise en page (refonte du 31 octobre, `site/index.html` seulement : aucune base ni fonction serveur touchée) :
+- En-tête : compte à rebours, bouton « Affichage » (texte plus grand, thème automatique / clair / sombre, choix gardé dans `localStorage` `theme`), titre.
+- Famille : avancement, prénom, puis barre d'onglets « À prendre / Tout / Mes choix » collée en haut de l'écran (`#tabbar`, hors de `#familyTop` pour que `position:sticky` tienne sur toute la liste).
+- Recherche par mot (`#q`, titre, précision, version, catégorie ; côté page seulement, rien n'est stocké) et bloc replié « Trier et filtrer » (tri, catégorie, budget, ordre des marchands) avec pastille du nombre de réglages actifs.
+- Propriétaire : formulaire d'ajout en haut ; « Inviter la famille », « Sites en avant » et « Marchands écartés » regroupés dans un seul bloc replié « Réglages de la liste » (`#settings`) en bas de page.
+- Carte d'un cadeau : grande photo (200 px, `object-fit:contain`, 84 px si le cadeau est pris), badges sur la photo, nom, bloc « Meilleur prix » (prix, marchand, état de vérification,
+économie par rapport au prix médian des autres marchands en stock, 2 autres au moins, 1 € au moins), puis l'action principale (famille : « Je le prends » / « C'est acheté » en grand bouton, puis « Voir l'offre » ;
+propriétaire : « Voir l'offre », « Modifier », « Envie forte », le reste dans « Plus d'actions »). Tout le reste (liste de prix, historique, dernière lecture, comparateurs, « Écarter un marchand »)
+est replié dans « Tous les prix et détails » (`.det`). L'état ouvert / fermé de ces blocs est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
+- La note sur les prix est repliée (« Comment lire les prix »). Formulaire de modification : marchands repliés, barre Enregistrer / Annuler fixe en bas.
+- Icônes dans `.media` : la règle de taille ne vise que `.media > svg` (l'ancienne règle agrandissait aussi l'étoile et la coche des badges).
 Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thème clair et sombre via variables CSS.
 Texte en français simple, phrases courtes. Garder une seule colonne.
 
