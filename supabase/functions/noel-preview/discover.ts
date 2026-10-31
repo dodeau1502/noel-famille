@@ -32,7 +32,7 @@ function slugToText(u: string): string {
 const hostOf = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (_) { return ""; } };
 const isGoogle = (u: string) => /(^|\.)google\.[a-z.]+$/i.test(hostOf(u));
 
-// Pipeline complet : lecture de la page, recherche Google (2 recherches SerpAPI au plus, 3 avec le code-barres), vérification directe des marchands.
+// Pipeline complet : lecture de la page, recherche Google (2 recherches SerpAPI en général ; 4 au plus : code-barres en secours et seconde fiche), vérification directe des marchands.
 export async function discover(q: string, now = new Date(), opts: { token?: string; debug?: boolean } = {}) {
   let title = "", image = "", gtin = "";
   let searchText = q, pageOffer: Offer | null = null;
@@ -62,7 +62,7 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
   let rows: any[] = [];
   let product: ReturnType<typeof pickProduct> = null;
   if (opts.token) {
-    product = { token: opts.token, title: "", image: "", rows: [], alternatives: [] };
+    product = { token: opts.token, title: "", image: "", rows: [], alternatives: [], backups: [] };
   } else {
     shop = await serp({ engine: "google_shopping", q: searchText.slice(0, 120), google_domain: "google.fr" });
     searches++;
@@ -76,18 +76,23 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
     }
   }
 
-  // 3. Fiche produit Google (1 recherche) : tous les marchands qui vendent exactement ce produit
+  // 3. Fiche produit Google (1 recherche) : les marchands qui vendent ce produit (2 à 5 par fiche).
+  //    Si elle donne moins de 3 marchands retenus, une seconde fiche (de secours) est lue : 2 fiches au plus, soit 4 recherches au total au maximum.
   let storeOffers: Offer[] = [];
   let immReason = "";
   let rawStores: any[] = [];
-  if (product?.token) {
-    const imm = await serp({ engine: "google_immersive_product", page_token: product.token });
-    searches++;
+  const fiches: string[] = product?.token ? [product.token, ...(opts.token ? [] : (product.backups || []))] : [];
+  let fichesRead = 0;
+  for (const tk of fiches) {
+    if (fichesRead >= 2 || (fichesRead >= 1 && storeOffers.length >= 3)) break;
+    const imm = await serp({ engine: "google_immersive_product", page_token: tk });
+    searches++; fichesRead++;
     if (imm.ok) {
-      rawStores = imm.data?.product_results?.stores || [];
-      storeOffers = storesToOffers(rawStores, searchText);
+      const stores = imm.data?.product_results?.stores || [];
+      rawStores = rawStores.concat(stores);
+      storeOffers = mergeOffers(storeOffers, storesToOffers(stores, searchText));
       if (!title && opts.token) title = String(imm.data?.product_results?.title || "").slice(0, 120);
-    } else immReason = imm.reason || "";
+    } else { immReason = imm.reason || ""; if (/Limite|refus/.test(immReason)) break; }
   }
   // Les résultats de la liste plate ne servent que s'ils appartiennent à la fiche choisie
   const flat = pickOffers(product ? product.rows : rows, searchText).offers.map((o: Offer) => ({ ...o, via: "google" }));
@@ -116,7 +121,7 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
       q: searchText.slice(0, 120), rows: rows.length, product: product?.title ? product.title.slice(0, 80) : null, token: !!opts.token,
       list: rows.slice(0, 12).map((r: any) => [String(r.source ?? "").slice(0, 30), r.extracted_price ?? null, String(r.title ?? "").slice(0, 60)]),
       stores: rawStores.slice(0, 25).map((s: any) => [String(s?.name ?? "").slice(0, 30), s?.extracted_price ?? null, why(s), String(s?.title ?? "").slice(0, 60)]),
-      kept: storeOffers.length, flat: flat.length, candidates: cands.length,
+      kept: storeOffers.length, flat: flat.length, candidates: cands.length, fiches: fichesRead, searches,
     }));
   } catch (_) { /* le diagnostic ne doit jamais gêner la recherche */ }
 

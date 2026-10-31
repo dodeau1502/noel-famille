@@ -203,4 +203,61 @@ assert.equal(storesToOffers([{ name: "Boulanger", link: "/goto?url=Q", title: "N
 // Plusieurs vendeurs du même produit ne forment pas des alternatives ; deux produits différents oui
 const same = pickProduct([T("Sony Casque sans fil WH-1000XM5", 250, "a"), T("Casque Sony wh 1000XM5", 170, "b"), T("Sony WH-1000XM5", 220, "c")], "Sony WH-1000XM5");
 assert.equal(same.alternatives.length, 1);
+
+
+// --- v7 : cas réels du 31/10/2026 (DJI Lito X1, Sony XM5) : titres et prix tels que Google les a renvoyés ---
+import { optionalTokens, keyTokens } from "./offers.js";
+const QD = "DJI Lito X1 Fly More Combo RC-N3";
+// « RC-N3 » (radiocommande du combo) est facultatif ; une référence de modèle ne l'est jamais
+assert.deepEqual([...optionalTokens(QD)].sort(), ["n3", "rc"]);
+assert.ok(!keyTokens(QD).includes("n3") && keyTokens(QD).includes("x1"));
+for (const q of ["Casque sans fil Sony WH-1000XM5", "Appareil photo hybride Fujifilm X-T5 boitier nu", "Sony WH-1000XM5", "Console Nintendo Switch 2 Pack Joy-Con"]) assert.equal(optionalTokens(q).size, 0, q);
+
+const D = (title, source, price, tok) => R(title, source, price, { immersive_product_page_token: tok });
+const dji = [
+  D("DJI Lito X1 Fly More Combo", "Fnac.com", 519.99, "tFnac"),
+  D("DJI Lito 1 Fly More Combo", "Carrefour", 429.98, "tLito1"),                                   // autre modèle, moins cher : à refuser
+  D("DJI Bundle Fly More DJI Lito X1", "DJI Official Store", 579, "tBundle"),
+  D("DJI Lito X1 Combo à deux batteries version mise à jour du Mini", "Amazon.fr", 469, "tAmz"),
+  D("DJI Lito X1 Fly More Combo Plus", "Amazon.fr", 713, "tPlus"),                                  // version « Plus » : autre produit
+  D("DJI Drone Lito 1", "Galaxyandorra", 294.9, "tG1"),
+  D("DJI Lito X1 Fly More Combo RC-N3", "Patrick Modélisme", 579, "tPatrick"),
+  D("Lito X1 Fly More Combo (DJI RC-N3) + SanDisk Extreme Pro 128GB", "foto-erhardtfr", 559, "tFoto"), // lot avec carte SD
+];
+const pdj = pickProduct(dji, QD);
+assert.equal(pdj.token, "tFnac");                  // avant correction : seule la ligne « RC-N3 » passait (fiche à 1 marchand)
+assert.deepEqual(pdj.backups, ["tPatrick"]);
+assert.ok(!dji.filter(r => /Lito 1 |Plus|Drone Lito 1/.test(r.title)).some(r => pdj.rows.includes(r)));
+// Fiches de secours : jamais un pack plus spécifique ni un prix hors fourchette
+const QC = "Nintendo Switch 2";
+const pc = pickProduct([T("Console Nintendo Switch 2", 449, "tBare"), T("Console Nintendo Switch 2 Mario Kart World", 509, "tPack"), T("Console Nintendo Switch 2 noire", 1200, "tFar")], QC);
+assert.equal(pc.token, "tBare"); assert.deepEqual(pc.backups, []);
+// Fiche Google du bon produit (3 marchands) : les titres des marchands citent ou non « RC-N3 », aucun n'est écarté pour cela
+const fiche0 = [
+  { name: "Fnac.com", link: "https://www.fnac.com/Drone-Dji-Lito-X1", title: "Drone Dji Lito X1 Fly More Combo RC-N3 Gris", extracted_price: 519.99, shipping: "Gratuit" },
+  { name: "iBOOD", link: "https://www.ibood.com/fr/s-fr/o/dji-li", title: "DJI Lito X1 Caméra drone premium | Fly More Combo", extracted_price: 459, extracted_total: 466.95, shipping: "+ 7,95 €" },
+  { name: "Darty.com", link: "/goto?url=CAESyAEB", title: "Dji Lito X1 fly more combo RC-N3 Drone", extracted_price: 519.99, shipping: "Gratuit" },
+];
+const so0 = storesToOffers(fiche0, QD);
+assert.deepEqual(so0.map(o => o.store), ["iBOOD", "Fnac.com", "Darty.com"]);
+assert.equal(so0[0].shipping, 7.95); assert.equal(totalOf(so0[0]), 466.95);
+// Fiche du « Lito 1 » (autre modèle) : aucune offre retenue, le chiffre « x1 » fait la différence
+const fiche1 = [
+  { name: "Carrefour", link: "https://www.carrefour.fr/p/drone-dji-l", title: "Drone Dji Lito 1 Fly More Combo Rc-n3 4k 36 Min 3 Batteries", extracted_price: 429.98, shipping: "Gratuit" },
+  { name: "Darty.com", link: "https://www.darty.com/nav/achat/teleph", title: "Dji Lito 1 fly more combo RC-N3 Drone", extracted_price: 429.99 },
+  { name: "Boulanger", link: "/goto?url=CAEScwHr", title: "Dji - Drone Lito 1 Fly More Combo (Rc-N3)", extracted_price: 479, shipping: "Gratuit" },
+];
+assert.deepEqual(storesToOffers(fiche1, QD), []);
+// Plus de faux accessoire : « Combo à deux batteries », « avec chargeur » ; une vraie batterie reste écartée
+assert.equal(isAccessory("DJI Lito X1 Combo à deux batteries version mise à jour", QD), false);
+assert.equal(isAccessory("DJI Mini 4 Pro Fly More Combo avec chargeur", "DJI Mini 4 Pro Fly More Combo"), false);
+assert.equal(isAccessory("DJI Mini 4 Pro Fly More Combo 3 batteries", "DJI Mini 4 Pro Fly More Combo"), false);
+for (const t of ["Sony WH-1000XM5 Batterie 3.8V 1200mAh de CELLONIC", "batterie casque sans fils sony wh-1000xm5 charging case", "Batterie pour DJI Lito X1", "Chargeur DJI Lito X1"]) assert.equal(isAccessory(t, t.includes("DJI") ? QD : "Sony WH-1000XM5"), true, t);
+// Aucune confusion de modèle : XM4 / WF (écouteurs) / XM6 ne sont pas des XM5
+const QX = "Casque sans fil Sony WH-1000XM5";
+assert.equal(pickOffers([R("Sony WH-1000XM4 Casque sans fil", "Fnac", 199)], QX).offers.length, 0);
+assert.equal(pickOffers([R("Sony WF-1000XM5", "Sony Store Online FR", 199)], "Sony WH-1000XM5").offers.length, 0);
+assert.equal(pickProduct([T("Sony WH-1000XM5", 250, "tXM5")], "Sony WH-1000XM6"), null);
+assert.equal(pickProduct([T("Sony WH-1000XM4 Casque sans fil", 199, "tXM4")], QX), null);
+assert.equal(pickOffers([R("Sony Casque sans fil WH-1000XM5SA", "Darty", 243.66)], "Sony WH-1000XM5").offers.length, 1);   // suffixe de coloris : même produit
 console.log("offers OK");

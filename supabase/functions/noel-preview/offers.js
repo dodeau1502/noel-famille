@@ -24,9 +24,24 @@ export function cleanTitle(t, store = "") {
 // Couleurs : elles ne changent pas le modèle, on ne les exige pas dans les résultats
 const COLORS = new Set(["noir","noire","blanc","blanche","bleu","bleue","rouge","gris","grise","vert","verte","rose","argent","silver","black","white","blue","red","grey","gray","green","pink","gold","beige","violet","orange","jaune","titane"]);
 
+// Référence d'une pièce incluse dans un lot (« Fly More Combo RC-N3 » : la radiocommande). Google et beaucoup de marchands ne la
+// citent pas dans leurs titres : l'exiger écartait presque toutes les offres (cas réel, DJI Lito X1). Elle n'est facultative que si
+// elle suit un mot de lot (combo, pack, bundle, kit…) : une référence de modèle (« WH-1000XM5 », « X-T5 ») reste obligatoire.
+const BUNDLE_WORDS = new Set(["combo","pack","bundle","kit","set","coffret","lot"]);
+export function optionalTokens(query) {
+  const q = norm(query), out = new Set();
+  const re = /\b[a-z]{1,4}-[a-z]?\d[a-z0-9]*\b/g;
+  let m;
+  while ((m = re.exec(q))) {
+    if (tokens(q.slice(0, m.index)).some(t => BUNDLE_WORDS.has(t))) tokens(m[0]).forEach(t => out.add(t));
+  }
+  return out;
+}
+
 // Mots-clés qui identifient le produit : les premiers mots significatifs + TOUTES les références chiffrées de la requête
 export function keyTokens(query, n = 6) {
-  const all = tokens(query).filter(t => !COLORS.has(t));
+  const opt = optionalTokens(query);
+  const all = tokens(query).filter(t => !COLORS.has(t) && !opt.has(t));
   const first = all.slice(0, n);
   const digits = all.filter(t => /\d/.test(t) && !first.includes(t));
   return [...first, ...digits].slice(0, 9);
@@ -107,10 +122,14 @@ export function isMarketplace(store, url = "") {
 
 // Accessoires, jeux et lots : ils contiennent le nom du produit mais ne sont pas le produit
 const ACCESSORY = new Set(["coque","coques","etui","etuis","housse","housses","pochette","protection","protections","protege","films","film","verre","trempe","support","supports","fixation","cable","cables","chargeur","chargeurs","batterie","batteries","adaptateur","adaptateurs","filtre","filtres","accessoire","accessoires","vitrine","display","case","cover","sangle","bandouliere","trepied","poignee","lanyard","coussinet","coussinets","rechange","remplacement","sticker","stickers","skin","socle","manette","manettes","telecommande","pour","compatible","compatibles","for"]);
+// Ces mots décrivent aussi le contenu d'un lot (« Combo à deux batteries », « avec chargeur ») : ils ne font un accessoire
+// que s'ils ne sont pas introduits par un nombre ou « avec / à / inclus » (« Batterie 3.8V pour XM5 » reste un accessoire).
+const AMBIGUOUS = new Set(["batterie","batteries","chargeur","chargeurs","cable","cables","adaptateur","adaptateurs","support","supports","filtre","filtres","manette","manettes","telecommande","accessoire","accessoires"]);
+const INCLUDED = /^(avec|a|deux|trois|quatre|une|un|inclus|incluant|inclut|double|plusieurs|\d+|x\d+|\d+x)$/;
 export function isAccessory(title, query = "") {
   const q = new Set(norm(query).split(/[^a-z0-9]+/));
   const t = norm(title).split(/[^a-z0-9]+/);
-  if (t.some(w => ACCESSORY.has(w) && !q.has(w))) return true;
+  if (t.some((w, i) => ACCESSORY.has(w) && !q.has(w) && !(AMBIGUOUS.has(w) && INCLUDED.test(t[i - 1] || "")))) return true;
   return /\s\+\s/.test(title) && !/\+/.test(query); // « produit + autre chose » : lot
 }
 
@@ -229,7 +248,7 @@ export function pickProduct(results, query) {
       const med = median(ok.map(r => Number(r.extracted_price)));
       ok = ok.filter(r => { const p = Number(r.extracted_price); return p >= med * 0.6 && p <= med * 1.8; });
     }
-    return { token: "", title: shortest(ok), image: thumb(ok), rows: ok, alternatives: [] };
+    return { token: "", title: shortest(ok), image: thumb(ok), rows: ok, alternatives: [], backups: [] };
   }
   const groups = new Map();
   for (const r of withTok) {
@@ -252,9 +271,14 @@ export function pickProduct(results, query) {
     if (seen.has(k)) continue;
     seen.add(k); alts.push(g);
   }
+  // Fiches de secours (2 au plus) : les autres fiches qui passent le même filtre strict, sans mot en trop de plus que la fiche choisie
+  // (pas de pack plus spécifique) et dans la même fourchette de prix. Elles ne servent que si la première fiche donne peu de marchands
+  // (discover.ts) : une recherche de plus à chaque fois.
+  const backups = list.filter(g => g !== best && g.extras <= best.extras && g.price >= best.price * 0.5 && g.price <= best.price * 2).map(g => g.token);
   return {
     token: best.token, title: shortest(best.rows), image: thumb(best.rows) || thumb(ok), rows: best.rows,
     alternatives: alts.slice(0, 4).map(g => ({ token: g.token, title: shortest(g.rows), image: thumb(g.rows), price: g.price, count: g.count, extras: g.extras })),
+    backups: backups.slice(0, 2),
   };
 }
 

@@ -12,7 +12,9 @@ avec le numérique, surtout sur téléphone. Langue : français.
   `SERPAPI_KEY`) pour repérer la fiche produit exacte (`pickProduct` dans `offers.js`) ; fiche produit Google (`google_immersive_product`)
   pour tous les marchands ; lecture directe des pages des 5 offres les moins chères (`net.ts`, `verify.js`) : chaque offre est
   « vérifiée » (prix confirmé par la page du marchand, avec la date) ou « non vérifiée » (prix Google seulement). Coût : 2 recherches
-  SerpAPI par fiche ajoutée (3 avec le code-barres en secours). Le propriétaire peut choisir une autre fiche proposée (`token`, 1 recherche de plus).
+  SerpAPI par fiche ajoutée en général ; 4 au plus (code-barres en secours si Google ne trouve rien, et seconde fiche de secours lue
+  seulement si la première donne moins de 3 marchands retenus). Le propriétaire peut choisir une autre fiche proposée (`token`, 1 recherche de plus).
+  Chaque fiche Google ne liste que 2 à 5 marchands : c'est la limite de couverture, pas un défaut de filtrage.
 - `supabase/functions/noel-refresh/` : relecture GRATUITE des pages des marchands déjà connus (aucune recherche SerpAPI). Appelée par
   le planning de la base (`pg_cron`, toutes les 2 h, 3 fiches au plus, les moins récemment lues) et par le bouton « Actualiser » du propriétaire.
   Elle écrit le prix, l'état de vérification, le stock et l'historique (`noel_prices`).
@@ -69,7 +71,11 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
    (pro, max, combo, pack…), neuf uniquement (occasion, reconditionné, `second_hand_condition` écartés), places de marché et
    identifiants de vendeur écartés (Leboncoin, eBay, Vinted, Back Market, Rakuten…), prix suspects écartés (hors 0,6 à 1,8 fois la
    médiane dès 3 prix), comparateurs écartés (idealo, Kelkoo, Dealabs… : ce ne sont pas des marchands), classement par prix +
-   livraison quand elle est connue, rupture de stock en dernier. Ne pas assouplir ces règles sans ajouter un test dans `offers.test.mjs` ;
+   livraison quand elle est connue, rupture de stock en dernier. Exception encadrée : la référence d'une pièce incluse dans un lot
+   (« Fly More Combo RC-N3 ») est facultative, mais seulement si elle suit un mot de lot (`optionalTokens`) ; une référence de modèle
+   (WH-1000XM5, X-T5) reste obligatoire. Les mots « batterie, chargeur, câble… » ne font pas un accessoire quand ils décrivent le
+   contenu d'un lot (« avec chargeur », « deux batteries »). Les fiches de secours (`backups`) n'ont pas plus de mots en trop que la
+   fiche choisie et sont dans la même fourchette de prix (0,5 à 2 fois). Ne pas assouplir ces règles sans ajouter un test dans `offers.test.mjs` ;
    pour un nouveau site à exclure, l'ajouter aux listes `MARKET` / `COMPARATOR` de `offers.js` (et de sa copie dans `noel-refresh`) et de `index.html`.
    Ne jamais promettre « le meilleur prix absolu » : chaque prix affiche sa source, sa date et son état de vérification. Pas de lien affilié.
 5. Les fonctions `noel-preview` et `noel-refresh` ne répondent qu'au code propriétaire (`noel-refresh` accepte aussi le mode planning,
@@ -83,6 +89,10 @@ Texte en français simple, phrases courtes. Garder une seule colonne.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
 - Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).
+- Cas réel corrigé (DJI Lito X1 Fly More Combo RC-N3) : un seul résultat sur un site inconnu, car la référence RC-N3 était exigée dans
+  les titres Google. Les fiches Google restent bruitées (accessoires, autres versions) et ne donnent que 2 à 5 marchands ; avec peu de
+  marchands, c'est la couverture de Google qui limite, pas le filtre. Une fiche peut contenir une offre reconditionnée non signalée
+  (ex. un prix Fnac anormalement bas) : le prix reste « non vérifié » tant que la page ne le confirme pas.
 - Une recherche par nom seul (sans lien) peut choisir la mauvaise fiche : la page propose alors les autres fiches. Le lien du marchand marche mieux.
 - Pas de seconde source de prix (Kelkoo/idealo via Apify) ni de copie locale de la photo du marchand ; pas de test quotidien automatique.
 - Les formats d'URL de recherche d'idealo et du Dénicheur n'ont pas pu être testés depuis l'environnement de développement (idealo refusé,
