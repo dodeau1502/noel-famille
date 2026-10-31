@@ -633,12 +633,15 @@ function render(){
     const histBlock = other ? "" : histHtml(g);
     const img = /^https:\/\//.test(g.image||"") ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
     const q = encodeURIComponent(g.title);
+    const gt = /^\d{8,14}$/.test(g.gtin || "") ? g.gtin : "";   // code-barres lu sur la page du marchand, quand il existe
+    const qc = gt || q;                                          // idealo et Le Dénicheur : code-barres d'abord, sinon le nom
     const cmp = `<details class="cmp"><summary>Comparer les prix</summary><div class="chips">
         <a href="https://www.google.com/search?tbm=shop&hl=fr&gl=fr&q=${q}" target="_blank" rel="noopener noreferrer">Google Shopping</a>
-        <a href="https://www.idealo.fr/prechten.html?q=${q}" target="_blank" rel="noopener noreferrer">idealo</a>
+        <a href="https://www.idealo.fr/prechten.html?q=${qc}" target="_blank" rel="noopener noreferrer">idealo</a>
+        <a href="https://ledenicheur.fr/search?search=${qc}" target="_blank" rel="noopener noreferrer">Le Dénicheur</a>
         <a href="https://www.dealabs.com/search?q=${q}" target="_blank" rel="noopener noreferrer">Dealabs</a>
         <a href="https://www.amazon.fr/s?k=${q}" target="_blank" rel="noopener noreferrer">Amazon</a></div>
-        <small>Ouvre la recherche de ce produit chez chaque comparateur.</small></details>`;
+        <small>Ouvre la recherche de ce produit chez chaque comparateur${gt ? " (code-barres pour idealo et Le Dénicheur)" : ""}. Les prix y sont ceux du comparateur, à vérifier sur place.</small></details>`;
     let cls = "gift", badges = g.top ? `<span class="badge star">${STAR} Envie forte</span>` : "", act = "", extra = "";
     if(dr && !other) badges += `<span class="badge drop">Baisse de ${eur(dr.by)}</span>`;
     if(role === "owner"){

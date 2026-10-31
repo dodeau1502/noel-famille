@@ -49,6 +49,9 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
   « Prix en baisse » (sans notification ; une baisse n'est annoncée que si les deux prix ont été lus sur le site du marchand), prix payé et
   « Prix moins cher trouvé » (famille, sur le cadeau qu'elle a pris), choix d'une autre fiche produit, alerte de doublon,
   invitation de la famille (le code famille est gardé dans le navigateur du propriétaire seulement), texte agrandi.
+  « Comparer les prix » : liens de recherche ouverts par la famille (Google Shopping, idealo, Le Dénicheur, Dealabs, Amazon) ; idealo et
+  Le Dénicheur reçoivent le code-barres (`gtin`) quand il est connu, sinon le nom. Ce sont de simples liens : aucune lecture automatique de
+  ces sites, aucun de leurs prix n'est stocké dans `offers` (règle 4 : les comparateurs ne sont pas des marchands).
   Le code d'accès est mémorisé dans `localStorage` de l'appareil (bouton « Quitter »). Pas de service worker.
   Pas prévu volontairement : participation groupée, notification de réservation, commentaires.
 
@@ -82,6 +85,10 @@ Texte en français simple, phrases courtes. Garder une seule colonne.
 - Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).
 - Une recherche par nom seul (sans lien) peut choisir la mauvaise fiche : la page propose alors les autres fiches. Le lien du marchand marche mieux.
 - Pas de seconde source de prix (Kelkoo/idealo via Apify) ni de copie locale de la photo du marchand ; pas de test quotidien automatique.
+- Les formats d'URL de recherche d'idealo et du Dénicheur n'ont pas pu être testés depuis l'environnement de développement (idealo refusé,
+  robots.txt du Dénicheur interdit la lecture automatique de ses recherches) : à contrôler à la main sur téléphone, avec et sans code-barres.
+- Pas de lecture des prix d'idealo (point d'accès non documenté, non vérifiable) : à ne pas ajouter sans échantillon réel de réponse et
+  sans accord explicite du propriétaire sur la règle 4.
 
 ## Vérifier avant de pousser
 - `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs` et `node supabase/functions/shared.test.mjs`
