@@ -1,0 +1,27 @@
+# Déploiement Coolify (ressource « Docker Compose », branche main, ce fichier).
+# Seul le service « app » reçoit un domaine (port 8000). PostgREST n'est jamais exposé.
+# Les deux services doivent être sur le même réseau Docker que le PostgreSQL central
+# (option Coolify « Connect to Predefined Network »).
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - SUPABASE_URL=http://127.0.0.1:8001
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:?}
+      - SERPAPI_KEY=${SERPAPI_KEY:?}
+      - CRON_SECRET=${CRON_SECRET:?}
+      - POSTGREST_URL=http://postgrest:3000
+    depends_on:
+      - postgrest
+    restart: unless-stopped
+  postgrest:
+    image: postgrest/postgrest:${POSTGREST_VERSION:?}
+    environment:
+      - PGRST_DB_URI=postgres://noel_authenticator:${NOEL_DB_PASSWORD:?}@${POSTGRES_HOST:?}:5432/noel
+      - PGRST_DB_SCHEMAS=public
+      - PGRST_DB_ANON_ROLE=anon
+      - PGRST_JWT_SECRET=${JWT_SECRET:?}
+    restart: unless-stopped

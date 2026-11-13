@@ -510,8 +510,8 @@
 
 <script>
 // Renseignés pour ce projet Supabase (clé publique, sans danger : les tables ne sont pas lisibles directement)
-const SUPABASE_URL = "https://pegojglksepcfvispcrs.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ29qZ2xrc2VwY2Z2aXNwY3JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzOTE3NzQsImV4cCI6MjEwODk2Nzc3NH0.DlXsZxkTlQySf7BaxHlMvaY7cg0qyIxC7atsp-RMza0";
+const SUPABASE_URL = location.origin;
+const SUPABASE_KEY = "__SUPABASE_ANON_KEY__"; // remplacé par le serveur au service de la page (clé publique par conception)
 
 const $ = id => document.getElementById(id);
 const store = {
