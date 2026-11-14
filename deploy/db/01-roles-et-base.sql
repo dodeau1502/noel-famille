@@ -1,4 +1,4 @@
--- À exécuter en superutilisateur, connecté à la base « postgres » du PostgreSQL central :
+-- À exécuter en superutilisateur, connecté à la base « postgres » du PostgreSQL « noel-db » :
 --   psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v mdp="$NOEL_DB_PASSWORD" -f 01-roles-et-base.sql
 -- Le mot de passe n'est jamais écrit dans ce fichier : il vient de la variable psql « mdp ».
 -- Les rôles sont communs à tout le serveur PostgreSQL ; les noms anon / authenticated / service_role sont ceux
