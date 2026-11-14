@@ -1,6 +1,6 @@
 # Liste de Noël famille : consignes pour l'IA
 
-Site statique (une seule page) + base Supabase. Le propriétaire (Dorian) y met ses idées de cadeaux, ses proches
+Site d'une seule page, servi par un petit serveur Deno avec une base PostgreSQL, le tout sur le VPS de Dorian (`https://noel.dorianlab.fr`, Coolify). Supabase n'est plus utilisé en production depuis la bascule (novembre 2026). Le propriétaire (Dorian) y met ses idées de cadeaux, ses proches
 réservent ce qu'ils offrent, et le propriétaire ne voit jamais les réservations. Public : famille, y compris peu à l'aise
 avec le numérique, surtout sur téléphone. Langue : français.
 
@@ -16,25 +16,28 @@ avec le numérique, surtout sur téléphone. Langue : français.
   seulement si la première donne moins de 3 marchands retenus). Le propriétaire peut choisir une autre fiche proposée (`token`, 1 recherche de plus).
   Chaque fiche Google ne liste que 2 à 5 marchands : c'est la limite de couverture, pas un défaut de filtrage.
 - `supabase/functions/noel-refresh/` : relecture GRATUITE des pages des marchands déjà connus (aucune recherche SerpAPI). Appelée par
-  le planning de la base (`pg_cron`, toutes les 2 h, 3 fiches au plus, les moins récemment lues) et par le bouton « Actualiser » du propriétaire.
+  la tâche planifiée Coolify (toutes les 2 h, 3 fiches au plus, les moins récemment lues ; en-tête `x-cron-secret`) et par le bouton « Actualiser » du propriétaire.
   Elle écrit le prix, l'état de vérification, le stock et l'historique (`noel_prices`).
 - `supabase/functions/noel-preview/{parse.js,offers.js,verify.js,net.ts}` sont copiés à l'identique dans `noel-refresh/`
   (`node supabase/functions/shared.test.mjs` le vérifie). Après une modification, recopier puis redéployer les deux fonctions.
   Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
   `trust.js` (sécurité des marchands) n'existe que dans `noel-preview/` ; `noel-refresh` conserve le champ `trust` des offres sans le recalculer.
 - `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
-- `.github/workflows/pages.yml` : publie `site/` sur GitHub Pages à chaque push sur `main`.
+- `server/main.ts`, `Dockerfile`, `docker-compose.coolify.yml` : serveur Deno (page + fonctions `noel-*` + relais PostgREST), PostgREST et service `backup`. `deploy/` : scripts de base, `RUNBOOK.md`.
+- `redirect/` + `.github/workflows/pages.yml` : GitHub Pages ne publie plus qu'une redirection vers `noel.dorianlab.fr` (le `#c=` est conservé).
 
 ## Publier
-Pousser sur `main` suffit. Rien d'autre. Le site se met à jour en 1 à 2 minutes.
+Le site est déployé par Coolify depuis ce dépôt (projet `noel`, ressource `noel-app`) : fusionner sur la branche suivie, puis « Redeploy » à la main dans Coolify (pas de webhook), puis vérifier `https://noel.dorianlab.fr/healthz`. Un push sur `main` ne publie que la page de redirection sur GitHub Pages. Documentation d'exploitation : dossier `vps-infra` de Dorian (`JOURNAL.md`, `ARCHITECTURE.md`).
 
-## Supabase
-Projet `pegojglksepcfvispcrs` (région eu-west-3). Changer la base : `apply_migration`, puis mettre à jour `supabase/schema.sql`.
+## Base et fonctions (VPS)
+La base est `noel-db` (PostgreSQL 17, ressource Coolify privée, aucun port publié). Changer la base : écrire une migration SQL, l'appliquer par SSH dans le conteneur (`psql`) en tant que `noel_owner`, puis mettre à jour `supabase/schema.sql`. Les fonctions `noel-preview` et `noel-refresh` tournent dans le service `app` (code du dossier `supabase/functions/`). L'ancien projet Supabase `pegojglksepcfvispcrs` n'est plus la production (gardé quelques semaines, puis en pause) : ne plus y déployer. Les anciennes instructions ci-dessous (`apply_migration`, `deploy_edge_function`, `verify_jwt`) sont obsolètes.
+
+Ancienne description (historique) :
 Changer une fonction : `deploy_edge_function` (`noel-preview` : `index.ts`, `discover.ts`, `net.ts`, `parse.js`, `offers.js`, `verify.js` ;
 `noel-refresh` : `index.ts`, `net.ts`, `parse.js`, `offers.js`, `verify.js` ; `verify_jwt: true` pour les deux), puis garder le dossier du
-dépôt identique à ce qui est déployé. Le planning (`pg_cron`) est décrit en fin de `schema.sql` ; la clé « anon » publique y est remplacée par un repère.
+dépôt identique à ce qui est déployé. Le relevé toutes les 2 h est maintenant une tâche planifiée Coolify (`price-refresh`, service `app`) ; le bloc `pg_cron` de `schema.sql` est conservé pour l'historique et n'est pas appliqué sur le VPS.
 
-Le secret `SERPAPI_KEY` est stocké côté Supabase (jamais dans le dépôt). Règle : on reste sur l'offre gratuite (environ 250 recherches
+Le secret `SERPAPI_KEY` est une variable de la ressource Coolify (vide pour l'instant : la recherche de produit est désactivée ; jamais dans le dépôt). Règle : on reste sur l'offre gratuite (environ 250 recherches
 par mois). Seul l'ajout d'une fiche, le choix d'une autre fiche proposée et le bouton « Autres marchands » (avec confirmation) consomment
 des recherches. L'actualisation des prix (automatique ou bouton) lit les pages des marchands directement et ne consomme rien.
 Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
@@ -85,7 +88,7 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
    (`noel-refresh`) traite toutes les fiches de la même façon : il choisit uniquement d'après `checked_at` et ne lit jamais `noel_claims`
    (sinon les dates de relevé révéleraient quels cadeaux sont pris). L'historique des prix est identique pour tous.
 2. Aucun accès direct aux tables depuis l'API publique : garder RLS activé, aucune policy, `revoke all` pour `anon` et
-   `authenticated`. Tout passe par les fonctions `noel_*` qui vérifient un code.
+   `authenticated` (sur le VPS, le serveur Deno ne relaie en plus que les appels `rpc/noel_*` : `/rest/v1/<table>` donne 403). Tout passe par les fonctions `noel_*` qui vérifient un code.
 3. Ne jamais écrire les codes d'accès (propriétaire ou famille) dans le dépôt, un commit, une issue ou un message de PR.
    Ils ne sont stockés que sous forme d'empreinte en base. La clé « anon » de Supabase dans `index.html` est publique par conception.
 4. Les offres affichées doivent correspondre au produit et être fiables (`offers.js`, doublé côté page par `isMarket`) :

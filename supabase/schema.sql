@@ -458,6 +458,8 @@ to anon, authenticated;
 --         extensions.crypt('CODE_PROPRIETAIRE', extensions.gen_salt('bf')),
 --         extensions.crypt('CODE_FAMILLE',      extensions.gen_salt('bf')));
 
+-- NOTE VPS (novembre 2026) : sur le VPS, pg_cron / pg_net ne sont pas installés (les scripts deploy/db et restore-test les retirent)
+-- et le relevé est une tâche planifiée Coolify (`price-refresh`). Le bloc ci-dessous ne sert plus qu'à l'historique de l'ancien hébergement Supabase.
 -- Relevé automatique gratuit des prix : toutes les 2 heures, la fonction noel-refresh relit les pages des marchands de 3 fiches au plus
 -- (celles dont la dernière lecture est la plus ancienne). Elle ne lit jamais les réservations : toutes les fiches sont traitées de la même façon.
 -- Aucune recherche SerpAPI n'est utilisée. La clé « anon » (publique) est celle de index.html ; ne pas la remplacer par une clé secrète.
