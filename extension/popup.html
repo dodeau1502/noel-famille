@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liste de Noël</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup">
+<!-- Première utilisation -->
+<section id="vSetup" hidden>
+  <h1>Liste de Noël</h1>
+  <p class="muted">Renseigne l'adresse de ta liste et ton code propriétaire pour commencer.</p>
+  <button class="btn" id="openOpts" type="button">Ouvrir les réglages</button>
+</section>
+
+<!-- Ajout -->
+<form id="vMain" hidden>
+  <header class="top">
+    <h1>Ajouter à ma liste</h1>
+    <button class="link" id="gear" type="button" title="Réglages" aria-label="Réglages">Réglages</button>
+  </header>
+  <p class="status" id="reading">Lecture de la page…</p>
+  <div id="fields" hidden>
+    <div class="preview">
+      <div class="thumb" id="thumb"></div>
+      <div class="pmeta"><span class="store" id="storeName"></span><span class="srcnote" id="srcNote"></span></div>
+    </div>
+    <label for="title">Nom du cadeau
+      <input id="title" type="text" maxlength="120" autocomplete="off">
+    </label>
+    <div class="row2">
+      <label for="price">Prix (€)
+        <input id="price" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
+      </label>
+      <label class="pill" for="top"><input id="top" type="checkbox"> Envie forte</label>
+    </div>
+    <label for="note">Précision (facultatif)
+      <input id="note" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
+    </label>
+    <label class="check" for="srch">
+      <input id="srch" type="checkbox">
+      <span>Chercher aussi chez d'autres marchands
+        <small id="srchHint">Utilise 2 des environ 250 recherches gratuites du mois. Sinon, tu pourras le faire plus tard depuis la fiche (« Autres marchands »).</small></span>
+    </label>
+    <p class="warn" id="warn" role="alert" hidden></p>
+    <button class="btn big" type="submit" id="add">Ajouter à la liste</button>
+  </div>
+  <p class="msg" id="err" role="alert"></p>
+</form>
+
+<!-- Terminé -->
+<section id="vDone" hidden>
+  <h1>Ajouté ✓</h1>
+  <p id="doneTxt"></p>
+  <div class="row2">
+    <a class="btn" id="openList" target="_blank" rel="noopener">Ouvrir ma liste</a>
+    <button class="btn ghost" id="close" type="button">Fermer</button>
+  </div>
+</section>
+
+<script src="extract.js"></script>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

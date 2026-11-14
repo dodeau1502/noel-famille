@@ -29,6 +29,8 @@ Public : famille, y compris peu à l'aise avec le numérique, surtout sur télé
   (`node supabase/functions/shared.test.mjs` le vérifie). Après une modification, recopier puis redéployer les deux fonctions.
   Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
   `trust.js` (sécurité des marchands) n'existe que dans `noel-preview/` ; `noel-refresh` conserve le champ `trust` des offres sans le recalculer.
+- `extension/` : extension de navigateur (Manifest V3, Firefox / Chrome / Safari) qui ajoute à la liste le produit de la page affichée (`noel_add`, et `noel-preview` seulement si la case est cochée : 2 recherches SerpAPI).
+  Propriétaire seulement ; aucun code ni clé dans le dossier. Listes `MARKET` / `COMPARATOR` de `extension/lib.js` copiées de `offers.js` (à garder identiques). Détails et limites : `extension/README.md`. Test : `node extension/test/lib.test.mjs`. Non publiée (seul `site/` l'est).
 - `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
 - `.github/workflows/pages.yml` : publie `site/` sur GitHub Pages à chaque push sur `main`.
 
@@ -144,6 +146,10 @@ ou automatique (`localStorage` `theme`), et le texte agrandi (`size`). Interface
 - Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée), formulaire d'ajout en haut, recherche et « Trier et filtrer » conservés, « Inviter la famille »,
   « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`). Le message d'invitation ne parle plus de réservation.
 - L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
+- Refonte de la partie propriétaire (14 novembre, `site/index.html` seulement, règles CSS sous `body[data-role="owner"]`, la vue famille n'est pas touchée) : page large (1120 px) sur ordinateur,
+  en-tête compact, barre d'ajout en une ligne (`#addForm`, aperçu à gauche, précision / « Envie forte » / « Corriger le nom ou le prix » / « Ajouter à la liste » à droite), barre d'outils
+  « Mes idées N » + recherche + « Trier et filtrer » + « Actualiser tous les prix » sur une ligne, liste en grille (3 colonnes dès 960 px, 2 dès 640 px, 1 sur téléphone), fiche en modification
+  sur toute la largeur et en deux colonnes dès 860 px, réglages côte à côte. Les identifiants des éléments et la logique d'ajout sont inchangés. Le nombre affiché est le total des idées (aucun lien avec les réservations, règle 1).
 - Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)

@@ -302,6 +302,90 @@
   .fgrab{width:44px; height:5px; border-radius:3px; background:var(--line); margin:0 auto; flex:none}
   body.nosc{overflow:hidden}
 
+  /* ===== Partie propriétaire (refonte du 14 novembre) : interface de gestion dense, large sur ordinateur =====
+     Ne concerne que body[data-role="owner"] ; la vue famille n'est pas touchée. */
+  body[data-role="owner"] main{max-width:1120px; gap:14px}
+
+  /* En-tête compact, aligné à gauche */
+  body[data-role="owner"] .head{flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px}
+  body[data-role="owner"] .toprow{order:2; margin-left:auto}
+  body[data-role="owner"] .hd{order:1; flex:1 1 320px; background:transparent; padding:4px 2px 0; text-align:left; display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 14px}
+  body[data-role="owner"] h1{font-size:clamp(1.6rem,6vw,2.1rem); text-align:left; letter-spacing:.03em}
+  body[data-role="owner"] .hd .lead{margin:0; font-size:.95rem}
+  body[data-role="owner"] .toprow{gap:8px}
+
+  /* Barre d'ajout */
+  .addbar{display:flex; flex-direction:column; gap:10px; padding:16px 18px; border-color:var(--pine); box-shadow:var(--shadow)}
+  .addhead{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 12px}
+  .addhead label{font:400 1.35rem/1.2 var(--f-display); letter-spacing:.02em}
+  .addhead .hint{color:var(--muted); font-size:.92rem}
+  .addbar .search-row input{min-height:54px; font-size:1.05rem}
+  .addbar .search-row .btn{min-height:54px; padding-inline:26px}
+  .addbar #result{display:grid; grid-template-columns:1fr; gap:14px; border-top:1px solid var(--line); padding-top:14px}
+  .addbar .res-a,.addbar .res-b{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .addbar .preview{padding:12px; grid-template-columns:88px minmax(0,1fr)}
+  .addbar .preview .thumb{width:88px; height:88px}
+  .addbar .preview h3{font-size:1.15rem}
+  label.check.pill{align-self:flex-start; min-height:44px; padding:6px 16px 6px 12px; border:1.5px solid var(--line); border-radius:999px}
+  label.check.pill:has(input:checked){background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
+  .addbar details.manual{border:1px dashed var(--line); border-radius:12px; padding:0 14px}
+  .addbar details.manual[open]{padding-bottom:12px}
+  @media (min-width:860px){
+    .addbar #result{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:20px; align-items:start}
+  }
+
+  /* Barre d'outils de la liste : une seule ligne sur ordinateur */
+  body[data-role="owner"] .listbar{flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px}
+  body[data-role="owner"] .listbar .lh{font:400 1.35rem/1 var(--f-display); letter-spacing:.02em; flex:0 0 auto; margin-right:4px}
+  body[data-role="owner"] .listbar .lh span{color:var(--pine); margin-left:4px}
+  body[data-role="owner"] .listbar input[type=search]{flex:1 1 220px; min-width:0}
+  body[data-role="owner"] .listbar .filters{flex:0 0 auto}
+  body[data-role="owner"] .listbar .filters[open]{flex:1 1 100%; order:9}
+  body[data-role="owner"] .listbar #bulkWrap{flex:0 0 auto}
+  body[data-role="owner"] #bulkWrap .btn{width:auto; min-height:48px}
+  body[data-role="owner"] .filtergrid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+  /* Liste en grille de cartes compactes */
+  body[data-role="owner"] .gifts{display:grid; grid-template-columns:1fr; gap:14px; align-items:start}
+  @media (min-width:640px){ body[data-role="owner"] .gifts{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (min-width:960px){ body[data-role="owner"] .gifts{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  body[data-role="owner"] .gift{border-radius:16px; transition:border-color .12s ease}
+  body[data-role="owner"] .gift:not(.edit):hover{border-color:var(--pine)}
+  body[data-role="owner"] .gift .media{height:150px}
+  body[data-role="owner"] .gift .body{gap:10px; padding:14px}
+  body[data-role="owner"] .gift h3{font-size:1.12rem}
+  body[data-role="owner"] .hp{padding:10px 12px}
+  body[data-role="owner"] .hp b{font-size:1.9rem}
+  body[data-role="owner"] .cta{min-height:40px; padding:6px 14px; font-size:.95rem; border-color:var(--line); color:var(--ink)}
+  body[data-role="owner"] .gift .see{font-size:.9rem}
+  body[data-role="owner"] .gift .act{gap:6px}
+  body[data-role="owner"] .gift .act .btn.small{min-height:40px; padding:6px 12px; font-size:.92rem}
+  body[data-role="owner"] .act .more{flex:0 0 auto}
+  body[data-role="owner"] .act .more[open]{flex:1 1 100%}
+  body[data-role="owner"] .more summary{min-height:40px; padding:0 12px; border:1.5px solid var(--line); border-radius:12px; color:var(--ink); font-size:.92rem}
+  body[data-role="owner"] .more summary::after{content:" ▾"; margin-left:6px; color:var(--muted)}
+  body[data-role="owner"] .more[open] summary{border-color:var(--pine); color:var(--pine)}
+  body[data-role="owner"] .det > summary{min-height:44px; font-size:.95rem}
+  @media (max-width:559px){ body[data-role="owner"] .gift .media{height:132px} }
+
+  /* Modification d'une fiche : pleine largeur, deux colonnes sur ordinateur */
+  body[data-role="owner"] .gift.edit{grid-column:1 / -1; border-radius:16px}
+  @media (min-width:860px){
+    body[data-role="owner"] .gift.edit{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; padding:20px}
+    body[data-role="owner"] .gift.edit > :not(label){grid-column:1 / -1}
+  }
+
+  /* Réglages : blocs côte à côte */
+  body[data-role="owner"] .settings{padding:6px 18px}
+  @media (min-width:860px){
+    body[data-role="owner"] .settings > .sub{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:start}
+  }
+  @media (max-width:559px){
+    .addbar .search-row{flex-direction:column}
+    .addbar .search-row .btn{width:100%}
+    body[data-role="owner"] .toprow{margin-left:0}
+  }
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
 </head>
@@ -339,40 +423,43 @@
 
       <!-- Vue propriétaire : ajout d'une idée -->
       <div id="ownerTop" class="stack" hidden>
-        <p class="note-owner">Ta famille voit cette liste en lecture seule : elle ne peut rien réserver.</p>
-
-        <form class="card panel" id="addForm">
-          <h2>Ajouter une idée</h2>
-          <label for="gQuery">Lien ou nom du produit
-            <div class="search-row">
-              <input id="gQuery" type="text" maxlength="300" placeholder="Colle un lien ou écris le nom" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
-              <button class="btn" type="button" id="searchBtn">Chercher</button>
-            </div>
-          </label>
+        <form class="card addbar" id="addForm">
+          <div class="addhead">
+            <label for="gQuery">Ajouter une idée</label>
+            <span class="hint">Colle l'adresse d'un produit, ou écris son nom</span>
+          </div>
+          <div class="search-row">
+            <input id="gQuery" type="text" maxlength="300" placeholder="https://… ou « casque Sony WH-1000XM5 »" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+            <button class="btn" type="button" id="searchBtn">Rechercher</button>
+          </div>
           <p class="status" id="lookup" aria-live="polite" hidden></p>
           <div id="result" hidden>
-            <div class="preview">
-              <div class="thumb" id="pvThumb"></div>
-              <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
-            </div>
-            <div class="alts" id="alts" hidden></div>
-            <p class="warn" id="dupWarn" role="alert" hidden></p>
-            <label for="gNote">Précision (facultatif)
-              <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
-            </label>
-            <label class="check" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
-            <details class="manual" id="manual">
-              <summary>Corriger à la main</summary>
-              <div class="grid2">
-                <label for="gTitle">Nom du cadeau
-                  <input id="gTitle" type="text" maxlength="120" autocomplete="off">
-                </label>
-                <label for="gPrice">Prix en euros
-                  <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
-                </label>
+            <div class="res-a">
+              <div class="preview">
+                <div class="thumb" id="pvThumb"></div>
+                <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
               </div>
-            </details>
-            <button class="btn big" type="submit" id="addBtn">Ajouter à la liste</button>
+              <div class="alts" id="alts" hidden></div>
+              <p class="warn" id="dupWarn" role="alert" hidden></p>
+            </div>
+            <div class="res-b">
+              <label for="gNote">Précision (facultatif)
+                <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
+              </label>
+              <label class="check pill" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
+              <details class="manual" id="manual">
+                <summary>Corriger le nom ou le prix</summary>
+                <div class="grid2">
+                  <label for="gTitle">Nom du cadeau
+                    <input id="gTitle" type="text" maxlength="120" autocomplete="off">
+                  </label>
+                  <label for="gPrice">Prix en euros
+                    <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
+                  </label>
+                </div>
+              </details>
+              <button class="btn big" type="submit" id="addBtn">Ajouter à la liste</button>
+            </div>
           </div>
         </form>
       </div>
@@ -383,6 +470,7 @@
 
       <!-- Recherche, tri et filtres (repliés) -->
       <div class="listbar" id="listbar" hidden>
+        <h2 class="lh">Mes idées <span id="gcount"></span></h2>
         <input id="q" type="search" placeholder="Chercher un cadeau" autocomplete="off" aria-label="Chercher un cadeau dans la liste" enterkeyhint="search">
         <details class="filters" id="filters">
           <summary><span>Trier et filtrer</span><span class="fc" id="fcount" hidden></span></summary>
@@ -764,6 +852,7 @@ function renderList(){
   $("listbar").hidden = role === "family" || !gifts.length;
   $("sort").value = sort;
   $("omode").value = orderMode();
+  $("gcount").textContent = gifts.length ? String(gifts.length) : "";
 
   // Famille : aucune recherche, aucun filtre ni tri ; les réglages éventuellement gardés sur l'appareil sont ignorés
   if(role === "family"){ list.innerHTML = famHtml(); return; }
@@ -843,7 +932,7 @@ function giftHtml(g){
         ? `<p class="status" style="width:100%">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button class="btn ghost small" data-researchno>Non</button></div>`
         : `<button class="btn ghost small" data-edit="${g.id}">Modifier</button>`
           + `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
-          + `<details class="more"${dk("m" + g.id)}><summary>Plus d'actions</summary><div class="act">`
+          + `<details class="more"${dk("m" + g.id)}><summary>Plus</summary><div class="act">`
           + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Relire les prix de ${esc(g.title)} (gratuit)">${refreshing.has(g.id) ? "Lecture…" : "Actualiser"}</button>`
           + `<button class="btn ghost small" data-research="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Chercher d'autres marchands pour ${esc(g.title)}">Autres marchands</button>`
           + `<button class="btn ghost small" data-del="${g.id}">Retirer</button></div></details>`;
