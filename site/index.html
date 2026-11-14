@@ -1285,6 +1285,7 @@ document.addEventListener("error", e=>{
   let c = "", gestion = false;
   try{
     gestion = /[#&]gestion\b/.test(location.hash);
+    if(/[#&]quitter\b/.test(location.hash)){ store.del("c"); try{ sessionStorage.removeItem("c"); }catch(e){} try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
     const m = location.hash.match(/[#&]c=([^&]+)/);
     if(m){ c = decodeURIComponent(m[1]); store.set("c", c); }
   }catch(e){}
@@ -1293,6 +1294,7 @@ document.addEventListener("error", e=>{
   code = c; $("app").hidden = false; showSkeleton();
   load().then(()=>{ if(code && role !== "owner"){ code = ""; store.del("c"); return load(); } })
     .catch(err=>{
+      if(code && !err.bad) $("foot").hidden = false; // même si le chargement échoue, on doit pouvoir quitter la gestion
       if(err.bad && code){ code = ""; store.del("c"); if(gestion){ toLogin("Ce code n'est plus valide. Saisis ton code propriétaire."); return; } return load().catch(e2=>{ $("appErr").textContent = e2.message; }); }
       if(err.bad) toLogin(err.message); else $("appErr").textContent = err.message;
     });
