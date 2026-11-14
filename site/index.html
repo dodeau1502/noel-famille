@@ -326,11 +326,11 @@
 
   <!-- Connexion de secours (le lien direct s'en passe) -->
   <form class="card login" id="login" hidden>
-    <h2>Entre ton code</h2>
-    <label for="code">Lien ou code reçu
-      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le lien ou le code">
+    <h2>Gestion de la liste</h2>
+    <label for="code">Ton code propriétaire
+      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle ton code">
     </label>
-    <button class="btn" type="submit">Voir la liste</button>
+    <button class="btn" type="submit">Ouvrir la gestion</button>
     <p class="msg" id="loginErr" role="alert"></p>
   </form>
 
@@ -430,17 +430,9 @@
           <details class="share" id="share">
             <summary>Inviter la famille</summary>
             <div class="sharebox">
-              <label for="famCode">Code famille
-                <input id="famCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le code famille ou renouvelle-le">
-              </label>
               <textarea id="shareMsg" readonly aria-label="Message à envoyer"></textarea>
               <div class="rowbtns">
                 <button class="btn" type="button" id="copyBtn">Copier le message</button>
-                <button class="btn ghost" type="button" id="renewBtn">Renouveler le code</button>
-              </div>
-              <div class="confirm" id="renewConfirm" hidden>
-                <button class="btn small" type="button" id="renewYes">Oui, renouveler</button>
-                <button class="btn ghost small" type="button" id="renewNo">Non</button>
               </div>
               <p class="status" id="shareStatus" aria-live="polite"></p>
             </div>
@@ -477,7 +469,7 @@
   </section>
 
   <footer class="foot" id="foot" hidden>
-    <button class="linkbtn" id="logout" type="button">Quitter cette liste sur cet appareil</button>
+    <button class="linkbtn" id="logout" type="button">Quitter la gestion sur cet appareil</button>
   </footer>
 </main>
 
@@ -704,11 +696,11 @@ $("themeBtn").addEventListener("click", ()=>{
 
 /* ---------- Icône d'écran d'accueil : manifeste local contenant le lien de la liste ---------- */
 function setManifest(){
-  if(manifestSet || !code) return;
+  if(manifestSet) return;
   try{
     const base = location.href.split("#")[0];
     const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#0d1117", theme_color:"#0d1117",
-      start_url: base + "#c=" + encodeURIComponent(code), scope: base.replace(/[^/]*$/, ""),
+      start_url: code ? base + "#c=" + encodeURIComponent(code) : base, scope: base.replace(/[^/]*$/, ""),
       icons:[{src:new URL("icon-192.png", base).href, sizes:"192x192", type:"image/png", purpose:"any"},
              {src:new URL("icon-512.png", base).href, sizes:"512x512", type:"image/png", purpose:"any"}]};
     const url = URL.createObjectURL(new Blob([JSON.stringify(m)], {type:"application/manifest+json"}));
@@ -726,9 +718,10 @@ function toLogin(message){
   $("loginErr").textContent = message || "";
 }
 
+// « public » (sans code) = lecture seule, affichée comme la vue famille
 async function load(){
-  const d = await rpc("noel_get", {p_code:code});
-  role = d.role; gifts = d.gifts || []; blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
+  const d = code ? await rpc("noel_get", {p_code:code}) : await rpc("noel_public", {});
+  role = d.role === "owner" ? "owner" : "family"; gifts = d.gifts || []; blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
   const dp = d.display && typeof d.display === "object" ? d.display : {};
   display = {
     featured: (Array.isArray(dp.featured) ? dp.featured : []).filter(f => f && typeof f.key === "string" && typeof f.label === "string").slice(0,10),
@@ -741,6 +734,7 @@ async function load(){
   $("ownerTop").hidden = role !== "owner";
   $("settings").hidden = role !== "owner";
   $("bulkWrap").hidden = role !== "owner";
+  $("logout").hidden = role !== "owner";
   $("lead").textContent = role === "owner"
     ? "Ta liste, telle que ta famille la voit."
     : "Voici mes idées de cadeaux, avec les prix relevés chez les marchands.";
@@ -876,9 +870,14 @@ $("login").addEventListener("submit", async e=>{
   e.preventDefault(); $("loginErr").textContent = "";
   const c = extractCode($("code").value); if(!c) return;
   code = c;
-  try{ await load(); store.set("c", code); $("code").value = ""; }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
+  try{
+    await load();
+    if(role !== "owner"){ code = ""; store.del("c"); await load(); $("loginErr").textContent = ""; return; }
+    store.set("c", code); $("code").value = "";
+    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+  }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
 });
-$("logout").addEventListener("click", ()=>{ store.del("c"); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} manifestSet = false; toLogin(""); });
+$("logout").addEventListener("click", ()=>{ store.del("c"); code = ""; manifestSet = false; try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} showSkeleton(); load().catch(err=>{ $("appErr").textContent = err.message; }); });
 $("sort").addEventListener("change", ()=>{ sort = $("sort").value; store.set("sort", sort); render(); });
 $("q").addEventListener("input", ()=>{ query = $("q").value; render(); });
 sort = store.get("sort") || "list";
@@ -1029,34 +1028,16 @@ $("bulkBtn").addEventListener("click", ()=>{
   });
 });
 
-/* ---------- Invitation de la famille ---------- */
-const WORDS = "sapin etoile neige cadeau bougie renne traineau guirlande cannelle chocolat flocon veillee brioche mandarine houx gui lutin boule ruban clementine marron buche nougat chalet cheminee givre hiver lumiere reveillon bonhomme couronne cloche chant manteau echarpe moufle tricot pomme poire orange noix amande miel vanille gingembre sucre glace braise nuit minuit aurore".split(" ");
-function rnd(n){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
-function newCode(){ return [0,1,2,3].map(()=>WORDS[rnd(WORDS.length)]).join("-") + "-" + String(rnd(9000)+1000); }
+/* ---------- Invitation de la famille : simple adresse du site, sans code ---------- */
 function shareText(){
-  const c = $("famCode").value.trim();
-  if(!c) return "";
-  return "Coucou ! Voici ma liste de Noël : " + location.href.split("#")[0] + "#c=" + encodeURIComponent(extractCode(c)) +
+  return "Coucou ! Voici ma liste de Noël : " + location.href.split("#")[0] +
     "\nTu y trouves mes idées de cadeaux avec les prix relevés chez les marchands. Il n'y a rien à réserver, c'est pour t'inspirer.";
 }
-function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = !$("shareMsg").value; }
-$("famCode").value = store.get("fam");
-$("famCode").addEventListener("input", ()=>{ store.set("fam", $("famCode").value.trim()); refreshShare(); });
+function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = false; }
 $("copyBtn").addEventListener("click", async ()=>{
   const t = $("shareMsg").value; if(!t) return;
   try{ await navigator.clipboard.writeText(t); $("shareStatus").textContent = "Message copié. Colle-le dans ta conversation familiale."; }
   catch(e){ $("shareMsg").focus(); $("shareMsg").select(); $("shareStatus").textContent = "Sélectionne le message ci-dessus et copie-le."; }
-});
-$("renewBtn").addEventListener("click", ()=>{ $("renewConfirm").hidden = false; $("shareStatus").textContent = "Les anciens liens famille cesseront de fonctionner. Continuer ?"; });
-$("renewNo").addEventListener("click", ()=>{ $("renewConfirm").hidden = true; $("shareStatus").textContent = ""; });
-$("renewYes").addEventListener("click", ()=>{
-  $("renewConfirm").hidden = true;
-  const c = newCode();
-  run(async()=>{
-    await rpc("noel_set_family_code",{p_code:code,p_new:c});
-    $("famCode").value = c; store.set("fam", c); refreshShare();
-    $("shareStatus").textContent = "Nouveau code enregistré. Copie le message et envoie-le à tes proches.";
-  });
 });
 refreshShare();
 
@@ -1299,17 +1280,22 @@ document.addEventListener("error", e=>{
   else if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("fimg")){ i.parentElement.classList.add("ph"); i.outerHTML = PLACEHOLDER; }
 }, true);
 
-/* ---------- Démarrage : lien (#c=...), sinon code mémorisé sur cet appareil, sinon saisie ---------- */
+/* ---------- Démarrage : la famille ouvre la liste sans code. Le propriétaire passe par /gestion.html (#gestion) ou garde son code sur son appareil ---------- */
 (function start(){
-  let c = "";
+  let c = "", gestion = false;
   try{
+    gestion = /[#&]gestion\b/.test(location.hash);
     const m = location.hash.match(/[#&]c=([^&]+)/);
     if(m){ c = decodeURIComponent(m[1]); store.set("c", c); }
   }catch(e){}
   if(!c) c = store.get("c") || store.sget("c");
-  if(!c){ $("login").hidden = false; return; }
+  if(!c && gestion){ $("login").hidden = false; return; }
   code = c; $("app").hidden = false; showSkeleton();
-  load().catch(err=>{ toLogin(err.bad ? (err.code === "throttled" ? err.message : "Ce lien n'est plus valide. Demande-en un nouveau ou saisis ton code.") : err.message); });
+  load().then(()=>{ if(code && role !== "owner"){ code = ""; store.del("c"); return load(); } })
+    .catch(err=>{
+      if(err.bad && code){ code = ""; store.del("c"); if(gestion){ toLogin("Ce code n'est plus valide. Saisis ton code propriétaire."); return; } return load().catch(e2=>{ $("appErr").textContent = e2.message; }); }
+      if(err.bad) toLogin(err.message); else $("appErr").textContent = err.message;
+    });
 })();
 
 // Mise à jour discrète pour voir les choix des autres
@@ -1318,7 +1304,7 @@ function tick(){
   if(editing) return;
   const a = document.activeElement;
   if(a && a.tagName === "INPUT" && a.closest && a.closest("#list, #sheet")) return;
-  if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); });
+  if(!busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad && code) toLogin(e.message); });
 }
 setInterval(tick, 20000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });

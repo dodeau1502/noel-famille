@@ -6,6 +6,11 @@ d'« Acheté » ni de prix payé) : Dorian a décidé que sa famille ne s'en ser
 `noel_set_paid`) et la table `noel_claims` restent dans la base, inutilisées ; les règles ci-dessous qui les concernent (1 et 2) restent valables si on les réactive.
 Public : famille, y compris peu à l'aise avec le numérique, surtout sur téléphone. Langue : français.
 
+## Accès (depuis le 14 novembre)
+- Famille : aucune connexion, la page appelle `noel_public()` (lecture seule). Un ancien lien `#c=…` de famille est ignoré et le site s'ouvre en public.
+- Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Le code est gardé dans `localStorage` de l'appareil ; « Quitter la gestion » revient à la vue publique. La page est en `noindex`, mais l'adresse n'est pas un secret : seul le code protège la gestion.
+- Migration : `supabase/migrations/2026-11-14-noel-public.sql` (aussi dans `schema.sql`). `noel_set_family_code` et `noel_claim*` restent en base, inutilisées.
+
 ## Structure
 - `site/index.html` : toute la page (HTML, CSS, JS, sans build). Seul ce dossier est publié.
 - `supabase/schema.sql` : état actuel complet de la base. À mettre à jour après chaque migration.
@@ -86,9 +91,10 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
    de fonction ou d'affichage qui permette de le déduire (ni compteur de cadeaux pris, ni ordre qui change). Le relevé automatique
    (`noel-refresh`) traite toutes les fiches de la même façon : il choisit uniquement d'après `checked_at` et ne lit jamais `noel_claims`
    (sinon les dates de relevé révéleraient quels cadeaux sont pris). L'historique des prix est identique pour tous.
-2. Aucun accès direct aux tables depuis l'API publique : garder RLS activé, aucune policy, `revoke all` pour `anon` et
+2. (Depuis le 14 novembre, la famille n'a plus de code : `noel_public()`, sans paramètre, est ouverte à `anon` et ne renvoie JAMAIS `claimed_by`, `bought`, `paid` ni `blocked`. Toute autre fonction `noel_*` exige un code.)
+   Aucun accès direct aux tables depuis l'API publique : garder RLS activé, aucune policy, `revoke all` pour `anon` et
    `authenticated`. Tout passe par les fonctions `noel_*` qui vérifient un code.
-3. Ne jamais écrire les codes d'accès (propriétaire ou famille) dans le dépôt, un commit, une issue ou un message de PR.
+3. Ne jamais écrire le code propriétaire (ni un ancien code famille) dans le dépôt, un commit, une issue ou un message de PR.
    Ils ne sont stockés que sous forme d'empreinte en base. La clé « anon » de Supabase dans `index.html` est publique par conception.
 4. Les offres affichées doivent correspondre au produit et être fiables (`offers.js`, doublé côté page par `isMarket`) :
    tous les mots-clés et toutes les références chiffrées de la requête présents (un chiffre seul compte), même version
