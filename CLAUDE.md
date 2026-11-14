@@ -1,8 +1,10 @@
 # Liste de Noël famille : consignes pour l'IA
 
-Site statique (une seule page) + base Supabase. Le propriétaire (Dorian) y met ses idées de cadeaux, ses proches
-réservent ce qu'ils offrent, et le propriétaire ne voit jamais les réservations. Public : famille, y compris peu à l'aise
-avec le numérique, surtout sur téléphone. Langue : français.
+Site statique (une seule page) + base Supabase. Depuis le 14 novembre, c'est un CATALOGUE en lecture seule : le propriétaire (Dorian) y met ses idées de cadeaux
+avec les prix relevés chez les marchands, et sa famille les consulte. L'interface ne permet plus de réserver (plus de « Je le prends », de prénom, de « Pris par »,
+d'« Acheté » ni de prix payé) : Dorian a décidé que sa famille ne s'en servirait pas. Les fonctions de réservation (`noel_claim`, `noel_unclaim`, `noel_set_bought`,
+`noel_set_paid`) et la table `noel_claims` restent dans la base, inutilisées ; les règles ci-dessous qui les concernent (1 et 2) restent valables si on les réactive.
+Public : famille, y compris peu à l'aise avec le numérique, surtout sur téléphone. Langue : français.
 
 ## Structure
 - `site/index.html` : toute la page (HTML, CSS, JS, sans build). Seul ce dossier est publié.
@@ -123,23 +125,20 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
 
 ## Style
 Refonte du 14 novembre (direction « Catalogue », `site/index.html` seulement : aucune base ni fonction serveur touchée). Polices : Bebas Neue (titres, prix, noms) et Figtree
-(texte), chargées depuis Google Fonts. Palette : violet `#4b3a8f` (accent), rouge `#b1233a` (action), fond gris clair ; thème sombre automatique ou choisi dans « Affichage »
-(`localStorage` `theme`), texte agrandi (`size`). Interface sobre, gros boutons, mobile en priorité, texte français simple.
-- En-tête : compte à rebours, bouton « Affichage », titre et phrase d'explication dans un bloc blanc centré.
+(texte), chargées depuis Google Fonts. Palette : violet (accent) et rouge (action), thème SOMBRE PAR DÉFAUT (`<html data-theme="dark">`) ; « Affichage » propose sombre, clair
+ou automatique (`localStorage` `theme`), et le texte agrandi (`size`). Interface sobre, gros boutons, mobile en priorité, texte français simple.
+- En-tête : compte à rebours, bouton « Affichage », titre et phrase d'explication dans un bloc centré.
 - Vue famille (`famHtml`, `famCard`) : deux sections, « Mes préférés » (cadeaux marqués « Envie forte », sans limite) puis « Autres idées ». Aucun onglet, aucune recherche,
-  aucun tri ni filtre : les réglages `cat`, `bud`, `sort`, `om` éventuellement gardés sur l'appareil sont ignorés pour la famille. Grille de 2 colonnes (3 dès 760 px).
-  Carte : photo carrée (`object-fit:contain`), nom souligné, meilleur prix, marchand et « prix vérifié » / « non vérifié », précision et « Version : … », puis UN bouton :
-  « Je le prends » ; « ✓ Tu le prends » ou « ✓ Acheté » si c'est le cadeau de la personne ; « Pris par X » (carte grisée, sans bouton) si quelqu'un d'autre l'a pris.
-  Les cartes gardent leur place (rien ne se réordonne selon les réservations). Un cadeau sans prix affiche « Prix à confirmer » ; l'ajout d'un cadeau sans prix est refusé.
-- Fiche détaillée (`#sheet`, `openSheet`, `refreshSheet`) : s'ouvre au toucher de la photo ou du nom. Elle contient la carte complète `giftHtml(g)` (meilleur prix, « Je le prends » /
-  « C'est acheté » / « Annuler », « Voir l'offre », puis « Tous les prix et détails » replié : liste de prix, historique, comparateurs, prix payé). Elle est redessinée à chaque
-  mise à jour (`render()`), sauf pendant une saisie (`tick`). Fermeture : bouton « Fermer », fond, touche Échap.
-- Prénom : demandé dans une petite fiche à la première réservation seulement (`openName`, `pendingClaim`), puis rappelé en haut avec « Changer ». « Tu as choisi N cadeaux » remplace
-  l'ancienne barre d'avancement.
-- Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée qu'avant, nouvelle palette et nouvelles polices), formulaire d'ajout en haut, barre de recherche /
-  « Trier et filtrer » conservée, « Inviter la famille », « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`).
+  aucun tri ni filtre pour la famille (les réglages `cat`, `bud`, `sort`, `om` gardés sur l'appareil sont ignorés). Grille de 2 colonnes (3 dès 760 px). Carte : photo carrée
+  (`object-fit:contain`), nom souligné, meilleur prix, marchand et « prix vérifié » / « non vérifié », précision et « Version : … », bouton « Voir les prix ». Un cadeau sans prix
+  affiche « Prix à confirmer » ; l'ajout d'un cadeau sans prix est refusé.
+- Fiche détaillée (`#sheet`, `openSheet`, `refreshSheet`) : s'ouvre au toucher de la photo, du nom ou du bouton. Elle contient la carte complète `giftHtml(g)` (meilleur prix,
+  « Voir l'offre », puis « Tous les prix et détails » replié : liste de prix, historique, comparateurs). Elle est redessinée à chaque mise à jour (`render()`), sauf pendant
+  une saisie (`tick`). Fermeture : bouton « Fermer », fond, touche Échap. La bannière « Prix en baisse » concerne tous les cadeaux.
+- Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée), formulaire d'ajout en haut, recherche et « Trier et filtrer » conservés, « Inviter la famille »,
+  « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`). Le message d'invitation ne parle plus de réservation.
 - L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
-- Icônes dans `.media` : la règle de taille ne vise que `.media > svg`. Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
+- Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
 - Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).
