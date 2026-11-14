@@ -14,6 +14,12 @@ services:
       - SERPAPI_KEY=${SERPAPI_KEY:-}
       - CRON_SECRET=${CRON_SECRET:?}
       - POSTGREST_URL=http://postgrest:3000
+      # Valeurs par défaut = production (rien d'injecté). En dev seulement : APP_ENV=dev + les 3 suivantes (voir vps-infra/dev-feedback).
+      - APP_ENV=${APP_ENV:-production}
+      - DEV_TOOLBAR_SRC=${DEV_TOOLBAR_SRC:-}
+      - DEV_TOOLBAR_TOKEN=${DEV_TOOLBAR_TOKEN:-}
+      - DEV_BASIC_AUTH=${DEV_BASIC_AUTH:-}
+      - APP_COMMIT=${SOURCE_COMMIT:-}
     depends_on:
       - postgrest
     restart: unless-stopped
