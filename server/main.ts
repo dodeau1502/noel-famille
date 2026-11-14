@@ -11,6 +11,37 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SITE = new URL("../site/", import.meta.url);
 const MAX_BODY = 1_000_000;
 
+// Environnement dev uniquement : barre d'outils de retours (voir vps-infra/dev-feedback). En production, APP_ENV n'est pas « dev »
+// et rien n'est injecté. La décision est prise ICI, côté serveur : le navigateur ne peut pas l'activer.
+const APP_ENV = Deno.env.get("APP_ENV") ?? "production";
+const TOOLBAR_SRC = Deno.env.get("DEV_TOOLBAR_SRC") ?? "";
+const TOOLBAR_TOKEN = Deno.env.get("DEV_TOOLBAR_TOKEN") ?? "";
+const APP_COMMIT = Deno.env.get("APP_COMMIT") ?? "";
+const attr = (s: string) => s.replace(/[&"'<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+const DEV_TAG = APP_ENV === "dev" && TOOLBAR_TOKEN && /^(https:\/\/[a-z0-9.-]+|http:\/\/localhost:\d+)\/toolbar\.js$/.test(TOOLBAR_SRC)
+  ? `<script src="${attr(TOOLBAR_SRC)}" data-token="${attr(TOOLBAR_TOKEN)}" data-commit="${attr(APP_COMMIT)}" data-env="dev"></script>`
+  : "";
+
+// Dev : accès aux PAGES protégé par authentification basique (DEV_BASIC_AUTH="utilisateur:motdepasse", ASCII). Pas au niveau du proxy :
+// la page envoie « Authorization: Bearer … » à ses propres appels d'API, ce qui entrerait en conflit avec une authentification basique
+// posée sur tout le domaine. /healthz, /rest/ et /functions/ gardent leur propre contrôle. Sans identifiants en dev : tout est refusé.
+const BASIC_EXPECTED = /^[\x20-\x7e]+:[\x20-\x7e]+$/.test(Deno.env.get("DEV_BASIC_AUTH") ?? "")
+  ? "Basic " + btoa(Deno.env.get("DEV_BASIC_AUTH")!)
+  : "";
+async function sha256(s: string): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+}
+async function devAccessDenied(req: Request): Promise<Response | null> {
+  if (APP_ENV !== "dev") return null;
+  const deny = (status: number, msg: string) =>
+    new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8", "WWW-Authenticate": 'Basic realm="dev", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow", ...SEC } });
+  if (!BASIC_EXPECTED) return deny(503, "Dev : identifiants non configurés (DEV_BASIC_AUTH), accès fermé");
+  const [a, b] = await Promise.all([sha256(req.headers.get("authorization") ?? ""), sha256(BASIC_EXPECTED)]);
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i];
+  return d === 0 ? null : deny(401, "Authentification requise");
+}
+
 const MIME: Record<string, string> = {
   html: "text/html; charset=utf-8", png: "image/png", ico: "image/x-icon", svg: "image/svg+xml",
   json: "application/json", webmanifest: "application/manifest+json", txt: "text/plain; charset=utf-8",
@@ -36,8 +67,12 @@ async function serveStatic(pathname: string): Promise<Response> {
     if (!file.pathname.startsWith(SITE.pathname)) return text("Introuvable", 404);
     if (ext === "html") {
       // La clé « anon » est publique par conception : elle est injectée à la volée, jamais écrite dans le dépôt.
-      const html = (await Deno.readTextFile(file)).replaceAll("__SUPABASE_ANON_KEY__", ANON_KEY);
-      return new Response(html, { headers: { "Content-Type": MIME.html, "Cache-Control": "no-cache", ...SEC } });
+      let html = (await Deno.readTextFile(file)).replaceAll("__SUPABASE_ANON_KEY__", ANON_KEY);
+      // Script synchrone en tête de page : il installe ses journaux (erreurs, requêtes en échec) avant le code de la page.
+      if (DEV_TAG) html = html.replace("<head>", "<head>" + DEV_TAG);
+      return new Response(html, {
+        headers: { "Content-Type": MIME.html, "Cache-Control": "no-cache", ...(APP_ENV === "dev" ? { "X-Robots-Tag": "noindex, nofollow" } : {}), ...SEC },
+      });
     }
     const data = await Deno.readFile(file);
     return new Response(data, { headers: { "Content-Type": MIME[ext], "Cache-Control": "public, max-age=3600", ...SEC } });
@@ -94,6 +129,8 @@ Deno.serve({ port: PORT }, async (req, info) => {
   if (p.startsWith("/functions/")) return text("Introuvable", 404);
 
   if (req.method !== "GET" && req.method !== "HEAD") return text("Méthode non autorisée", 405);
+  const denied = await devAccessDenied(req);
+  if (denied) return denied;
   return serveStatic(p);
 });
 
