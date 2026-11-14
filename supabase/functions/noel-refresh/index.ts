@@ -33,6 +33,13 @@ async function isOwner(code: string): Promise<boolean> {
   return d?.role === "owner";
 }
 
+function sameSecret(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
 type Gift = { id: number; title: string; offers: any[] | null; checked_at: string | null };
 
 async function refreshGift(g: Gift, now: Date) {
@@ -69,7 +76,7 @@ async function refreshGift(g: Gift, now: Date) {
   }
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ error: "méthode" }, 405);
   let body: { cron?: boolean; code?: string; id?: number };
@@ -78,6 +85,10 @@ Deno.serve(async (req) => {
   let gifts: Gift[] = [];
 
   if (body.cron === true) {
+    // Hébergement VPS : le mode planning exige l'en-tête x-cron-secret (variable CRON_SECRET).
+    // Sans CRON_SECRET (ancien déploiement Supabase), le comportement d'origine est conservé.
+    const secret = Deno.env.get("CRON_SECRET");
+    if (secret && !sameSecret(req.headers.get("x-cron-secret") ?? "", secret)) return json({ error: "non autorisé" }, 403);
     // Les fiches les moins récemment lues d'abord. Aucune lecture des réservations.
     const cut = new Date(now.getTime() - CRON_MIN_AGE_MS).toISOString();
     const q = `${URL_}/rest/v1/noel_gifts?select=id,title,offers,checked_at&or=(checked_at.is.null,checked_at.lt.${cut})&order=checked_at.asc.nullsfirst,id.asc&limit=${CRON_BATCH}`;
@@ -93,4 +104,6 @@ Deno.serve(async (req) => {
   if (!Array.isArray(gifts)) gifts = [];
   for (const g of gifts) { try { await refreshGift(g, now); } catch (_) { /* une fiche en échec ne bloque pas les autres */ } }
   return json({ ok: true, n: gifts.length });
-});
+}
+
+if (import.meta.main) Deno.serve(handler);

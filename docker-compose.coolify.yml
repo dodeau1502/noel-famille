@@ -1,0 +1,47 @@
+# Déploiement Coolify (ressource « Docker Compose », ce fichier à la racine du dépôt). Les variables sont saisies dans Coolify, jamais ici.
+# Aucun « ports: » : seul le proxy de Coolify (domaine posé sur le service « app », port 8000) joint l'appli. PostgREST n'est jamais exposé.
+# Les deux services doivent être sur le même réseau Docker que la base PostgreSQL « noel-db »
+# (option Coolify « Connect to Predefined Network »).
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SUPABASE_URL=http://127.0.0.1:8001
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:?}
+      - SERPAPI_KEY=${SERPAPI_KEY:-}
+      - CRON_SECRET=${CRON_SECRET:?}
+      - POSTGREST_URL=http://postgrest:3000
+    depends_on:
+      - postgrest
+    restart: unless-stopped
+  postgrest:
+    image: postgrest/postgrest:${POSTGREST_VERSION:?}
+    environment:
+      - PGRST_DB_URI=postgres://noel_authenticator:${NOEL_DB_PASSWORD:?}@${POSTGRES_HOST:?}:5432/noel
+      - PGRST_DB_SCHEMAS=public
+      - PGRST_DB_ANON_ROLE=anon
+      - PGRST_JWT_SECRET=${JWT_SECRET:?}
+    restart: unless-stopped
+  # Sauvegarde chiffrée de « noel-db » (pg_dump | age) vers le stockage S3 externe. Le conteneur reste en veille ;
+  # la tâche planifiée Coolify (service « backup ») lance /usr/local/bin/backup-noel.sh une fois par jour.
+  # Aucun port publié, aucun domaine. La clé privée age n'est jamais ici : seule la clé publique (BACKUP_AGE_RECIPIENT).
+  backup:
+    build:
+      context: .
+      dockerfile: infra/backup/Dockerfile
+    entrypoint: ["sleep", "infinity"]
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      - BACKUP_DATABASE_URL=postgres://backup_reader:${BACKUP_DB_PASSWORD:?}@${POSTGRES_HOST:?}:5432/noel
+      - BACKUP_AGE_RECIPIENT=${BACKUP_AGE_RECIPIENT:?}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:?}
+      - BACKUP_S3_ENDPOINT=${BACKUP_S3_ENDPOINT:?}
+      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:?}
+      - BACKUP_S3_REGION=${BACKUP_S3_REGION:?}
+      - BACKUP_S3_PREFIX=${BACKUP_S3_PREFIX:?}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:?}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:?}

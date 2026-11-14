@@ -20,7 +20,7 @@ async function isOwner(code: string): Promise<boolean> {
   return d?.role === "owner";
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ error: "méthode" }, 405);
   let body: { code?: string; query?: string; url?: string; token?: string };
@@ -32,4 +32,6 @@ Deno.serve(async (req) => {
   // « token » : le propriétaire a choisi une autre fiche produit parmi les propositions (1 seule recherche SerpAPI)
   const token = typeof body.token === "string" && body.token.length > 0 && body.token.length < 1200 ? body.token : undefined;
   return json(await discover(q, new Date(), { token }));
-});
+}
+
+if (import.meta.main) Deno.serve(handler);

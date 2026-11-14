@@ -1,21 +1,17 @@
-name: Publier le site
-
-# Chaque modification poussee sur main met le site en ligne automatiquement.
+# À copier sur .github/workflows/pages.yml AU MOMENT de la bascule (étape 9) : GitHub Pages ne publie plus que la page de redirection.
+name: Publier la redirection
 on:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+    paths: ["redirect/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,6 +23,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: redirect
       - id: deployment
         uses: actions/deploy-pages@v4
