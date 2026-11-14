@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#1f5a4c">
+<meta name="theme-color" content="#0d1117">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Noël">
@@ -14,28 +14,28 @@
 <title>Liste de Noël</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Principes : une seule colonne, l'action principale visible sans défiler, les détails repliés.
-     Famille : « Je le prends » juste sous le prix. Propriétaire : ajout en haut, réglages regroupés en bas. */
+     Famille : catalogue en lecture seule. Propriétaire : ajout en haut, réglages regroupés en bas. */
   :root{
-    --bg:#f1f5f4; --surface:#ffffff; --ink:#14302b; --muted:#566d67; --line:#d6e0dd;
-    --berry:#b1233a; --berry-ink:#ffffff; --pine:#1f5a4c; --pine-soft:#e3eeea;
-    --seg-off:#cfdad6; --focus:#1f5a4c; --err:#a31d2f; --shadow:0 1px 2px rgb(20 48 43 / .08), 0 6px 18px rgb(20 48 43 / .06);
-    --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --bg:#eef1f5; --surface:#ffffff; --ink:#111111; --muted:#5d6470; --line:#dfe3ea;
+    --berry:#b1233a; --berry-ink:#ffffff; --pine:#4b3a8f; --pine-soft:#ece9f7;
+    --seg-off:#dfe3ea; --focus:#4b3a8f; --err:#a31d2f; --shadow:0 1px 2px rgb(17 17 17 / .06), 0 6px 18px rgb(17 17 17 / .05);
+    --f-display:"Bebas Neue","Oswald","Impact","Arial Narrow",sans-serif;
     --f-body:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
-      --bg:#0e1b19; --surface:#152624; --ink:#e9f1ef; --muted:#9db1ac; --line:#26403b;
-      --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#79ccb1; --pine-soft:#183430;
-      --seg-off:#2a413c; --focus:#79ccb1; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
+      --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+      --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
+      --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
     }
   }
   :root[data-theme="dark"]{
-    --bg:#0e1b19; --surface:#152624; --ink:#e9f1ef; --muted:#9db1ac; --line:#26403b;
-    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#79ccb1; --pine-soft:#183430;
-    --seg-off:#2a413c; --focus:#79ccb1; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
+    --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
+    --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
   }
 
   *{box-sizing:border-box}
@@ -66,7 +66,7 @@
     background:var(--pine-soft); color:var(--pine); border-radius:999px; padding:6px 14px 6px 12px;
     font-weight:600; font-size:.95rem;
   }
-  .days b{font:800 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
+  .days b{font:400 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
   .view{position:relative; margin-left:auto}
   .view summary{list-style:none; display:flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); font-weight:600; font-size:.92rem}
   .view[open] summary{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
@@ -76,24 +76,13 @@
     font-weight:600; font-size:.95rem; cursor:pointer; color:var(--ink); text-align:left;
   }
   .tool[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  h1{font:800 clamp(1.75rem,7.5vw,2.3rem)/1.08 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
+  h1{font:400 clamp(1.75rem,7.5vw,2.3rem)/1.08 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
   .lead{color:var(--muted); max-width:46ch; font-size:1rem}
-
-  /* Avancement (famille) */
-  .progress{display:flex; flex-direction:column; gap:8px}
-  .segs{display:flex; gap:4px; height:10px}
-  .segs i{flex:1 1 0; min-width:4px; border-radius:3px; background:var(--seg-off)}
-  .segs i.on{background:var(--pine); opacity:.5}
-  .segs i.done{background:var(--pine)}
-  .segs i.me{background:var(--berry)}
-  .count{display:flex; flex-wrap:wrap; gap:2px 16px; font-weight:600}
-  .count span{color:var(--muted); font-weight:500}
-  .count strong{font:700 1.15rem var(--f-display); font-variant-numeric:tabular-nums}
 
   /* Cartes et champs */
   .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px}
   .login{display:flex; flex-direction:column; gap:12px}
-  .login h2,.panel h2{font:700 1.2rem/1.2 var(--f-display)}
+  .login h2,.panel h2{font:400 1.2rem/1.2 var(--f-display)}
   label{display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem}
   input[type=text],input[type=password],input[type=url],input[type=search],select,textarea{
     width:100%; min-height:48px; padding:10px 14px; border-radius:12px; border:1.5px solid var(--line);
@@ -118,19 +107,9 @@
   .btn.small{min-height:44px; padding:6px 14px; font-size:.95rem}
   .btn.big{min-height:54px; font-size:1.08rem; width:100%}
 
-  .who{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-  .who p{min-width:0}
-  .who strong{font-family:var(--f-display)}
   .linkbtn{background:none; border:0; padding:10px 6px; color:var(--pine); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; font-size:inherit}
 
   /* Onglets (collés en haut), recherche, filtres */
-  .tabbar{position:sticky; top:0; z-index:10; margin-inline:-12px; padding:8px 12px; background:color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter:blur(8px)}
-  .tabs{display:flex; gap:6px; background:var(--pine-soft); padding:5px; border-radius:14px}
-  .tabs button{
-    flex:1 1 0; min-height:46px; border:0; border-radius:10px; background:transparent; cursor:pointer;
-    font-weight:600; color:var(--pine);
-  }
-  .tabs button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0 / .12)}
   .listbar{display:flex; flex-direction:column; gap:10px}
   .filters summary{list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; padding:8px 14px; border:1.5px solid var(--line); border-radius:12px; font-weight:600; background:var(--surface)}
   .filters summary .fc{font-size:.85rem; color:var(--pine); background:var(--pine-soft); border-radius:999px; padding:2px 10px}
@@ -149,14 +128,9 @@
   .gift .media .badge{background:var(--surface); box-shadow:0 1px 3px rgb(0 0 0 / .18)}
   .gift .body{display:flex; flex-direction:column; gap:12px; padding:16px}
   .gift .txt{min-width:0; display:flex; flex-direction:column; gap:4px}
-  .gift h3{margin:0; font:700 1.2rem/1.25 var(--f-display); overflow-wrap:anywhere}
+  .gift h3{margin:0; font:400 1.2rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .gift .note{color:var(--muted); font-size:.95rem; overflow-wrap:anywhere}
   .gift .see{font-size:.95rem; font-weight:600}
-  .gift.taken{background:transparent; border-style:dashed; box-shadow:none}
-  .gift.taken .media{height:84px; opacity:.6}
-  .gift.taken .media > svg{width:32px; height:32px}
-  .gift.taken h3{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1.5px; text-decoration-color:var(--seg-off)}
-  .gift.mine{border-color:var(--berry)}
   .badges{display:flex; flex-wrap:wrap; gap:6px}
   .badge{
     display:inline-flex; align-items:center; gap:6px; font-size:.9rem; font-weight:700;
@@ -164,7 +138,6 @@
   }
   .badge.star{color:var(--berry); border:1.5px solid var(--berry)}
   .badge.drop{color:var(--pine)}
-  .gift.mine .badge.who-badge{color:var(--berry); border:1.5px solid var(--berry)}
   .cat{font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
   .variant{font-size:.95rem; background:var(--pine-soft); border-radius:10px; padding:8px 12px; margin-top:4px}
   .variant b{display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine)}
@@ -173,7 +146,7 @@
   .hp{display:flex; flex-direction:column; gap:2px; background:var(--pine-soft); border-radius:14px; padding:12px 14px}
   .hp .lbl{font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine); font-weight:800}
   .hp .hpr{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px}
-  .hp b{font:800 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
+  .hp b{font:400 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
   .hp .at{font-weight:600}
   .hp small{color:var(--muted); font-size:.85rem}
   .hp .chk{display:flex; align-items:center; gap:5px; color:var(--muted)}
@@ -194,7 +167,7 @@
   /* Détails repliés : tous les prix, historique, comparateurs */
   .det{border-top:1px solid var(--line); padding-top:4px}
   .det > summary{list-style:none; display:flex; align-items:center; justify-content:space-between; min-height:48px; font-weight:700; color:var(--pine)}
-  .det > summary::after{content:"+"; font:700 1.4rem/1 var(--f-display)}
+  .det > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display)}
   .det[open] > summary::after{content:"–"}
   .det > .inner{display:flex; flex-direction:column; gap:12px; padding-bottom:4px}
   .offers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden}
@@ -202,7 +175,7 @@
   .offers li:first-child{border-top:0}
   .offers a{color:var(--ink); font-weight:600; text-decoration:none; min-width:0; overflow-wrap:anywhere; padding:10px 0; flex:1}
   .offers a:hover{text-decoration:underline}
-  .offers b{font:700 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .offers b{font:400 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
   .offers li.best{background:var(--pine-soft)}
   .offers li.best b{color:var(--pine)}
   .offers a small{display:block; font-weight:500; font-size:.82rem; color:var(--muted)}
@@ -246,10 +219,10 @@
   .alt{display:grid; grid-template-columns:48px minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; min-height:56px; text-align:left; padding:8px 12px; border-radius:12px; border:1.5px solid var(--line); background:transparent; cursor:pointer; color:var(--ink)}
   .alt .thumb{width:48px; height:48px; border-radius:8px}
   .alt .t{overflow-wrap:anywhere; font-weight:600; font-size:.95rem; line-height:1.3}
-  .alt b{font:700 1rem var(--f-display); white-space:nowrap}
+  .alt b{font:400 1rem var(--f-display); white-space:nowrap}
   .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
   .preview .thumb{width:72px; height:72px}
-  .preview h3{margin:0; font:700 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
+  .preview h3{margin:0; font:400 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .preview .more{display:flex; flex-direction:column; gap:2px; margin-top:4px; font-size:.92rem; color:var(--muted)}
   .status{font-size:.95rem; color:var(--muted)}
   .warn{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem}
@@ -263,8 +236,8 @@
   .rowbtns{display:flex; flex-wrap:wrap; gap:8px}
   .rowbtns .btn{flex:1 1 auto}
   /* Réglages regroupés (propriétaire) */
-  .settings > summary{list-style:none; font:700 1.1rem var(--f-display); min-height:48px; display:flex; align-items:center; justify-content:space-between}
-  .settings > summary::after{content:"+"; font:700 1.4rem/1 var(--f-display); color:var(--pine)}
+  .settings > summary{list-style:none; font:400 1.1rem var(--f-display); min-height:48px; display:flex; align-items:center; justify-content:space-between}
+  .settings > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display); color:var(--pine)}
   .settings[open] > summary::after{content:"–"}
   .settings > .sub{display:flex; flex-direction:column; gap:10px; padding-top:8px}
   .settings details.share{border:1px solid var(--line); border-radius:12px; padding:4px 14px}
@@ -273,7 +246,7 @@
   #favList{display:flex; flex-wrap:wrap; gap:8px}
 
   .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
-  .empty strong{display:block; color:var(--ink); font:700 1.1rem var(--f-display); margin-bottom:4px}
+  .empty strong{display:block; color:var(--ink); font:400 1.1rem var(--f-display); margin-bottom:4px}
   .skeleton{height:84px; border-radius:16px; background:linear-gradient(90deg,var(--line),var(--surface),var(--line)); background-size:200% 100%; animation:sh 1.4s linear infinite}
   @keyframes sh{to{background-position:-200% 0}}
 
@@ -290,7 +263,7 @@
   /* Modification d'une fiche */
   .edit{border-color:var(--pine)}
   .gift.edit{padding:16px; gap:12px; box-shadow:none}
-  .edit h4{margin:0; font:700 1.05rem var(--f-display)}
+  .edit h4{margin:0; font:400 1.05rem var(--f-display)}
   .edit .erow{display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px}
   .edit details.erow{display:block; padding:0}
   .edit .erow > summary{list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center; min-height:52px; padding:0 12px; font-weight:600}
@@ -300,6 +273,118 @@
   .edit .stick{position:sticky; bottom:0; display:flex; gap:8px; background:var(--surface); border-top:1px solid var(--line); padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px)); margin-top:4px}
   .edit .stick .btn{flex:1}
   .edit input[list]{width:100%}
+
+  /* Refonte « catalogue » : en-tête, grille famille, fiche détaillée */
+  h1{font:400 clamp(2.2rem,10.5vw,3.1rem)/1 var(--f-display); letter-spacing:.02em; text-transform:uppercase; text-align:center; text-wrap:balance}
+  .hd{background:var(--surface); border-radius:10px; padding:18px 14px 16px; text-align:center}
+  .hd .lead{margin:10px auto 0; max-width:34ch}
+  .hp b{font-size:2.3rem}
+  body[data-role="family"] main{max-width:1000px}
+  .fsec{list-style:none; background:var(--surface); border-radius:10px; padding:18px 12px 26px}
+  .fsec h2{font:400 clamp(2rem,8.5vw,2.6rem)/1 var(--f-display); text-transform:uppercase; letter-spacing:.02em; text-align:center}
+  .fsub{text-align:center; color:var(--muted); font-size:.92rem; margin:6px 0 16px}
+  .fgrid{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 10px; align-items:stretch}
+  @media (min-width:760px){ .fgrid{grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px 18px} }
+  .fcard{display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0}
+  .fimg{position:relative; width:100%; max-width:240px; aspect-ratio:1/1; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; display:grid; place-items:center; overflow:hidden}
+  .fimg img{width:100%; height:100%; object-fit:contain; display:block}
+  .fimg.ph{background:var(--pine-soft); color:var(--pine)}
+  .fimg.ph svg{width:48px; height:48px}
+  .fname{background:none; border:0; padding:8px 0 0; cursor:pointer; color:var(--ink); font:400 1.4rem/1.05 var(--f-display); text-transform:uppercase; letter-spacing:.02em; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere}
+  .fprice{color:var(--pine); font:400 1.6rem/1.1 var(--f-display); letter-spacing:.02em}
+  .fsrc{font-size:.82rem; color:var(--muted)}
+  .fnote{color:var(--pine); font:400 1.1rem/1.15 var(--f-display); text-transform:uppercase; letter-spacing:.02em; max-width:26ch; overflow-wrap:anywhere}
+  .fact{margin-top:auto; padding-top:10px; width:100%; max-width:240px}
+  .fbg{position:fixed; inset:0; z-index:50; background:rgb(0 0 0 / .5); display:flex; align-items:flex-end; justify-content:center}
+  .fsheet{width:100%; max-width:560px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; background:var(--bg); border-radius:20px 20px 0 0; padding:10px 12px calc(20px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:12px; outline:0}
+  .fsheet .gifts{gap:0}
+  .fsheet .login h2{font:400 1.9rem/1 var(--f-display); text-transform:uppercase; letter-spacing:.02em}
+  .fgrab{width:44px; height:5px; border-radius:3px; background:var(--line); margin:0 auto; flex:none}
+  body.nosc{overflow:hidden}
+
+  /* ===== Partie propriétaire (refonte du 14 novembre) : interface de gestion dense, large sur ordinateur =====
+     Ne concerne que body[data-role="owner"] ; la vue famille n'est pas touchée. */
+  body[data-role="owner"] main{max-width:1120px; gap:14px}
+
+  /* En-tête compact, aligné à gauche */
+  body[data-role="owner"] .head{flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px}
+  body[data-role="owner"] .toprow{order:2; margin-left:auto}
+  body[data-role="owner"] .hd{order:1; flex:1 1 320px; background:transparent; padding:4px 2px 0; text-align:left; display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 14px}
+  body[data-role="owner"] h1{font-size:clamp(1.6rem,6vw,2.1rem); text-align:left; letter-spacing:.03em}
+  body[data-role="owner"] .hd .lead{margin:0; font-size:.95rem}
+  body[data-role="owner"] .toprow{gap:8px}
+
+  /* Barre d'ajout */
+  .addbar{display:flex; flex-direction:column; gap:10px; padding:16px 18px; border-color:var(--pine); box-shadow:var(--shadow)}
+  .addhead{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 12px}
+  .addhead label{font:400 1.35rem/1.2 var(--f-display); letter-spacing:.02em}
+  .addhead .hint{color:var(--muted); font-size:.92rem}
+  .addbar .search-row input{min-height:54px; font-size:1.05rem}
+  .addbar .search-row .btn{min-height:54px; padding-inline:26px}
+  .addbar #result{display:grid; grid-template-columns:1fr; gap:14px; border-top:1px solid var(--line); padding-top:14px}
+  .addbar .res-a,.addbar .res-b{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .addbar .preview{padding:12px; grid-template-columns:88px minmax(0,1fr)}
+  .addbar .preview .thumb{width:88px; height:88px}
+  .addbar .preview h3{font-size:1.15rem}
+  label.check.pill{align-self:flex-start; min-height:44px; padding:6px 16px 6px 12px; border:1.5px solid var(--line); border-radius:999px}
+  label.check.pill:has(input:checked){background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
+  .addbar details.manual{border:1px dashed var(--line); border-radius:12px; padding:0 14px}
+  .addbar details.manual[open]{padding-bottom:12px}
+  @media (min-width:860px){
+    .addbar #result{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:20px; align-items:start}
+  }
+
+  /* Barre d'outils de la liste : une seule ligne sur ordinateur */
+  body[data-role="owner"] .listbar{flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px}
+  body[data-role="owner"] .listbar .lh{font:400 1.35rem/1 var(--f-display); letter-spacing:.02em; flex:0 0 auto; margin-right:4px}
+  body[data-role="owner"] .listbar .lh span{color:var(--pine); margin-left:4px}
+  body[data-role="owner"] .listbar input[type=search]{flex:1 1 220px; min-width:0}
+  body[data-role="owner"] .listbar .filters{flex:0 0 auto}
+  body[data-role="owner"] .listbar .filters[open]{flex:1 1 100%; order:9}
+  body[data-role="owner"] .listbar #bulkWrap{flex:0 0 auto}
+  body[data-role="owner"] #bulkWrap .btn{width:auto; min-height:48px}
+  body[data-role="owner"] .filtergrid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+  /* Liste en grille de cartes compactes */
+  body[data-role="owner"] .gifts{display:grid; grid-template-columns:1fr; gap:14px; align-items:start}
+  @media (min-width:640px){ body[data-role="owner"] .gifts{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (min-width:960px){ body[data-role="owner"] .gifts{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  body[data-role="owner"] .gift{border-radius:16px; transition:border-color .12s ease}
+  body[data-role="owner"] .gift:not(.edit):hover{border-color:var(--pine)}
+  body[data-role="owner"] .gift .media{height:150px}
+  body[data-role="owner"] .gift .body{gap:10px; padding:14px}
+  body[data-role="owner"] .gift h3{font-size:1.12rem}
+  body[data-role="owner"] .hp{padding:10px 12px}
+  body[data-role="owner"] .hp b{font-size:1.9rem}
+  body[data-role="owner"] .cta{min-height:40px; padding:6px 14px; font-size:.95rem; border-color:var(--line); color:var(--ink)}
+  body[data-role="owner"] .gift .see{font-size:.9rem}
+  body[data-role="owner"] .gift .act{gap:6px}
+  body[data-role="owner"] .gift .act .btn.small{min-height:40px; padding:6px 12px; font-size:.92rem}
+  body[data-role="owner"] .act .more{flex:0 0 auto}
+  body[data-role="owner"] .act .more[open]{flex:1 1 100%}
+  body[data-role="owner"] .more summary{min-height:40px; padding:0 12px; border:1.5px solid var(--line); border-radius:12px; color:var(--ink); font-size:.92rem}
+  body[data-role="owner"] .more summary::after{content:" ▾"; margin-left:6px; color:var(--muted)}
+  body[data-role="owner"] .more[open] summary{border-color:var(--pine); color:var(--pine)}
+  body[data-role="owner"] .det > summary{min-height:44px; font-size:.95rem}
+  @media (max-width:559px){ body[data-role="owner"] .gift .media{height:132px} }
+
+  /* Modification d'une fiche : pleine largeur, deux colonnes sur ordinateur */
+  body[data-role="owner"] .gift.edit{grid-column:1 / -1; border-radius:16px}
+  @media (min-width:860px){
+    body[data-role="owner"] .gift.edit{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; padding:20px}
+    body[data-role="owner"] .gift.edit > :not(label){grid-column:1 / -1}
+  }
+
+  /* Réglages : blocs côte à côte */
+  body[data-role="owner"] .settings{padding:6px 18px}
+  @media (min-width:860px){
+    body[data-role="owner"] .settings > .sub{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:start}
+  }
+  @media (max-width:559px){
+    .addbar .search-row{flex-direction:column}
+    .addbar .search-row .btn{width:100%}
+    body[data-role="owner"] .toprow{margin-left:0}
+  }
 
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
@@ -317,89 +402,64 @@
         </div>
       </details>
     </div>
-    <h1 id="title">Liste de Noël</h1>
-    <p class="lead" id="lead">Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.</p>
+    <div class="hd">
+      <h1 id="title">Liste de Noël</h1>
+      <p class="lead" id="lead">Voici mes idées de cadeaux, avec les prix relevés chez les marchands.</p>
+    </div>
   </header>
 
   <!-- Connexion de secours (le lien direct s'en passe) -->
   <form class="card login" id="login" hidden>
-    <h2>Entre ton code</h2>
-    <label for="code">Lien ou code reçu
-      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le lien ou le code">
+    <h2>Gestion de la liste</h2>
+    <label for="code">Ton code propriétaire
+      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle ton code">
     </label>
-    <button class="btn" type="submit">Voir la liste</button>
+    <button class="btn" type="submit">Ouvrir la gestion</button>
     <p class="msg" id="loginErr" role="alert"></p>
   </form>
 
   <section id="app" hidden>
     <div class="stack">
 
-      <!-- Vue famille : avancement et prénom -->
-      <div id="familyTop" class="stack" hidden>
-        <div class="progress" aria-live="polite">
-          <div class="segs" id="segs" aria-hidden="true"></div>
-          <div class="count" id="count"></div>
-        </div>
-
-        <form class="card login" id="nameForm" hidden>
-          <h2>C'est quoi ton prénom&nbsp;?</h2>
-          <label for="who">Les autres verront qui prend quoi
-            <input id="who" type="text" maxlength="40" autocomplete="given-name" placeholder="Ton prénom">
-          </label>
-          <button class="btn" type="submit">Continuer</button>
-        </form>
-
-        <div class="who" id="whoBar" hidden>
-          <p>Tu es <strong id="whoName"></strong></p>
-          <button class="linkbtn" id="changeName" type="button">Changer</button>
-        </div>
-      </div>
-
-      <!-- Onglets collés en haut de l'écran (famille) -->
-      <div class="tabbar" id="tabbar" hidden>
-        <div class="tabs" role="group" aria-label="Filtrer la liste">
-          <button type="button" data-f="open" aria-pressed="true">À prendre</button>
-          <button type="button" data-f="all" aria-pressed="false">Tout</button>
-          <button type="button" data-f="mine" aria-pressed="false">Mes choix</button>
-        </div>
-      </div>
-
       <!-- Vue propriétaire : ajout d'une idée -->
       <div id="ownerTop" class="stack" hidden>
-        <p class="note-owner">Tu vois uniquement tes idées. Ce que ta famille prend reste caché, c'est voulu.</p>
-
-        <form class="card panel" id="addForm">
-          <h2>Ajouter une idée</h2>
-          <label for="gQuery">Lien ou nom du produit
-            <div class="search-row">
-              <input id="gQuery" type="text" maxlength="300" placeholder="Colle un lien ou écris le nom" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
-              <button class="btn" type="button" id="searchBtn">Chercher</button>
-            </div>
-          </label>
+        <form class="card addbar" id="addForm">
+          <div class="addhead">
+            <label for="gQuery">Ajouter une idée</label>
+            <span class="hint">Colle l'adresse d'un produit, ou écris son nom</span>
+          </div>
+          <div class="search-row">
+            <input id="gQuery" type="text" maxlength="300" placeholder="https://… ou « casque Sony WH-1000XM5 »" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+            <button class="btn" type="button" id="searchBtn">Rechercher</button>
+          </div>
           <p class="status" id="lookup" aria-live="polite" hidden></p>
           <div id="result" hidden>
-            <div class="preview">
-              <div class="thumb" id="pvThumb"></div>
-              <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
-            </div>
-            <div class="alts" id="alts" hidden></div>
-            <p class="warn" id="dupWarn" role="alert" hidden></p>
-            <label for="gNote">Précision (facultatif)
-              <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
-            </label>
-            <label class="check" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
-            <details class="manual" id="manual">
-              <summary>Corriger à la main</summary>
-              <div class="grid2">
-                <label for="gTitle">Nom du cadeau
-                  <input id="gTitle" type="text" maxlength="120" autocomplete="off">
-                </label>
-                <label for="gPrice">Prix en euros
-                  <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
-                </label>
+            <div class="res-a">
+              <div class="preview">
+                <div class="thumb" id="pvThumb"></div>
+                <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
               </div>
-            </details>
-            <button class="btn big" type="submit" id="addBtn">Ajouter à la liste</button>
+              <div class="alts" id="alts" hidden></div>
+              <p class="warn" id="dupWarn" role="alert" hidden></p>
+            </div>
+            <div class="res-b">
+              <label for="gNote">Précision (facultatif)
+                <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
+              </label>
+              <label class="check pill" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
+              <details class="manual" id="manual">
+                <summary>Corriger le nom ou le prix</summary>
+                <div class="grid2">
+                  <label for="gTitle">Nom du cadeau
+                    <input id="gTitle" type="text" maxlength="120" autocomplete="off">
+                  </label>
+                  <label for="gPrice">Prix en euros
+                    <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
+                  </label>
+                </div>
+              </details>
+              <button class="btn big" type="submit" id="addBtn">Ajouter à la liste</button>
+            </div>
           </div>
         </form>
       </div>
@@ -410,6 +470,7 @@
 
       <!-- Recherche, tri et filtres (repliés) -->
       <div class="listbar" id="listbar" hidden>
+        <h2 class="lh">Mes idées <span id="gcount"></span></h2>
         <input id="q" type="search" placeholder="Chercher un cadeau" autocomplete="off" aria-label="Chercher un cadeau dans la liste" enterkeyhint="search">
         <details class="filters" id="filters">
           <summary><span>Trier et filtrer</span><span class="fc" id="fcount" hidden></span></summary>
@@ -457,17 +518,9 @@
           <details class="share" id="share">
             <summary>Inviter la famille</summary>
             <div class="sharebox">
-              <label for="famCode">Code famille
-                <input id="famCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le code famille ou renouvelle-le">
-              </label>
               <textarea id="shareMsg" readonly aria-label="Message à envoyer"></textarea>
               <div class="rowbtns">
                 <button class="btn" type="button" id="copyBtn">Copier le message</button>
-                <button class="btn ghost" type="button" id="renewBtn">Renouveler le code</button>
-              </div>
-              <div class="confirm" id="renewConfirm" hidden>
-                <button class="btn small" type="button" id="renewYes">Oui, renouveler</button>
-                <button class="btn ghost small" type="button" id="renewNo">Non</button>
               </div>
               <p class="status" id="shareStatus" aria-live="polite"></p>
             </div>
@@ -504,9 +557,12 @@
   </section>
 
   <footer class="foot" id="foot" hidden>
-    <button class="linkbtn" id="logout" type="button">Quitter cette liste sur cet appareil</button>
+    <button class="linkbtn" id="logout" type="button">Quitter la gestion sur cet appareil</button>
   </footer>
 </main>
+
+<!-- Fiche détaillée d'un cadeau et saisie du prénom (famille) -->
+<div class="fbg" id="sheetBg" hidden><div class="fsheet" id="sheet" role="dialog" aria-modal="true" aria-label="Détail du cadeau" tabindex="-1"></div></div>
 
 <script>
 // Renseignés pour ce projet Supabase (clé publique, sans danger : les tables ne sont pas lisibles directement)
@@ -520,7 +576,7 @@ const store = {
   del(k){ try{ localStorage.removeItem(k) }catch(e){} },
   sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
 };
-let code = "", role = "", gifts = [], filter = "open", sort = "list", who = store.get("who");
+let code = "", role = "", gifts = [], filter = "open", sort = "list";
 let catFilter = store.get("cat"), budget = +store.get("bud") || 0;
 let display = {featured:[], mode:"price"}, editing = null, query = "";
 // Blocs repliés que l'utilisateur a ouverts : leur état est gardé quand la liste est redessinée (mise à jour toutes les 20 s)
@@ -690,22 +746,12 @@ function histHtml(g){
 }
 function renderDrops(){
   const el = $("dropBar");
-  // Pour la famille, on ne montre pas les cadeaux pris par quelqu'un d'autre ; pour le propriétaire, tous (il ne connaît aucune réservation)
-  const rows = gifts.filter(g => !(role === "family" && g.claimed_by && !same(g.claimed_by, who)))
+  const rows = gifts
     .map(g => ({g, d:dropOf(g)})).filter(x => x.d).sort((a,b) => b.d.by - a.d.by).slice(0,4);
   el.hidden = !rows.length;
   el.innerHTML = rows.length ? "<strong>Prix en baisse</strong><ul>" + rows.map(x => `<li>${esc(x.g.title)} : ${eur(x.d.from)} → ${eur(x.d.to)} (relevé le ${dayD(x.d.when)})</li>`).join("") + "</ul>" : "";
 }
 
-/* ---------- Prix payé et « prix moins cher trouvé » (famille, sur le cadeau qu'elle a pris) ---------- */
-function paidHtml(g, bo){
-  const id = g.id, paid = g.paid != null ? +g.paid : null;
-  let msg = "";
-  if(paid != null && bo && totalOf(bo) <= paid - 1){
-    msg = `<p class="cheaper">Prix moins cher trouvé : ${eur(totalOf(bo))} chez ${esc(bo.store)}, soit ${eur(paid - totalOf(bo))} de moins que ce que tu as payé. ${bo.verified ? "Prix lu sur le site" + (bo.at ? " le " + D(bo.at) : "") : "Prix non vérifié sur le site"}. Contrôle-le sur le site du marchand et regarde ses conditions de retour ou d'échange.</p>`;
-  }
-  return `<div class="paid">${msg}<div class="row"><label for="paid${id}">Prix payé (facultatif)<input id="paid${id}" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off" value="${paid != null ? esc(String(paid).replace(".", ",")) : ""}"></label><button class="btn ghost small" type="button" data-paidsave="${id}">Enregistrer</button></div><p class="note">Sert à te prévenir si un prix plus bas apparaît. Le propriétaire de la liste ne voit jamais cette information.</p></div>`;
-}
 const extractCode = v => { const m = String(v||"").match(/[#&?]c=([^&\s]+)/); return m ? decodeURIComponent(m[1]) : String(v||"").trim(); };
 
 /* ---------- Texte plus grand ---------- */
@@ -717,14 +763,15 @@ applySize(store.get("size") === "big");
 $("sizeBtn").addEventListener("click", ()=>{ const big = document.documentElement.dataset.size !== "big"; store.set("size", big ? "big" : ""); applySize(big); });
 
 /* ---------- Thème : automatique (suit le téléphone), clair ou sombre, choix gardé sur l'appareil ---------- */
-const THEMES = [["", "automatique"], ["light", "clair"], ["dark", "sombre"]];
+const THEMES = [["dark", "sombre"], ["light", "clair"], ["auto", "automatique"]];
 function applyTheme(t){
-  if(t === "light" || t === "dark") document.documentElement.dataset.theme = t; else { t = ""; delete document.documentElement.dataset.theme; }
+  if(!THEMES.some(x => x[0] === t)) t = "dark";   // sombre par défaut
+  if(t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
   $("themeBtn").textContent = "Thème : " + THEMES.find(x => x[0] === t)[1];
 }
 applyTheme(store.get("theme"));
 $("themeBtn").addEventListener("click", ()=>{
-  const cur = document.documentElement.dataset.theme || "", i = THEMES.findIndex(x => x[0] === cur), nx = THEMES[(i + 1) % THEMES.length][0];
+  const cur = document.documentElement.dataset.theme || "auto", i = THEMES.findIndex(x => x[0] === cur), nx = THEMES[(i + 1) % THEMES.length][0];
   store.set("theme", nx); applyTheme(nx);
 });
 
@@ -737,11 +784,11 @@ $("themeBtn").addEventListener("click", ()=>{
 
 /* ---------- Icône d'écran d'accueil : manifeste local contenant le lien de la liste ---------- */
 function setManifest(){
-  if(manifestSet || !code) return;
+  if(manifestSet) return;
   try{
     const base = location.href.split("#")[0];
-    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#f1f5f4", theme_color:"#1f5a4c",
-      start_url: base + "#c=" + encodeURIComponent(code), scope: base.replace(/[^/]*$/, ""),
+    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#0d1117", theme_color:"#0d1117",
+      start_url: code ? base + "#c=" + encodeURIComponent(code) : base, scope: base.replace(/[^/]*$/, ""),
       icons:[{src:new URL("icon-192.png", base).href, sizes:"192x192", type:"image/png", purpose:"any"},
              {src:new URL("icon-512.png", base).href, sizes:"512x512", type:"image/png", purpose:"any"}]};
     const url = URL.createObjectURL(new Blob([JSON.stringify(m)], {type:"application/manifest+json"}));
@@ -759,9 +806,10 @@ function toLogin(message){
   $("loginErr").textContent = message || "";
 }
 
+// « public » (sans code) = lecture seule, affichée comme la vue famille
 async function load(){
-  const d = await rpc("noel_get", {p_code:code});
-  role = d.role; gifts = d.gifts || []; blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
+  const d = code ? await rpc("noel_get", {p_code:code}) : await rpc("noel_public", {});
+  role = d.role === "owner" ? "owner" : "family"; gifts = d.gifts || []; blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
   const dp = d.display && typeof d.display === "object" ? d.display : {};
   display = {
     featured: (Array.isArray(dp.featured) ? dp.featured : []).filter(f => f && typeof f.key === "string" && typeof f.label === "string").slice(0,10),
@@ -770,26 +818,18 @@ async function load(){
   document.title = d.title;
   $("title").textContent = d.title;
   $("login").hidden = true; $("app").hidden = false; $("foot").hidden = false;
-  $("familyTop").hidden = role !== "family";
-  $("tabbar").hidden = role !== "family";
+  document.body.dataset.role = role;
   $("ownerTop").hidden = role !== "owner";
   $("settings").hidden = role !== "owner";
   $("bulkWrap").hidden = role !== "owner";
+  $("logout").hidden = role !== "owner";
   $("lead").textContent = role === "owner"
-    ? "Ta liste, telle que ta famille la voit, sans les réservations."
-    : "Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.";
-  syncName();
+    ? "Ta liste, telle que ta famille la voit."
+    : "Voici mes idées de cadeaux, avec les prix relevés chez les marchands.";
   render();
   renderBlocked();
   renderFav();
   setManifest();
-}
-
-function syncName(){
-  if(role !== "family") return;
-  $("nameForm").hidden = !!who;
-  $("whoBar").hidden = !who;
-  $("whoName").textContent = who;
 }
 
 function sorted(arr){
@@ -800,31 +840,23 @@ function sorted(arr){
   return a.map(x=>x.g);
 }
 
-function render(){
+function render(){ renderList(); refreshSheet(); }
+function renderList(){
   const list = $("list");
-  if(role === "family"){
-    const claimed = gifts.filter(g=>g.claimed_by), bought = claimed.filter(g=>g.bought).length;
-    $("segs").innerHTML = gifts.map(g => `<i class="${g.claimed_by ? (same(g.claimed_by,who) ? 'me' : (g.bought ? 'done' : 'on')) : ''}"></i>`).join("");
-    $("count").innerHTML = gifts.length
-      ? `<div><strong>${gifts.length - claimed.length}</strong> <span>à prendre</span></div><div><strong>${claimed.length}</strong> <span>pris</span></div><div><strong>${bought}</strong> <span>achetés</span></div>`
-      : "";
-    document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.f===filter)));
-  }
   const stamps = gifts.map(g=>g.checked_at || g.offers_at).filter(Boolean).sort();
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
   $("priceNoteBox").hidden = !withPrice;
   $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
     + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Choix de Dorian » : site mis en avant par le propriétaire, sans effet sur les prix ; « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
   renderDrops();
-  $("listbar").hidden = !gifts.length;
+  $("listbar").hidden = role === "family" || !gifts.length;
   $("sort").value = sort;
   $("omode").value = orderMode();
+  $("gcount").textContent = gifts.length ? String(gifts.length) : "";
 
+  // Famille : aucune recherche, aucun filtre ni tri ; les réglages éventuellement gardés sur l'appareil sont ignorés
+  if(role === "family"){ list.innerHTML = famHtml(); return; }
   let shown = gifts;
-  if(role === "family"){
-    if(filter==="open") shown = gifts.filter(g=>!g.claimed_by);
-    if(filter==="mine") shown = gifts.filter(g=>g.claimed_by && same(g.claimed_by,who));
-  }
   shown = sorted(shown);
   const cats = [...new Set(gifts.map(g => g.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, "fr"));
   if(catFilter && !cats.includes(catFilter)){ catFilter = ""; store.del("cat"); }
@@ -849,14 +881,18 @@ function render(){
     list.innerHTML = `<li class="empty"><strong>${t}</strong>${s}</li>`;
     return;
   }
-  list.innerHTML = shown.map(g=>{
+  list.innerHTML = shown.map(giftHtml).join("");
+}
+
+// Carte détaillée d'un cadeau (liste du propriétaire, fiche ouverte par la famille)
+function giftHtml(g){
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
     if(role === "owner" && editing && editing.id === g.id) return editLi(g);
     const offs = cleanOffers(g), bo = inStock(offs)[0] || null;
     const best = bestPrice(g);
-    const other0 = g.claimed_by && role==="family" && !same(g.claimed_by,who);
+    const other0 = false;
     const sv = (() => { if(!bo) return null; const o2 = offs.filter(o => o !== bo && o.stock !== "out").map(totalOf).sort((x,y)=>x-y);
       if(o2.length < 2) return null; const m = Math.floor(o2.length/2), med = o2.length % 2 ? o2[m] : (o2[m-1] + o2[m]) / 2, d = med - totalOf(bo);
       return d >= 1 ? {by:d, n:o2.length} : null; })();
@@ -864,7 +900,7 @@ function render(){
       ? `<div class="hp"><span class="lbl">${offs.length ? "Meilleur prix" : "Prix"}</span><div class="hpr"><b>${eur(best)}</b>${bo ? `<span class="at">chez ${esc(bo.store)}</span>` : ""}</div>${bo ? `${chkText(bo, g)}<small>${typeof bo.shipping === "number" ? "livraison comprise" : "hors livraison"}</small>` : ""}${sv ? `<span class="save">${eur(sv.by)} de moins que chez les ${sv.n} autres marchands (prix médian)</span>` : ""}</div>`
       : (offs.length ? `<div class="hp"><span class="at">En rupture chez les marchands lus</span></div>` : "");
     const cta = bo && !other0 ? `<a class="cta" href="${esc(bo.url)}" target="_blank" rel="noopener noreferrer">Voir l'offre chez ${esc(bo.store)}</a>` : "";
-    const other = g.claimed_by && role==="family" && !same(g.claimed_by,who);
+    const other = false;
     const all = orderedOffers(g, offs), fk = favKeys(g);
     const li = o => `<li class="${o===bo?'best':''}${o.stock==='out'?' out':''}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${o===bo?'<span class="tag">Le moins cher</span>':''}${favIdx(fk, o)>=0?'<span class="tag fav">Choix de Dorian</span>':''}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
     const offersHtml = (!other && offs.length)
@@ -896,21 +932,10 @@ function render(){
         ? `<p class="status" style="width:100%">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button class="btn ghost small" data-researchno>Non</button></div>`
         : `<button class="btn ghost small" data-edit="${g.id}">Modifier</button>`
           + `<button class="btn ghost small" data-top="${g.id}" aria-pressed="${g.top ? "true" : "false"}">${STAR} Envie forte</button>`
-          + `<details class="more"${dk("m" + g.id)}><summary>Plus d'actions</summary><div class="act">`
+          + `<details class="more"${dk("m" + g.id)}><summary>Plus</summary><div class="act">`
           + `<button class="btn ghost small" data-refresh="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Relire les prix de ${esc(g.title)} (gratuit)">${refreshing.has(g.id) ? "Lecture…" : "Actualiser"}</button>`
           + `<button class="btn ghost small" data-research="${g.id}" ${refreshing.has(g.id) ? "disabled" : ""} aria-label="Chercher d'autres marchands pour ${esc(g.title)}">Autres marchands</button>`
           + `<button class="btn ghost small" data-del="${g.id}">Retirer</button></div></details>`;
-    } else if(g.claimed_by){
-      const mine = same(g.claimed_by, who);
-      cls += mine ? " mine" : " taken";
-      const who2 = mine ? (g.bought ? "Acheté par toi" : "C'est toi qui l'offres") : (g.bought ? "Acheté par " : "Pris par ") + esc(g.claimed_by);
-      badges += `<span class="badge who-badge">${g.bought ? CHECK + " " : ""}${who2}</span>`;
-      if(mine && g.bought) extra = paidHtml(g, bo);
-      if(mine) act = g.bought
-        ? `<button class="btn ghost small" data-unbought="${g.id}">Pas encore acheté</button>`
-        : `<button class="btn big" data-bought="${g.id}">C'est acheté</button><button class="btn ghost small" data-unclaim="${g.id}">Annuler</button>`;
-    } else {
-      act = `<button class="btn big" data-claim="${g.id}">Je le prends</button>`;
     }
     const lastRead = offersHtml && (g.checked_at || g.offers_at) ? `<p class="note">Dernière lecture des prix le ${D(g.checked_at || g.offers_at, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}, marchands neufs uniquement.</p>` : "";
     // Ordre : identité, meilleur prix, action principale, lien vers l'offre ; le reste (tous les prix, historique, comparateurs) est replié
@@ -920,7 +945,6 @@ function render(){
     const head = `<div class="txt">${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h3>${esc(g.title)}</h3>${note}${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}</div>`;
     const mid = role === "owner" ? `${price}${cta}${see}${actHtml}` : `${price}${actHtml}${cta}${see}${extra}`;
     return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body">${head}${mid}${detHtml}</div></li>`;
-  }).join("");
 }
 
 async function run(fn){
@@ -935,19 +959,14 @@ $("login").addEventListener("submit", async e=>{
   e.preventDefault(); $("loginErr").textContent = "";
   const c = extractCode($("code").value); if(!c) return;
   code = c;
-  try{ await load(); store.set("c", code); $("code").value = ""; }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
+  try{
+    await load();
+    if(role !== "owner"){ code = ""; store.del("c"); await load(); $("loginErr").textContent = ""; return; }
+    store.set("c", code); $("code").value = "";
+    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+  }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
 });
-$("logout").addEventListener("click", ()=>{ store.del("c"); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} manifestSet = false; toLogin(""); });
-$("nameForm").addEventListener("submit", e=>{
-  e.preventDefault();
-  const n = $("who").value.trim(); if(!n){ $("who").focus(); return; }
-  who = n; store.set("who", n); syncName(); render();
-});
-$("changeName").addEventListener("click", ()=>{ $("whoBar").hidden = true; $("nameForm").hidden = false; $("who").value = who; $("who").focus(); });
-document.querySelector(".tabs").addEventListener("click", e=>{
-  const b = e.target.closest("button[data-f]"); if(!b) return;
-  filter = b.dataset.f; render();
-});
+$("logout").addEventListener("click", ()=>{ store.del("c"); code = ""; manifestSet = false; try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} showSkeleton(); load().catch(err=>{ $("appErr").textContent = err.message; }); });
 $("sort").addEventListener("change", ()=>{ sort = $("sort").value; store.set("sort", sort); render(); });
 $("q").addEventListener("input", ()=>{ query = $("q").value; render(); });
 sort = store.get("sort") || "list";
@@ -1057,6 +1076,7 @@ $("addForm").addEventListener("submit", e=>{
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
   if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
+  if(price === null){ $("manual").open = true; $("appErr").textContent = "Ajoute un prix : un cadeau sans prix n'est pas proposé à la famille."; $("gPrice").focus(); return; }
   const offers = meta.offers.length ? meta.offers.map(offerOut) : null;
   const bo = inStock(meta.offers)[0];
   run(async()=>{
@@ -1097,34 +1117,16 @@ $("bulkBtn").addEventListener("click", ()=>{
   });
 });
 
-/* ---------- Invitation de la famille ---------- */
-const WORDS = "sapin etoile neige cadeau bougie renne traineau guirlande cannelle chocolat flocon veillee brioche mandarine houx gui lutin boule ruban clementine marron buche nougat chalet cheminee givre hiver lumiere reveillon bonhomme couronne cloche chant manteau echarpe moufle tricot pomme poire orange noix amande miel vanille gingembre sucre glace braise nuit minuit aurore".split(" ");
-function rnd(n){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
-function newCode(){ return [0,1,2,3].map(()=>WORDS[rnd(WORDS.length)]).join("-") + "-" + String(rnd(9000)+1000); }
+/* ---------- Invitation de la famille : simple adresse du site, sans code ---------- */
 function shareText(){
-  const c = $("famCode").value.trim();
-  if(!c) return "";
-  return "Coucou ! Voici ma liste de Noël : " + location.href.split("#")[0] + "#c=" + encodeURIComponent(extractCode(c)) +
-    "\nChoisis ce que tu offres : les autres voient ton choix, et moi je ne vois rien. Ton prénom te sera demandé la première fois.";
+  return "Coucou ! Voici ma liste de Noël : " + location.href.split("#")[0] +
+    "\nTu y trouves mes idées de cadeaux avec les prix relevés chez les marchands. Il n'y a rien à réserver, c'est pour t'inspirer.";
 }
-function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = !$("shareMsg").value; }
-$("famCode").value = store.get("fam");
-$("famCode").addEventListener("input", ()=>{ store.set("fam", $("famCode").value.trim()); refreshShare(); });
+function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = false; }
 $("copyBtn").addEventListener("click", async ()=>{
   const t = $("shareMsg").value; if(!t) return;
   try{ await navigator.clipboard.writeText(t); $("shareStatus").textContent = "Message copié. Colle-le dans ta conversation familiale."; }
   catch(e){ $("shareMsg").focus(); $("shareMsg").select(); $("shareStatus").textContent = "Sélectionne le message ci-dessus et copie-le."; }
-});
-$("renewBtn").addEventListener("click", ()=>{ $("renewConfirm").hidden = false; $("shareStatus").textContent = "Les anciens liens famille cesseront de fonctionner. Continuer ?"; });
-$("renewNo").addEventListener("click", ()=>{ $("renewConfirm").hidden = true; $("shareStatus").textContent = ""; });
-$("renewYes").addEventListener("click", ()=>{
-  $("renewConfirm").hidden = true;
-  const c = newCode();
-  run(async()=>{
-    await rpc("noel_set_family_code",{p_code:code,p_new:c});
-    $("famCode").value = c; store.set("fam", c); refreshShare();
-    $("shareStatus").textContent = "Nouveau code enregistré. Copie le message et envoie-le à tes proches.";
-  });
 });
 refreshShare();
 
@@ -1249,12 +1251,14 @@ $("list").addEventListener("change", e=>{
   }
 });
 // Liste de prix déroulante : son état est gardé quand la liste est redessinée
-$("list").addEventListener("toggle", e=>{
+const onToggle = e=>{
   const d = e.target; if(!d || !d.classList) return;
   if(d.classList.contains("erow") && editing){ const r = editing.d.offers[+d.dataset.i]; if(r) r.open = d.open; return; }
   const k = d.dataset && d.dataset.k; if(!k) return;
   if(d.open) openK.add(k); else openK.delete(k);
-}, true);
+};
+$("list").addEventListener("toggle", onToggle, true);
+$("sheet").addEventListener("toggle", onToggle, true);
 
 /* ---------- Sites en avant et ordre des prix ---------- */
 function renderFav(){
@@ -1284,9 +1288,54 @@ $("catf").addEventListener("change", ()=>{ catFilter = $("catf").value; if(catFi
 $("budf").addEventListener("change", ()=>{ budget = +$("budf").value || 0; store.set("bud", String(budget)); render(); });
 $("omode").addEventListener("change", ()=>{ store.set("om", $("omode").value === "featured" ? "featured" : "price"); render(); });
 
+/* ---------- Vue famille : catalogue en lecture seule. « Mes préférés » (envies fortes, sans limite) puis « Autres idées » ---------- */
+function famCard(g){
+  const offs = cleanOffers(g), bo = inStock(offs)[0] || null, best = bestPrice(g);
+  const hasImg = /^https:\/\//.test(g.image || "");
+  const img = hasImg ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
+  let price;
+  if(best != null){
+    const st = bo ? bo.store : (g.store || "");
+    price = `<span class="fprice">${eur(best)}</span><span class="fsrc">${[st ? "chez " + esc(st) : "", bo && bo.verified ? "prix vérifié" : "non vérifié"].filter(Boolean).join(" · ")}</span>`;
+  } else if(offs.length) price = `<span class="fsrc">En rupture chez les marchands lus</span>`;
+  else price = `<span class="fsrc">Prix à confirmer</span>`;
+  const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
+  return `<li class="fcard"><button class="fimg${hasImg ? "" : " ph"}" type="button" data-open="${g.id}" aria-label="Voir ${esc(g.title)}">${img}</button><button class="fname" type="button" data-open="${g.id}">${esc(g.title)}</button>${price}${notes}<div class="fact"><button class="btn ghost big" type="button" data-open="${g.id}">Voir les prix</button></div></li>`;
+}
+function famHtml(){
+  if(!gifts.length) return `<li class="empty"><strong>La liste arrive bientôt</strong>Reviens un peu plus tard.</li>`;
+  const pref = gifts.filter(g => g.top), rest = gifts.filter(g => !g.top);
+  const sec = (t, sub, arr) => arr.length ? `<li class="fsec"><h2>${t} :</h2>${sub ? `<p class="fsub">${sub}</p>` : ""}<ul class="fgrid">${arr.map(famCard).join("")}</ul></li>` : "";
+  return pref.length
+    ? sec("Mes préférés", "Ce que je voudrais en premier.", pref) + sec("Autres idées", "Sans ordre de préférence.", rest)
+    : sec("Mes idées", "", rest);
+}
+
+/* ---------- Fiche détaillée d'un cadeau (famille) ---------- */
+let sheetId = null;
+function openSheet(id){ sheetId = id; refreshSheet(true); }
+function closeSheet(){ sheetId = null; refreshSheet(); }
+function refreshSheet(focus){
+  const bg = $("sheetBg"), box = $("sheet");
+  if(!bg) return;
+  if(sheetId != null){
+    const g = gifts.find(x => x.id === sheetId);
+    if(!g) sheetId = null;
+    else { const top = box.scrollTop; box.innerHTML = `<div class="fgrab"></div><ul class="gifts">${giftHtml(g)}</ul><button class="btn ghost" type="button" data-close>Fermer</button>`; box.scrollTop = top; }
+  }
+  const open = sheetId != null;
+  bg.hidden = !open; document.body.classList.toggle("nosc", open);
+  if(!open) box.innerHTML = "";
+  else if(focus) box.focus();
+}
+$("sheetBg").addEventListener("click", e=>{ if(e.target.id === "sheetBg") closeSheet(); });
+document.addEventListener("keydown", e=>{ if(e.key === "Escape" && sheetId != null) closeSheet(); });
+
 /* ---------- Actions sur les cartes ---------- */
-$("list").addEventListener("click", e=>{
+const onListClick = e=>{
   const t = e.target.closest("button"); if(!t) return;
+  if(t.hasAttribute("data-close")){ closeSheet(); return; }
+  if(t.dataset.open){ openSheet(+t.dataset.open); return; }
   if(handleEdit(t)) return;
   const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.block || t.dataset.paidsave || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
   const g = gifts.find(x=>x.id===id);
@@ -1305,22 +1354,10 @@ $("list").addEventListener("click", e=>{
   if(t.hasAttribute("data-researchno")){ pendingResearch = null; render(); return; }
   if(t.dataset.researchyes){ if(!g) return; pendingResearch = null; refreshing.add(id); render();
     run(async()=>{ try{ if(!(await researchOne(g))) throw new Error("Aucun marchand fiable trouvé pour « " + g.title + " »."); } finally { refreshing.delete(id); } }); return; }
-  if(t.dataset.paidsave){
-    const inp = document.getElementById("paid" + id); if(!inp) return;
-    const raw = inp.value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
-    const v = raw === "" ? null : parseFloat(raw);
-    if(v !== null && !(v > 0 && v < 100000)){ $("appErr").textContent = "Le prix payé n'est pas valide."; inp.focus(); return; }
-    run(()=>rpc("noel_set_paid",{p_code:code,p_id:id,p_name:who,p_paid:v})); return;
-  }
-  if(t.dataset.claim){
-    if(!who){ $("appErr").textContent = "Indique d'abord ton prénom, en haut de la page."; $("who").focus(); window.scrollTo({top:0,behavior:"smooth"}); return; }
-    if(g) g.claimed_by = who; render();
-    run(()=>rpc("noel_claim",{p_code:code,p_id:id,p_name:who})); return;
-  }
-  if(t.dataset.unclaim){ if(g){ g.claimed_by = null; g.bought = false; } render(); run(()=>rpc("noel_unclaim",{p_code:code,p_id:id,p_name:who})); return; }
-  if(t.dataset.bought){ if(g) g.bought = true; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:true})); return; }
-  if(t.dataset.unbought){ if(g) g.bought = false; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:false})); }
-});
+
+};
+$("list").addEventListener("click", onListClick);
+$("sheet").addEventListener("click", onListClick);
 
 $("blockedList").addEventListener("click", e=>{
   const b = e.target.closest("button[data-unblock]"); if(!b) return;
@@ -1329,19 +1366,27 @@ $("blockedList").addEventListener("click", e=>{
 
 document.addEventListener("error", e=>{
   const i = e.target; if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("thumb")){ i.parentElement.innerHTML = PLACEHOLDER; }
+  else if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("fimg")){ i.parentElement.classList.add("ph"); i.outerHTML = PLACEHOLDER; }
 }, true);
 
-/* ---------- Démarrage : lien (#c=...), sinon code mémorisé sur cet appareil, sinon saisie ---------- */
+/* ---------- Démarrage : la famille ouvre la liste sans code. Le propriétaire passe par /gestion.html (#gestion) ou garde son code sur son appareil ---------- */
 (function start(){
-  let c = "";
+  let c = "", gestion = false;
   try{
+    gestion = /[#&]gestion\b/.test(location.hash);
+    if(/[#&]quitter\b/.test(location.hash)){ store.del("c"); try{ sessionStorage.removeItem("c"); }catch(e){} try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
     const m = location.hash.match(/[#&]c=([^&]+)/);
     if(m){ c = decodeURIComponent(m[1]); store.set("c", c); }
   }catch(e){}
   if(!c) c = store.get("c") || store.sget("c");
-  if(!c){ $("login").hidden = false; return; }
+  if(!c && gestion){ $("login").hidden = false; return; }
   code = c; $("app").hidden = false; showSkeleton();
-  load().catch(err=>{ toLogin(err.bad ? (err.code === "throttled" ? err.message : "Ce lien n'est plus valide. Demande-en un nouveau ou saisis ton code.") : err.message); });
+  load().then(()=>{ if(code && role !== "owner"){ code = ""; store.del("c"); return load(); } })
+    .catch(err=>{
+      if(code && !err.bad) $("foot").hidden = false; // même si le chargement échoue, on doit pouvoir quitter la gestion
+      if(err.bad && code){ code = ""; store.del("c"); if(gestion){ toLogin("Ce code n'est plus valide. Saisis ton code propriétaire."); return; } return load().catch(e2=>{ $("appErr").textContent = e2.message; }); }
+      if(err.bad) toLogin(err.message); else $("appErr").textContent = err.message;
+    });
 })();
 
 // Mise à jour discrète pour voir les choix des autres
@@ -1349,8 +1394,8 @@ function tick(){
   // pas de mise à jour pendant qu'on saisit un prix payé : elle effacerait la saisie
   if(editing) return;
   const a = document.activeElement;
-  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list")) return;
-  if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); });
+  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list, #sheet")) return;
+  if(!busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad && code) toLogin(e.message); });
 }
 setInterval(tick, 20000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });

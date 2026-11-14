@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liste de Noël : réglages</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="page">
+<form class="card" id="f">
+  <h1>Réglages de l'extension</h1>
+  <p class="muted">Ces deux informations restent dans ce navigateur (stockage local de l'extension). Elles ne sont envoyées qu'à ton propre site.</p>
+  <label for="site">Adresse de ta liste
+    <input id="site" type="url" placeholder="https://liste.exemple.fr" autocomplete="off" spellcheck="false">
+  </label>
+  <label for="code">Code propriétaire
+    <input id="code" type="password" placeholder="Colle ton code (ou ton lien de gestion)" autocomplete="off" spellcheck="false">
+  </label>
+  <p class="muted" id="state"></p>
+  <button class="btn" type="submit" id="save">Enregistrer et vérifier</button>
+  <p class="msg" id="msg" role="alert"></p>
+  <button class="link" type="button" id="forget">Effacer les réglages de ce navigateur</button>
+</form>
+<script type="module" src="options.js"></script>
+</body>
+</html>

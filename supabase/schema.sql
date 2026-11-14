@@ -139,6 +139,24 @@ begin
             else '{}'::jsonb end;
 end $$;
 
+-- Accès public en lecture seule : aucune donnée de réservation, aucun code requis (14 novembre).
+create or replace function public.noel_public()
+returns jsonb language plpgsql stable security definer set search_path = public, extensions as $$
+declare t text; f jsonb; m text; res jsonb;
+begin
+  select title, featured, order_mode into t, f, m from public.noel_config where id = 1;
+  select coalesce(jsonb_agg(
+    jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
+                       'image', g.image_url, 'price', g.price, 'store', g.store,
+                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
+                       'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned), 'variant', g.variant, 'category', g.category, 'cmp', g.cmp,
+                       'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
+                                              from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
+    order by g.created_at), '[]'::jsonb)
+  into res from public.noel_gifts g;
+  return jsonb_build_object('role', 'public', 'title', t, 'gifts', res, 'display', jsonb_build_object('featured', f, 'mode', m));
+end $$;
+
 create or replace function public.noel_add(p_code text, p_title text, p_url text, p_note text, p_image text,
                                            p_price numeric, p_store text, p_offers jsonb, p_top boolean, p_gtin text default null)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
@@ -429,7 +447,8 @@ revoke all on function
   public.noel_edit_offers(text,bigint,jsonb),
   public.noel_set_pinned(text,bigint,text[]),
   public.noel_set_extras(text,bigint,text,text,text,text),
-  public.noel_set_display(text,jsonb,text)
+  public.noel_set_display(text,jsonb,text),
+  public.noel_public()
 from public;
 grant execute on function
   public.noel_get(text),
@@ -448,7 +467,8 @@ grant execute on function
   public.noel_edit_offers(text,bigint,jsonb),
   public.noel_set_pinned(text,bigint,text[]),
   public.noel_set_extras(text,bigint,text,text,text,text),
-  public.noel_set_display(text,jsonb,text)
+  public.noel_set_display(text,jsonb,text),
+  public.noel_public()
 to anon, authenticated;
 
 -- Initialisation (remplacer les deux codes par des phrases longues, différentes l'une de l'autre).

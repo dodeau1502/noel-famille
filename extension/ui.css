@@ -1,0 +1,49 @@
+:root{
+  --bg:#eef1f5; --surface:#fff; --ink:#111; --muted:#5d6470; --line:#dfe3ea;
+  --berry:#b1233a; --berry-ink:#fff; --pine:#4b3a8f; --pine-soft:#ece9f7; --err:#a31d2f;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f; --err:#ff8c9b; color-scheme:dark}
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 "Figtree","Avenir Next","Segoe UI",system-ui,sans-serif}
+body.popup{width:380px; padding:14px 16px 16px}
+body.page{max-width:560px; margin:32px auto; padding:0 16px}
+[hidden]{display:none!important}
+h1{margin:0; font-size:1.15rem; letter-spacing:.01em}
+h2{margin:0 0 6px; font-size:1rem}
+p{margin:0}
+.muted,.status,small{color:var(--muted)}
+.status{font-size:.92rem; padding:10px 0}
+.top{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px}
+.link{background:none; border:0; padding:4px 2px; color:var(--pine); font:inherit; font-size:.9rem; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+form,section{display:flex; flex-direction:column; gap:10px}
+#fields{display:flex; flex-direction:column; gap:10px}
+label{display:flex; flex-direction:column; gap:4px; font-weight:600; font-size:.9rem}
+input[type=text],input[type=password],input[type=url]{
+  width:100%; min-height:42px; padding:8px 12px; border-radius:10px; border:1.5px solid var(--line);
+  background:var(--surface); color:inherit; font:inherit; font-weight:400}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--pine); outline-offset:1px}
+.row2{display:flex; gap:10px; align-items:flex-end}
+.row2 > label:first-child{flex:1; min-width:0}
+.pill{flex-direction:row; align-items:center; gap:8px; min-height:42px; padding:6px 14px 6px 10px; border:1.5px solid var(--line); border-radius:999px; cursor:pointer; white-space:nowrap}
+.pill:has(input:checked){background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
+.pill input,.check input{width:18px; height:18px; accent-color:var(--pine); flex:none}
+.check{flex-direction:row; align-items:flex-start; gap:10px; cursor:pointer}
+.check small{display:block; font-weight:400; margin-top:2px; line-height:1.35}
+.preview{display:flex; gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
+.thumb{width:64px; height:64px; border-radius:10px; overflow:hidden; background:var(--surface); display:grid; place-items:center; color:var(--pine); flex:none; font-size:1.6rem}
+.thumb img{width:100%; height:100%; object-fit:contain}
+.pmeta{display:flex; flex-direction:column; gap:2px; min-width:0}
+.store{font-weight:700; overflow-wrap:anywhere}
+.srcnote{font-size:.85rem; color:var(--muted)}
+.btn{display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:8px 18px; border-radius:10px; border:0; background:var(--berry); color:var(--berry-ink); font:inherit; font-weight:700; cursor:pointer; text-decoration:none}
+.btn.big{min-height:48px; width:100%}
+.btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.55; cursor:default}
+.warn{font-weight:600; background:var(--pine-soft); border-radius:10px; padding:9px 12px; font-size:.9rem}
+.msg{color:var(--err); font-size:.92rem; min-height:1.2em}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px}
+.ok{color:var(--pine); font-weight:600}

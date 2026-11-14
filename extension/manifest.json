@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Liste de Noël : ajouter ce produit",
+  "short_name": "Liste de Noël",
+  "version": "1.0.0",
+  "description": "Ajoute en un clic le produit affiché sur n'importe quel site à ta liste de Noël (réservé au propriétaire de la liste).",
+  "action": {
+    "default_title": "Ajouter à ma liste de Noël",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+N"
+      },
+      "description": "Ajouter la page à ma liste de Noël"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "liste-noel@dorian.invalid",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}

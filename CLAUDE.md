@@ -1,8 +1,16 @@
 # Liste de Noël famille : consignes pour l'IA
 
-Site d'une seule page, servi par un petit serveur Deno avec une base PostgreSQL, le tout sur le VPS de Dorian (`https://noel.dorianlab.fr`, Coolify). Supabase n'est plus utilisé en production depuis la bascule (novembre 2026). Le propriétaire (Dorian) y met ses idées de cadeaux, ses proches
-réservent ce qu'ils offrent, et le propriétaire ne voit jamais les réservations. Public : famille, y compris peu à l'aise
-avec le numérique, surtout sur téléphone. Langue : français.
+Site d'une seule page, servi par un petit serveur Deno avec une base PostgreSQL, le tout sur le VPS de Dorian (`https://noel.dorianlab.fr`, Coolify). Supabase n'est plus utilisé en production depuis la bascule (novembre 2026).
+Depuis le 14 novembre, c'est un CATALOGUE en lecture seule : le propriétaire (Dorian) y met ses idées de cadeaux
+avec les prix relevés chez les marchands, et sa famille les consulte. L'interface ne permet plus de réserver (plus de « Je le prends », de prénom, de « Pris par »,
+d'« Acheté » ni de prix payé) : Dorian a décidé que sa famille ne s'en servirait pas. Les fonctions de réservation (`noel_claim`, `noel_unclaim`, `noel_set_bought`,
+`noel_set_paid`) et la table `noel_claims` restent dans la base, inutilisées ; les règles ci-dessous qui les concernent (1 et 2) restent valables si on les réactive.
+Public : famille, y compris peu à l'aise avec le numérique, surtout sur téléphone. Langue : français.
+
+## Accès (depuis le 14 novembre)
+- Famille : aucune connexion, la page appelle `noel_public()` (lecture seule). Un ancien lien `#c=…` de famille est ignoré et le site s'ouvre en public.
+- Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Le code est gardé dans `localStorage` de l'appareil ; « Quitter la gestion » revient à la vue publique. La page est en `noindex`, mais l'adresse n'est pas un secret : seul le code protège la gestion.
+- Migration : `supabase/migrations/2026-11-14-noel-public.sql` (aussi dans `schema.sql`). `noel_set_family_code` et `noel_claim*` restent en base, inutilisées.
 
 ## Structure
 - `site/index.html` : toute la page (HTML, CSS, JS, sans build). Seul ce dossier est publié.
@@ -22,6 +30,8 @@ avec le numérique, surtout sur téléphone. Langue : français.
   (`node supabase/functions/shared.test.mjs` le vérifie). Après une modification, recopier puis redéployer les deux fonctions.
   Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
   `trust.js` (sécurité des marchands) n'existe que dans `noel-preview/` ; `noel-refresh` conserve le champ `trust` des offres sans le recalculer.
+- `extension/` : extension de navigateur (Manifest V3, Firefox / Chrome / Safari) qui ajoute à la liste le produit de la page affichée (`noel_add`, et `noel-preview` seulement si la case est cochée : 2 recherches SerpAPI).
+  Propriétaire seulement ; aucun code ni clé dans le dossier. Listes `MARKET` / `COMPARATOR` de `extension/lib.js` copiées de `offers.js` (à garder identiques). Détails et limites : `extension/README.md`. Test : `node extension/test/lib.test.mjs`. Non publiée (seul `site/` l'est).
 - `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
 - `server/main.ts`, `Dockerfile`, `docker-compose.coolify.yml` : serveur Deno (page + fonctions `noel-*` + relais PostgREST), PostgREST et service `backup`. `deploy/` : scripts de base, `RUNBOOK.md`.
 - `redirect/` + `.github/workflows/pages.yml` : GitHub Pages ne publie plus qu'une redirection vers `noel.dorianlab.fr` (le `#c=` est conservé).
@@ -87,9 +97,10 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
    de fonction ou d'affichage qui permette de le déduire (ni compteur de cadeaux pris, ni ordre qui change). Le relevé automatique
    (`noel-refresh`) traite toutes les fiches de la même façon : il choisit uniquement d'après `checked_at` et ne lit jamais `noel_claims`
    (sinon les dates de relevé révéleraient quels cadeaux sont pris). L'historique des prix est identique pour tous.
-2. Aucun accès direct aux tables depuis l'API publique : garder RLS activé, aucune policy, `revoke all` pour `anon` et
+2. (Depuis le 14 novembre, la famille n'a plus de code : `noel_public()`, sans paramètre, est ouverte à `anon` et ne renvoie JAMAIS `claimed_by`, `bought`, `paid` ni `blocked`. Toute autre fonction `noel_*` exige un code.)
+   Aucun accès direct aux tables depuis l'API publique : garder RLS activé, aucune policy, `revoke all` pour `anon` et
    `authenticated` (sur le VPS, le serveur Deno ne relaie en plus que les appels `rpc/noel_*` : `/rest/v1/<table>` donne 403). Tout passe par les fonctions `noel_*` qui vérifient un code.
-3. Ne jamais écrire les codes d'accès (propriétaire ou famille) dans le dépôt, un commit, une issue ou un message de PR.
+3. Ne jamais écrire le code propriétaire (ni un ancien code famille) dans le dépôt, un commit, une issue ou un message de PR.
    Ils ne sont stockés que sous forme d'empreinte en base. La clé « anon » de Supabase dans `index.html` est publique par conception.
 4. Les offres affichées doivent correspondre au produit et être fiables (`offers.js`, doublé côté page par `isMarket`) :
    tous les mots-clés et toutes les références chiffrées de la requête présents (un chiffre seul compte), même version
@@ -125,19 +136,25 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
   `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
 
 ## Style
-Mise en page (refonte du 31 octobre, `site/index.html` seulement : aucune base ni fonction serveur touchée) :
-- En-tête : compte à rebours, bouton « Affichage » (texte plus grand, thème automatique / clair / sombre, choix gardé dans `localStorage` `theme`), titre.
-- Famille : avancement, prénom, puis barre d'onglets « À prendre / Tout / Mes choix » collée en haut de l'écran (`#tabbar`, hors de `#familyTop` pour que `position:sticky` tienne sur toute la liste).
-- Recherche par mot (`#q`, titre, précision, version, catégorie ; côté page seulement, rien n'est stocké) et bloc replié « Trier et filtrer » (tri, catégorie, budget, ordre des marchands) avec pastille du nombre de réglages actifs.
-- Propriétaire : formulaire d'ajout en haut ; « Inviter la famille », « Sites en avant » et « Marchands écartés » regroupés dans un seul bloc replié « Réglages de la liste » (`#settings`) en bas de page.
-- Carte d'un cadeau : grande photo (200 px, `object-fit:contain`, 84 px si le cadeau est pris), badges sur la photo, nom, bloc « Meilleur prix » (prix, marchand, état de vérification,
-économie par rapport au prix médian des autres marchands en stock, 2 autres au moins, 1 € au moins), puis l'action principale (famille : « Je le prends » / « C'est acheté » en grand bouton, puis « Voir l'offre » ;
-propriétaire : « Voir l'offre », « Modifier », « Envie forte », le reste dans « Plus d'actions »). Tout le reste (liste de prix, historique, dernière lecture, comparateurs, « Écarter un marchand »)
-est replié dans « Tous les prix et détails » (`.det`). L'état ouvert / fermé de ces blocs est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
-- La note sur les prix est repliée (« Comment lire les prix »). Formulaire de modification : marchands repliés, barre Enregistrer / Annuler fixe en bas.
-- Icônes dans `.media` : la règle de taille ne vise que `.media > svg` (l'ancienne règle agrandissait aussi l'étoile et la coche des badges).
-Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thème clair et sombre via variables CSS.
-Texte en français simple, phrases courtes. Garder une seule colonne.
+Refonte du 14 novembre (direction « Catalogue », `site/index.html` seulement : aucune base ni fonction serveur touchée). Polices : Bebas Neue (titres, prix, noms) et Figtree
+(texte), chargées depuis Google Fonts. Palette : violet (accent) et rouge (action), thème SOMBRE PAR DÉFAUT (`<html data-theme="dark">`) ; « Affichage » propose sombre, clair
+ou automatique (`localStorage` `theme`), et le texte agrandi (`size`). Interface sobre, gros boutons, mobile en priorité, texte français simple.
+- En-tête : compte à rebours, bouton « Affichage », titre et phrase d'explication dans un bloc centré.
+- Vue famille (`famHtml`, `famCard`) : deux sections, « Mes préférés » (cadeaux marqués « Envie forte », sans limite) puis « Autres idées ». Aucun onglet, aucune recherche,
+  aucun tri ni filtre pour la famille (les réglages `cat`, `bud`, `sort`, `om` gardés sur l'appareil sont ignorés). Grille de 2 colonnes (3 dès 760 px). Carte : photo carrée
+  (`object-fit:contain`), nom souligné, meilleur prix, marchand et « prix vérifié » / « non vérifié », précision et « Version : … », bouton « Voir les prix ». Un cadeau sans prix
+  affiche « Prix à confirmer » ; l'ajout d'un cadeau sans prix est refusé.
+- Fiche détaillée (`#sheet`, `openSheet`, `refreshSheet`) : s'ouvre au toucher de la photo, du nom ou du bouton. Elle contient la carte complète `giftHtml(g)` (meilleur prix,
+  « Voir l'offre », puis « Tous les prix et détails » replié : liste de prix, historique, comparateurs). Elle est redessinée à chaque mise à jour (`render()`), sauf pendant
+  une saisie (`tick`). Fermeture : bouton « Fermer », fond, touche Échap. La bannière « Prix en baisse » concerne tous les cadeaux.
+- Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée), formulaire d'ajout en haut, recherche et « Trier et filtrer » conservés, « Inviter la famille »,
+  « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`). Le message d'invitation ne parle plus de réservation.
+- L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
+- Refonte de la partie propriétaire (14 novembre, `site/index.html` seulement, règles CSS sous `body[data-role="owner"]`, la vue famille n'est pas touchée) : page large (1120 px) sur ordinateur,
+  en-tête compact, barre d'ajout en une ligne (`#addForm`, aperçu à gauche, précision / « Envie forte » / « Corriger le nom ou le prix » / « Ajouter à la liste » à droite), barre d'outils
+  « Mes idées N » + recherche + « Trier et filtrer » + « Actualiser tous les prix » sur une ligne, liste en grille (3 colonnes dès 960 px, 2 dès 640 px, 1 sur téléphone), fiche en modification
+  sur toute la largeur et en deux colonnes dès 860 px, réglages côte à côte. Les identifiants des éléments et la logique d'ajout sont inchangés. Le nombre affiché est le total des idées (aucun lien avec les réservations, règle 1).
+- Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
 - Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).
