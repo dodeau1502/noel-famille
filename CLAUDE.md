@@ -122,19 +122,24 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
   `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
 
 ## Style
-Mise en page (refonte du 31 octobre, `site/index.html` seulement : aucune base ni fonction serveur touchée) :
-- En-tête : compte à rebours, bouton « Affichage » (texte plus grand, thème automatique / clair / sombre, choix gardé dans `localStorage` `theme`), titre.
-- Famille : avancement, prénom, puis barre d'onglets « À prendre / Tout / Mes choix » collée en haut de l'écran (`#tabbar`, hors de `#familyTop` pour que `position:sticky` tienne sur toute la liste).
-- Recherche par mot (`#q`, titre, précision, version, catégorie ; côté page seulement, rien n'est stocké) et bloc replié « Trier et filtrer » (tri, catégorie, budget, ordre des marchands) avec pastille du nombre de réglages actifs.
-- Propriétaire : formulaire d'ajout en haut ; « Inviter la famille », « Sites en avant » et « Marchands écartés » regroupés dans un seul bloc replié « Réglages de la liste » (`#settings`) en bas de page.
-- Carte d'un cadeau : grande photo (200 px, `object-fit:contain`, 84 px si le cadeau est pris), badges sur la photo, nom, bloc « Meilleur prix » (prix, marchand, état de vérification,
-économie par rapport au prix médian des autres marchands en stock, 2 autres au moins, 1 € au moins), puis l'action principale (famille : « Je le prends » / « C'est acheté » en grand bouton, puis « Voir l'offre » ;
-propriétaire : « Voir l'offre », « Modifier », « Envie forte », le reste dans « Plus d'actions »). Tout le reste (liste de prix, historique, dernière lecture, comparateurs, « Écarter un marchand »)
-est replié dans « Tous les prix et détails » (`.det`). L'état ouvert / fermé de ces blocs est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
-- La note sur les prix est repliée (« Comment lire les prix »). Formulaire de modification : marchands repliés, barre Enregistrer / Annuler fixe en bas.
-- Icônes dans `.media` : la règle de taille ne vise que `.media > svg` (l'ancienne règle agrandissait aussi l'étoile et la coche des badges).
-Interface sobre, gros boutons, texte lisible à l'écran d'un téléphone, thème clair et sombre via variables CSS.
-Texte en français simple, phrases courtes. Garder une seule colonne.
+Refonte du 14 novembre (direction « Catalogue », `site/index.html` seulement : aucune base ni fonction serveur touchée). Polices : Bebas Neue (titres, prix, noms) et Figtree
+(texte), chargées depuis Google Fonts. Palette : violet `#4b3a8f` (accent), rouge `#b1233a` (action), fond gris clair ; thème sombre automatique ou choisi dans « Affichage »
+(`localStorage` `theme`), texte agrandi (`size`). Interface sobre, gros boutons, mobile en priorité, texte français simple.
+- En-tête : compte à rebours, bouton « Affichage », titre et phrase d'explication dans un bloc blanc centré.
+- Vue famille (`famHtml`, `famCard`) : deux sections, « Mes préférés » (cadeaux marqués « Envie forte », sans limite) puis « Autres idées ». Aucun onglet, aucune recherche,
+  aucun tri ni filtre : les réglages `cat`, `bud`, `sort`, `om` éventuellement gardés sur l'appareil sont ignorés pour la famille. Grille de 2 colonnes (3 dès 760 px).
+  Carte : photo carrée (`object-fit:contain`), nom souligné, meilleur prix, marchand et « prix vérifié » / « non vérifié », précision et « Version : … », puis UN bouton :
+  « Je le prends » ; « ✓ Tu le prends » ou « ✓ Acheté » si c'est le cadeau de la personne ; « Pris par X » (carte grisée, sans bouton) si quelqu'un d'autre l'a pris.
+  Les cartes gardent leur place (rien ne se réordonne selon les réservations). Un cadeau sans prix affiche « Prix à confirmer » ; l'ajout d'un cadeau sans prix est refusé.
+- Fiche détaillée (`#sheet`, `openSheet`, `refreshSheet`) : s'ouvre au toucher de la photo ou du nom. Elle contient la carte complète `giftHtml(g)` (meilleur prix, « Je le prends » /
+  « C'est acheté » / « Annuler », « Voir l'offre », puis « Tous les prix et détails » replié : liste de prix, historique, comparateurs, prix payé). Elle est redessinée à chaque
+  mise à jour (`render()`), sauf pendant une saisie (`tick`). Fermeture : bouton « Fermer », fond, touche Échap.
+- Prénom : demandé dans une petite fiche à la première réservation seulement (`openName`, `pendingClaim`), puis rappelé en haut avec « Changer ». « Tu as choisi N cadeaux » remplace
+  l'ancienne barre d'avancement.
+- Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée qu'avant, nouvelle palette et nouvelles polices), formulaire d'ajout en haut, barre de recherche /
+  « Trier et filtrer » conservée, « Inviter la famille », « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`).
+- L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
+- Icônes dans `.media` : la règle de taille ne vise que `.media > svg`. Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
 - Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).

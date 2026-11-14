@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#1f5a4c">
+<meta name="theme-color" content="#4b3a8f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Noël">
@@ -14,28 +14,28 @@
 <title>Liste de Noël</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Principes : une seule colonne, l'action principale visible sans défiler, les détails repliés.
      Famille : « Je le prends » juste sous le prix. Propriétaire : ajout en haut, réglages regroupés en bas. */
   :root{
-    --bg:#f1f5f4; --surface:#ffffff; --ink:#14302b; --muted:#566d67; --line:#d6e0dd;
-    --berry:#b1233a; --berry-ink:#ffffff; --pine:#1f5a4c; --pine-soft:#e3eeea;
-    --seg-off:#cfdad6; --focus:#1f5a4c; --err:#a31d2f; --shadow:0 1px 2px rgb(20 48 43 / .08), 0 6px 18px rgb(20 48 43 / .06);
-    --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+    --bg:#eef1f5; --surface:#ffffff; --ink:#111111; --muted:#5d6470; --line:#dfe3ea;
+    --berry:#b1233a; --berry-ink:#ffffff; --pine:#4b3a8f; --pine-soft:#ece9f7;
+    --seg-off:#dfe3ea; --focus:#4b3a8f; --err:#a31d2f; --shadow:0 1px 2px rgb(17 17 17 / .06), 0 6px 18px rgb(17 17 17 / .05);
+    --f-display:"Bebas Neue","Oswald","Impact","Arial Narrow",sans-serif;
     --f-body:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
-      --bg:#0e1b19; --surface:#152624; --ink:#e9f1ef; --muted:#9db1ac; --line:#26403b;
-      --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#79ccb1; --pine-soft:#183430;
-      --seg-off:#2a413c; --focus:#79ccb1; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
+      --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+      --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
+      --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
     }
   }
   :root[data-theme="dark"]{
-    --bg:#0e1b19; --surface:#152624; --ink:#e9f1ef; --muted:#9db1ac; --line:#26403b;
-    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#79ccb1; --pine-soft:#183430;
-    --seg-off:#2a413c; --focus:#79ccb1; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
+    --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
+    --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
   }
 
   *{box-sizing:border-box}
@@ -66,7 +66,7 @@
     background:var(--pine-soft); color:var(--pine); border-radius:999px; padding:6px 14px 6px 12px;
     font-weight:600; font-size:.95rem;
   }
-  .days b{font:800 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
+  .days b{font:400 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
   .view{position:relative; margin-left:auto}
   .view summary{list-style:none; display:flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); font-weight:600; font-size:.92rem}
   .view[open] summary{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
@@ -76,24 +76,13 @@
     font-weight:600; font-size:.95rem; cursor:pointer; color:var(--ink); text-align:left;
   }
   .tool[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  h1{font:800 clamp(1.75rem,7.5vw,2.3rem)/1.08 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
+  h1{font:400 clamp(1.75rem,7.5vw,2.3rem)/1.08 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
   .lead{color:var(--muted); max-width:46ch; font-size:1rem}
-
-  /* Avancement (famille) */
-  .progress{display:flex; flex-direction:column; gap:8px}
-  .segs{display:flex; gap:4px; height:10px}
-  .segs i{flex:1 1 0; min-width:4px; border-radius:3px; background:var(--seg-off)}
-  .segs i.on{background:var(--pine); opacity:.5}
-  .segs i.done{background:var(--pine)}
-  .segs i.me{background:var(--berry)}
-  .count{display:flex; flex-wrap:wrap; gap:2px 16px; font-weight:600}
-  .count span{color:var(--muted); font-weight:500}
-  .count strong{font:700 1.15rem var(--f-display); font-variant-numeric:tabular-nums}
 
   /* Cartes et champs */
   .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px}
   .login{display:flex; flex-direction:column; gap:12px}
-  .login h2,.panel h2{font:700 1.2rem/1.2 var(--f-display)}
+  .login h2,.panel h2{font:400 1.2rem/1.2 var(--f-display)}
   label{display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem}
   input[type=text],input[type=password],input[type=url],input[type=search],select,textarea{
     width:100%; min-height:48px; padding:10px 14px; border-radius:12px; border:1.5px solid var(--line);
@@ -124,13 +113,6 @@
   .linkbtn{background:none; border:0; padding:10px 6px; color:var(--pine); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; font-size:inherit}
 
   /* Onglets (collés en haut), recherche, filtres */
-  .tabbar{position:sticky; top:0; z-index:10; margin-inline:-12px; padding:8px 12px; background:color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter:blur(8px)}
-  .tabs{display:flex; gap:6px; background:var(--pine-soft); padding:5px; border-radius:14px}
-  .tabs button{
-    flex:1 1 0; min-height:46px; border:0; border-radius:10px; background:transparent; cursor:pointer;
-    font-weight:600; color:var(--pine);
-  }
-  .tabs button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0 / .12)}
   .listbar{display:flex; flex-direction:column; gap:10px}
   .filters summary{list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; padding:8px 14px; border:1.5px solid var(--line); border-radius:12px; font-weight:600; background:var(--surface)}
   .filters summary .fc{font-size:.85rem; color:var(--pine); background:var(--pine-soft); border-radius:999px; padding:2px 10px}
@@ -149,7 +131,7 @@
   .gift .media .badge{background:var(--surface); box-shadow:0 1px 3px rgb(0 0 0 / .18)}
   .gift .body{display:flex; flex-direction:column; gap:12px; padding:16px}
   .gift .txt{min-width:0; display:flex; flex-direction:column; gap:4px}
-  .gift h3{margin:0; font:700 1.2rem/1.25 var(--f-display); overflow-wrap:anywhere}
+  .gift h3{margin:0; font:400 1.2rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .gift .note{color:var(--muted); font-size:.95rem; overflow-wrap:anywhere}
   .gift .see{font-size:.95rem; font-weight:600}
   .gift.taken{background:transparent; border-style:dashed; box-shadow:none}
@@ -173,7 +155,7 @@
   .hp{display:flex; flex-direction:column; gap:2px; background:var(--pine-soft); border-radius:14px; padding:12px 14px}
   .hp .lbl{font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine); font-weight:800}
   .hp .hpr{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px}
-  .hp b{font:800 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
+  .hp b{font:400 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
   .hp .at{font-weight:600}
   .hp small{color:var(--muted); font-size:.85rem}
   .hp .chk{display:flex; align-items:center; gap:5px; color:var(--muted)}
@@ -194,7 +176,7 @@
   /* Détails repliés : tous les prix, historique, comparateurs */
   .det{border-top:1px solid var(--line); padding-top:4px}
   .det > summary{list-style:none; display:flex; align-items:center; justify-content:space-between; min-height:48px; font-weight:700; color:var(--pine)}
-  .det > summary::after{content:"+"; font:700 1.4rem/1 var(--f-display)}
+  .det > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display)}
   .det[open] > summary::after{content:"–"}
   .det > .inner{display:flex; flex-direction:column; gap:12px; padding-bottom:4px}
   .offers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden}
@@ -202,7 +184,7 @@
   .offers li:first-child{border-top:0}
   .offers a{color:var(--ink); font-weight:600; text-decoration:none; min-width:0; overflow-wrap:anywhere; padding:10px 0; flex:1}
   .offers a:hover{text-decoration:underline}
-  .offers b{font:700 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .offers b{font:400 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
   .offers li.best{background:var(--pine-soft)}
   .offers li.best b{color:var(--pine)}
   .offers a small{display:block; font-weight:500; font-size:.82rem; color:var(--muted)}
@@ -246,10 +228,10 @@
   .alt{display:grid; grid-template-columns:48px minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; min-height:56px; text-align:left; padding:8px 12px; border-radius:12px; border:1.5px solid var(--line); background:transparent; cursor:pointer; color:var(--ink)}
   .alt .thumb{width:48px; height:48px; border-radius:8px}
   .alt .t{overflow-wrap:anywhere; font-weight:600; font-size:.95rem; line-height:1.3}
-  .alt b{font:700 1rem var(--f-display); white-space:nowrap}
+  .alt b{font:400 1rem var(--f-display); white-space:nowrap}
   .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
   .preview .thumb{width:72px; height:72px}
-  .preview h3{margin:0; font:700 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
+  .preview h3{margin:0; font:400 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
   .preview .more{display:flex; flex-direction:column; gap:2px; margin-top:4px; font-size:.92rem; color:var(--muted)}
   .status{font-size:.95rem; color:var(--muted)}
   .warn{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem}
@@ -263,8 +245,8 @@
   .rowbtns{display:flex; flex-wrap:wrap; gap:8px}
   .rowbtns .btn{flex:1 1 auto}
   /* Réglages regroupés (propriétaire) */
-  .settings > summary{list-style:none; font:700 1.1rem var(--f-display); min-height:48px; display:flex; align-items:center; justify-content:space-between}
-  .settings > summary::after{content:"+"; font:700 1.4rem/1 var(--f-display); color:var(--pine)}
+  .settings > summary{list-style:none; font:400 1.1rem var(--f-display); min-height:48px; display:flex; align-items:center; justify-content:space-between}
+  .settings > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display); color:var(--pine)}
   .settings[open] > summary::after{content:"–"}
   .settings > .sub{display:flex; flex-direction:column; gap:10px; padding-top:8px}
   .settings details.share{border:1px solid var(--line); border-radius:12px; padding:4px 14px}
@@ -273,7 +255,7 @@
   #favList{display:flex; flex-wrap:wrap; gap:8px}
 
   .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
-  .empty strong{display:block; color:var(--ink); font:700 1.1rem var(--f-display); margin-bottom:4px}
+  .empty strong{display:block; color:var(--ink); font:400 1.1rem var(--f-display); margin-bottom:4px}
   .skeleton{height:84px; border-radius:16px; background:linear-gradient(90deg,var(--line),var(--surface),var(--line)); background-size:200% 100%; animation:sh 1.4s linear infinite}
   @keyframes sh{to{background-position:-200% 0}}
 
@@ -290,7 +272,7 @@
   /* Modification d'une fiche */
   .edit{border-color:var(--pine)}
   .gift.edit{padding:16px; gap:12px; box-shadow:none}
-  .edit h4{margin:0; font:700 1.05rem var(--f-display)}
+  .edit h4{margin:0; font:400 1.05rem var(--f-display)}
   .edit .erow{display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px}
   .edit details.erow{display:block; padding:0}
   .edit .erow > summary{list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center; min-height:52px; padding:0 12px; font-weight:600}
@@ -300,6 +282,41 @@
   .edit .stick{position:sticky; bottom:0; display:flex; gap:8px; background:var(--surface); border-top:1px solid var(--line); padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px)); margin-top:4px}
   .edit .stick .btn{flex:1}
   .edit input[list]{width:100%}
+
+  /* Refonte « catalogue » : en-tête, grille famille, fiche détaillée */
+  h1{font:400 clamp(2.2rem,10.5vw,3.1rem)/1 var(--f-display); letter-spacing:.02em; text-transform:uppercase; text-align:center; text-wrap:balance}
+  .hd{background:var(--surface); border-radius:10px; padding:18px 14px 16px; text-align:center}
+  .hd .lead{margin:10px auto 0; max-width:34ch}
+  .mine-line{text-align:center; color:var(--pine); font-weight:700}
+  .mine-line:empty{display:none}
+  .who{justify-content:center}
+  .hp b{font-size:2.3rem}
+  body[data-role="family"] main{max-width:1000px}
+  .fsec{list-style:none; background:var(--surface); border-radius:10px; padding:18px 12px 26px}
+  .fsec h2{font:400 clamp(2rem,8.5vw,2.6rem)/1 var(--f-display); text-transform:uppercase; letter-spacing:.02em; text-align:center}
+  .fsub{text-align:center; color:var(--muted); font-size:.92rem; margin:6px 0 16px}
+  .fgrid{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 10px; align-items:stretch}
+  @media (min-width:760px){ .fgrid{grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px 18px} }
+  .fcard{display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0}
+  .fimg{position:relative; width:100%; max-width:240px; aspect-ratio:1/1; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; display:grid; place-items:center; overflow:hidden}
+  .fimg img{width:100%; height:100%; object-fit:contain; display:block}
+  .fimg.ph{background:var(--pine-soft); color:var(--pine)}
+  .fimg.ph svg{width:48px; height:48px}
+  .fcard.taken .fimg{filter:grayscale(.85) opacity(.55)}
+  .fstamp{position:absolute; top:8px; left:8px; background:var(--surface); color:var(--ink); border-radius:999px; padding:2px 10px; font-size:.78rem; font-weight:700; box-shadow:0 1px 3px rgb(0 0 0 / .25)}
+  .fstamp.mine{background:var(--berry); color:var(--berry-ink)}
+  .fname{background:none; border:0; padding:8px 0 0; cursor:pointer; color:var(--ink); font:400 1.4rem/1.05 var(--f-display); text-transform:uppercase; letter-spacing:.02em; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere}
+  .fprice{color:var(--pine); font:400 1.6rem/1.1 var(--f-display); letter-spacing:.02em}
+  .fsrc{font-size:.82rem; color:var(--muted)}
+  .fnote{color:var(--pine); font:400 1.1rem/1.15 var(--f-display); text-transform:uppercase; letter-spacing:.02em; max-width:26ch; overflow-wrap:anywhere}
+  .fact{margin-top:auto; padding-top:10px; width:100%; max-width:240px}
+  .fby{display:block; color:var(--muted); font-size:.9rem; padding:12px 0}
+  .fbg{position:fixed; inset:0; z-index:50; background:rgb(0 0 0 / .5); display:flex; align-items:flex-end; justify-content:center}
+  .fsheet{width:100%; max-width:560px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; background:var(--bg); border-radius:20px 20px 0 0; padding:10px 12px calc(20px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:12px; outline:0}
+  .fsheet .gifts{gap:0}
+  .fsheet .login h2{font:400 1.9rem/1 var(--f-display); text-transform:uppercase; letter-spacing:.02em}
+  .fgrab{width:44px; height:5px; border-radius:3px; background:var(--line); margin:0 auto; flex:none}
+  body.nosc{overflow:hidden}
 
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 </style>
@@ -317,8 +334,10 @@
         </div>
       </details>
     </div>
-    <h1 id="title">Liste de Noël</h1>
-    <p class="lead" id="lead">Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.</p>
+    <div class="hd">
+      <h1 id="title">Liste de Noël</h1>
+      <p class="lead" id="lead">Choisis un cadeau et appuie sur « Je le prends ». Les autres verront qu'il est pris.</p>
+    </div>
   </header>
 
   <!-- Connexion de secours (le lien direct s'en passe) -->
@@ -334,33 +353,12 @@
   <section id="app" hidden>
     <div class="stack">
 
-      <!-- Vue famille : avancement et prénom -->
+      <!-- Vue famille : nombre de cadeaux pris par la personne, prénom -->
       <div id="familyTop" class="stack" hidden>
-        <div class="progress" aria-live="polite">
-          <div class="segs" id="segs" aria-hidden="true"></div>
-          <div class="count" id="count"></div>
-        </div>
-
-        <form class="card login" id="nameForm" hidden>
-          <h2>C'est quoi ton prénom&nbsp;?</h2>
-          <label for="who">Les autres verront qui prend quoi
-            <input id="who" type="text" maxlength="40" autocomplete="given-name" placeholder="Ton prénom">
-          </label>
-          <button class="btn" type="submit">Continuer</button>
-        </form>
-
+        <p class="mine-line" id="mineLine" aria-live="polite"></p>
         <div class="who" id="whoBar" hidden>
           <p>Tu es <strong id="whoName"></strong></p>
           <button class="linkbtn" id="changeName" type="button">Changer</button>
-        </div>
-      </div>
-
-      <!-- Onglets collés en haut de l'écran (famille) -->
-      <div class="tabbar" id="tabbar" hidden>
-        <div class="tabs" role="group" aria-label="Filtrer la liste">
-          <button type="button" data-f="open" aria-pressed="true">À prendre</button>
-          <button type="button" data-f="all" aria-pressed="false">Tout</button>
-          <button type="button" data-f="mine" aria-pressed="false">Mes choix</button>
         </div>
       </div>
 
@@ -507,6 +505,9 @@
     <button class="linkbtn" id="logout" type="button">Quitter cette liste sur cet appareil</button>
   </footer>
 </main>
+
+<!-- Fiche détaillée d'un cadeau et saisie du prénom (famille) -->
+<div class="fbg" id="sheetBg" hidden><div class="fsheet" id="sheet" role="dialog" aria-modal="true" aria-label="Détail du cadeau" tabindex="-1"></div></div>
 
 <script>
 // Renseignés pour ce projet Supabase (clé publique, sans danger : les tables ne sont pas lisibles directement)
@@ -740,7 +741,7 @@ function setManifest(){
   if(manifestSet || !code) return;
   try{
     const base = location.href.split("#")[0];
-    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#f1f5f4", theme_color:"#1f5a4c",
+    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#eef1f5", theme_color:"#4b3a8f",
       start_url: base + "#c=" + encodeURIComponent(code), scope: base.replace(/[^/]*$/, ""),
       icons:[{src:new URL("icon-192.png", base).href, sizes:"192x192", type:"image/png", purpose:"any"},
              {src:new URL("icon-512.png", base).href, sizes:"512x512", type:"image/png", purpose:"any"}]};
@@ -771,13 +772,13 @@ async function load(){
   $("title").textContent = d.title;
   $("login").hidden = true; $("app").hidden = false; $("foot").hidden = false;
   $("familyTop").hidden = role !== "family";
-  $("tabbar").hidden = role !== "family";
+  document.body.dataset.role = role;
   $("ownerTop").hidden = role !== "owner";
   $("settings").hidden = role !== "owner";
   $("bulkWrap").hidden = role !== "owner";
   $("lead").textContent = role === "owner"
     ? "Ta liste, telle que ta famille la voit, sans les réservations."
-    : "Choisis ce que tu offres. Les autres voient ton choix et prennent autre chose.";
+    : "Choisis un cadeau et appuie sur « Je le prends ». Les autres verront qu'il est pris.";
   syncName();
   render();
   renderBlocked();
@@ -787,7 +788,6 @@ async function load(){
 
 function syncName(){
   if(role !== "family") return;
-  $("nameForm").hidden = !!who;
   $("whoBar").hidden = !who;
   $("whoName").textContent = who;
 }
@@ -800,15 +800,12 @@ function sorted(arr){
   return a.map(x=>x.g);
 }
 
-function render(){
+function render(){ renderList(); refreshSheet(); }
+function renderList(){
   const list = $("list");
   if(role === "family"){
-    const claimed = gifts.filter(g=>g.claimed_by), bought = claimed.filter(g=>g.bought).length;
-    $("segs").innerHTML = gifts.map(g => `<i class="${g.claimed_by ? (same(g.claimed_by,who) ? 'me' : (g.bought ? 'done' : 'on')) : ''}"></i>`).join("");
-    $("count").innerHTML = gifts.length
-      ? `<div><strong>${gifts.length - claimed.length}</strong> <span>à prendre</span></div><div><strong>${claimed.length}</strong> <span>pris</span></div><div><strong>${bought}</strong> <span>achetés</span></div>`
-      : "";
-    document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.f===filter)));
+    const n = gifts.filter(g => g.claimed_by && same(g.claimed_by, who)).length;
+    $("mineLine").textContent = n ? "Tu as choisi " + n + " cadeau" + (n > 1 ? "x" : "") + "." : "";
   }
   const stamps = gifts.map(g=>g.checked_at || g.offers_at).filter(Boolean).sort();
   const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
@@ -816,15 +813,13 @@ function render(){
   $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
     + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Choix de Dorian » : site mis en avant par le propriétaire, sans effet sur les prix ; « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
   renderDrops();
-  $("listbar").hidden = !gifts.length;
+  $("listbar").hidden = role === "family" || !gifts.length;
   $("sort").value = sort;
   $("omode").value = orderMode();
 
+  // Famille : aucune recherche, aucun filtre ni tri ; les réglages éventuellement gardés sur l'appareil sont ignorés
+  if(role === "family"){ list.innerHTML = famHtml(); return; }
   let shown = gifts;
-  if(role === "family"){
-    if(filter==="open") shown = gifts.filter(g=>!g.claimed_by);
-    if(filter==="mine") shown = gifts.filter(g=>g.claimed_by && same(g.claimed_by,who));
-  }
   shown = sorted(shown);
   const cats = [...new Set(gifts.map(g => g.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, "fr"));
   if(catFilter && !cats.includes(catFilter)){ catFilter = ""; store.del("cat"); }
@@ -849,7 +844,11 @@ function render(){
     list.innerHTML = `<li class="empty"><strong>${t}</strong>${s}</li>`;
     return;
   }
-  list.innerHTML = shown.map(g=>{
+  list.innerHTML = shown.map(giftHtml).join("");
+}
+
+// Carte détaillée d'un cadeau (liste du propriétaire, fiche ouverte par la famille)
+function giftHtml(g){
     const url = safeUrl(g.url);
     const see = url && !(g.offers && g.offers.length) ? `<a class="see" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "";
     const note = g.note ? `<p class="note">${esc(g.note)}</p>` : "";
@@ -920,7 +919,6 @@ function render(){
     const head = `<div class="txt">${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h3>${esc(g.title)}</h3>${note}${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}</div>`;
     const mid = role === "owner" ? `${price}${cta}${see}${actHtml}` : `${price}${actHtml}${cta}${see}${extra}`;
     return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body">${head}${mid}${detHtml}</div></li>`;
-  }).join("");
 }
 
 async function run(fn){
@@ -938,16 +936,6 @@ $("login").addEventListener("submit", async e=>{
   try{ await load(); store.set("c", code); $("code").value = ""; }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
 });
 $("logout").addEventListener("click", ()=>{ store.del("c"); try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} manifestSet = false; toLogin(""); });
-$("nameForm").addEventListener("submit", e=>{
-  e.preventDefault();
-  const n = $("who").value.trim(); if(!n){ $("who").focus(); return; }
-  who = n; store.set("who", n); syncName(); render();
-});
-$("changeName").addEventListener("click", ()=>{ $("whoBar").hidden = true; $("nameForm").hidden = false; $("who").value = who; $("who").focus(); });
-document.querySelector(".tabs").addEventListener("click", e=>{
-  const b = e.target.closest("button[data-f]"); if(!b) return;
-  filter = b.dataset.f; render();
-});
 $("sort").addEventListener("change", ()=>{ sort = $("sort").value; store.set("sort", sort); render(); });
 $("q").addEventListener("input", ()=>{ query = $("q").value; render(); });
 sort = store.get("sort") || "list";
@@ -1057,6 +1045,7 @@ $("addForm").addEventListener("submit", e=>{
   const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
   const price = raw === "" ? null : parseFloat(raw);
   if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
+  if(price === null){ $("manual").open = true; $("appErr").textContent = "Ajoute un prix : un cadeau sans prix n'est pas proposé à la famille."; $("gPrice").focus(); return; }
   const offers = meta.offers.length ? meta.offers.map(offerOut) : null;
   const bo = inStock(meta.offers)[0];
   run(async()=>{
@@ -1249,12 +1238,14 @@ $("list").addEventListener("change", e=>{
   }
 });
 // Liste de prix déroulante : son état est gardé quand la liste est redessinée
-$("list").addEventListener("toggle", e=>{
+const onToggle = e=>{
   const d = e.target; if(!d || !d.classList) return;
   if(d.classList.contains("erow") && editing){ const r = editing.d.offers[+d.dataset.i]; if(r) r.open = d.open; return; }
   const k = d.dataset && d.dataset.k; if(!k) return;
   if(d.open) openK.add(k); else openK.delete(k);
-}, true);
+};
+$("list").addEventListener("toggle", onToggle, true);
+$("sheet").addEventListener("toggle", onToggle, true);
 
 /* ---------- Sites en avant et ordre des prix ---------- */
 function renderFav(){
@@ -1284,9 +1275,78 @@ $("catf").addEventListener("change", ()=>{ catFilter = $("catf").value; if(catFi
 $("budf").addEventListener("change", ()=>{ budget = +$("budf").value || 0; store.set("bud", String(budget)); render(); });
 $("omode").addEventListener("change", ()=>{ store.set("om", $("omode").value === "featured" ? "featured" : "price"); render(); });
 
+/* ---------- Vue famille : « Mes préférés » (envies fortes, sans limite) puis « Autres idées » ---------- */
+function famCard(g){
+  const offs = cleanOffers(g), bo = inStock(offs)[0] || null, best = bestPrice(g);
+  const mine = !!g.claimed_by && same(g.claimed_by, who), other = !!g.claimed_by && !mine;
+  const hasImg = /^https:\/\//.test(g.image || "");
+  const img = hasImg ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER;
+  const stamp = other ? `<span class="fstamp">${g.bought ? "Acheté" : "Pris"}</span>` : mine ? `<span class="fstamp mine">${g.bought ? "Acheté" : "Ton choix"}</span>` : "";
+  let price;
+  if(best != null){
+    const st = bo ? bo.store : (g.store || "");
+    price = `<span class="fprice">${eur(best)}</span><span class="fsrc">${[st ? "chez " + esc(st) : "", bo && bo.verified ? "prix vérifié" : "non vérifié"].filter(Boolean).join(" · ")}</span>`;
+  } else if(offs.length) price = `<span class="fsrc">En rupture chez les marchands lus</span>`;
+  else price = `<span class="fsrc">Prix à confirmer</span>`;
+  const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
+  let act;
+  if(!g.claimed_by) act = `<button class="btn big" type="button" data-claim="${g.id}">Je le prends</button>`;
+  else if(mine) act = `<button class="btn ghost big" type="button" aria-pressed="true" data-open="${g.id}">${CHECK} ${g.bought ? "Acheté" : "Tu le prends"}</button>`;
+  else act = `<span class="fby">${g.bought ? "Acheté par " : "Pris par "}${esc(g.claimed_by)}</span>`;
+  return `<li class="fcard${other ? " taken" : ""}"><button class="fimg${hasImg ? "" : " ph"}" type="button" data-open="${g.id}" aria-label="Voir ${esc(g.title)}">${img}${stamp}</button><button class="fname" type="button" data-open="${g.id}">${esc(g.title)}</button>${price}${notes}<div class="fact">${act}</div></li>`;
+}
+function famHtml(){
+  if(!gifts.length) return `<li class="empty"><strong>La liste arrive bientôt</strong>Reviens un peu plus tard.</li>`;
+  const pref = gifts.filter(g => g.top), rest = gifts.filter(g => !g.top);
+  const sec = (t, sub, arr) => arr.length ? `<li class="fsec"><h2>${t} :</h2>${sub ? `<p class="fsub">${sub}</p>` : ""}<ul class="fgrid">${arr.map(famCard).join("")}</ul></li>` : "";
+  return pref.length
+    ? sec("Mes préférés", "Ce que je voudrais en premier.", pref) + sec("Autres idées", "Sans ordre de préférence.", rest)
+    : sec("Mes idées", "", rest);
+}
+
+/* ---------- Fiche détaillée et saisie du prénom (famille) ---------- */
+let sheetId = null, nameOpen = false, pendingClaim = null;
+function openSheet(id){ sheetId = id; nameOpen = false; refreshSheet(true); }
+function openName(claimId){ pendingClaim = claimId == null ? null : claimId; nameOpen = true; refreshSheet(true); }
+function closeSheet(){ sheetId = null; nameOpen = false; pendingClaim = null; refreshSheet(); }
+function refreshSheet(focus){
+  const bg = $("sheetBg"), box = $("sheet");
+  if(!bg) return;
+  if(nameOpen){
+    // pas de reconstruction pendant la saisie : elle effacerait le prénom
+    if(!box.querySelector("#whoIn")) box.innerHTML = `<div class="fgrab"></div><form id="nameSheetForm" class="login"><h2>C'est quoi ton prénom ?</h2><p class="status">Les autres verront qui prend quoi. Tu ne le saisis qu'une fois sur cet appareil.</p><input id="whoIn" type="text" maxlength="40" autocomplete="given-name" placeholder="Ton prénom" value="${esc(who)}"><button class="btn big" type="submit">Continuer</button><button class="btn ghost" type="button" data-close>Annuler</button></form>`;
+  } else if(sheetId != null){
+    const g = gifts.find(x => x.id === sheetId);
+    if(!g) sheetId = null;
+    else { const top = box.scrollTop; box.innerHTML = `<div class="fgrab"></div><ul class="gifts">${giftHtml(g)}</ul><button class="btn ghost" type="button" data-close>Fermer</button>`; box.scrollTop = top; }
+  }
+  const open = nameOpen || sheetId != null;
+  bg.hidden = !open; document.body.classList.toggle("nosc", open);
+  if(!open) box.innerHTML = "";
+  else if(focus) (nameOpen ? $("whoIn") : box).focus();
+}
+function claimNow(id){
+  const g = gifts.find(x => x.id === id); if(g) g.claimed_by = who;
+  render();
+  run(()=>rpc("noel_claim",{p_code:code,p_id:id,p_name:who}));
+}
+$("sheet").addEventListener("submit", e=>{
+  if(e.target.id !== "nameSheetForm") return;
+  e.preventDefault();
+  const n = $("whoIn").value.trim(); if(!n){ $("whoIn").focus(); return; }
+  who = n; store.set("who", n); nameOpen = false; syncName();
+  const id = pendingClaim; pendingClaim = null;
+  if(id != null) claimNow(id); else render();
+});
+$("sheetBg").addEventListener("click", e=>{ if(e.target.id === "sheetBg") closeSheet(); });
+document.addEventListener("keydown", e=>{ if(e.key === "Escape" && (nameOpen || sheetId != null)) closeSheet(); });
+$("changeName").addEventListener("click", ()=> openName(null));
+
 /* ---------- Actions sur les cartes ---------- */
-$("list").addEventListener("click", e=>{
+const onListClick = e=>{
   const t = e.target.closest("button"); if(!t) return;
+  if(t.hasAttribute("data-close")){ closeSheet(); return; }
+  if(t.dataset.open){ openSheet(+t.dataset.open); return; }
   if(handleEdit(t)) return;
   const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.block || t.dataset.paidsave || t.dataset.claim || t.dataset.unclaim || t.dataset.bought || t.dataset.unbought || 0);
   const g = gifts.find(x=>x.id===id);
@@ -1313,14 +1373,15 @@ $("list").addEventListener("click", e=>{
     run(()=>rpc("noel_set_paid",{p_code:code,p_id:id,p_name:who,p_paid:v})); return;
   }
   if(t.dataset.claim){
-    if(!who){ $("appErr").textContent = "Indique d'abord ton prénom, en haut de la page."; $("who").focus(); window.scrollTo({top:0,behavior:"smooth"}); return; }
-    if(g) g.claimed_by = who; render();
-    run(()=>rpc("noel_claim",{p_code:code,p_id:id,p_name:who})); return;
+    if(!who){ openName(id); return; }
+    claimNow(id); return;
   }
   if(t.dataset.unclaim){ if(g){ g.claimed_by = null; g.bought = false; } render(); run(()=>rpc("noel_unclaim",{p_code:code,p_id:id,p_name:who})); return; }
   if(t.dataset.bought){ if(g) g.bought = true; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:true})); return; }
   if(t.dataset.unbought){ if(g) g.bought = false; render(); run(()=>rpc("noel_set_bought",{p_code:code,p_id:id,p_name:who,p_bought:false})); }
-});
+};
+$("list").addEventListener("click", onListClick);
+$("sheet").addEventListener("click", onListClick);
 
 $("blockedList").addEventListener("click", e=>{
   const b = e.target.closest("button[data-unblock]"); if(!b) return;
@@ -1329,6 +1390,7 @@ $("blockedList").addEventListener("click", e=>{
 
 document.addEventListener("error", e=>{
   const i = e.target; if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("thumb")){ i.parentElement.innerHTML = PLACEHOLDER; }
+  else if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("fimg")){ i.parentElement.classList.add("ph"); i.outerHTML = PLACEHOLDER; }
 }, true);
 
 /* ---------- Démarrage : lien (#c=...), sinon code mémorisé sur cet appareil, sinon saisie ---------- */
@@ -1349,7 +1411,7 @@ function tick(){
   // pas de mise à jour pendant qu'on saisit un prix payé : elle effacerait la saisie
   if(editing) return;
   const a = document.activeElement;
-  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list")) return;
+  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list, #sheet")) return;
   if(code && !busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad) toLogin(e.message); });
 }
 setInterval(tick, 20000);
