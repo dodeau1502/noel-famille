@@ -12,13 +12,15 @@ $("f").addEventListener("submit", async e => {
   const site = normalizeSite($("site").value), code = extractCode($("code").value);
   const msg = $("msg"); msg.textContent = "";
   if (!site) { msg.textContent = "Adresse invalide."; return; }
+  // Autorisation d'appeler ton site : doit être demandée directement dans le gestionnaire du clic,
+  // AVANT tout « await » (sinon le navigateur ne la considère plus comme une action de l'utilisateur).
+  const asking = (() => { try { return api.permissions.request({ origins: [site + "/*"] }); } catch (e) { return Promise.reject(e); } })();
+  let granted = false;
+  try { granted = await asking; } catch (e) { msg.textContent = "Autorisation impossible : " + e.message; return; }
+  if (!granted) { msg.textContent = "Sans cette autorisation, l'extension ne peut pas joindre ton site."; return; }
   const old = await store.get();
   const codeFinal = code || (old.site === site ? old.code : "");
   if (!codeFinal) { msg.textContent = "Saisis ton code propriétaire."; return; }
-  // Autorisation d'appeler ton site : demandée ici, au clic (obligatoire pour que le navigateur l'accepte)
-  let granted = false;
-  try { granted = await api.permissions.request({ origins: [site + "/*"] }); } catch (e) { msg.textContent = "Autorisation impossible : " + e.message; return; }
-  if (!granted) { msg.textContent = "Sans cette autorisation, l'extension ne peut pas joindre ton site."; return; }
   $("save").disabled = true; msg.textContent = "Vérification…";
   try {
     const key = await fetchKey(site);
