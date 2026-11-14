@@ -25,3 +25,23 @@ services:
       - PGRST_DB_ANON_ROLE=anon
       - PGRST_JWT_SECRET=${JWT_SECRET:?}
     restart: unless-stopped
+  # Sauvegarde chiffrée de « noel-db » (pg_dump | age) vers le stockage S3 externe. Le conteneur reste en veille ;
+  # la tâche planifiée Coolify (service « backup ») lance /usr/local/bin/backup-noel.sh une fois par jour.
+  # Aucun port publié, aucun domaine. La clé privée age n'est jamais ici : seule la clé publique (BACKUP_AGE_RECIPIENT).
+  backup:
+    build:
+      context: .
+      dockerfile: infra/backup/Dockerfile
+    entrypoint: ["sleep", "infinity"]
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      - BACKUP_DATABASE_URL=postgres://backup_reader:${BACKUP_DB_PASSWORD:?}@${POSTGRES_HOST:?}:5432/noel
+      - BACKUP_AGE_RECIPIENT=${BACKUP_AGE_RECIPIENT:?}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:?}
+      - BACKUP_S3_ENDPOINT=${BACKUP_S3_ENDPOINT:?}
+      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:?}
+      - BACKUP_S3_REGION=${BACKUP_S3_REGION:?}
+      - BACKUP_S3_PREFIX=${BACKUP_S3_PREFIX:?}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:?}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:?}
