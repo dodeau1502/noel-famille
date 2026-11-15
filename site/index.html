@@ -139,6 +139,8 @@
   .badge.star{color:var(--berry); border:1.5px solid var(--berry)}
   .badge.drop{color:var(--pine)}
   .cat{font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+  .linked{font-size:.95rem; margin-top:6px}
+  .linked button{font:inherit; background:none; border:0; padding:0; color:var(--pine); text-decoration:underline; cursor:pointer; text-align:left}
   .variant{font-size:.95rem; background:var(--pine-soft); border-radius:10px; padding:8px 12px; margin-top:4px}
   .variant b{display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine)}
 
@@ -942,7 +944,7 @@ function giftHtml(g){
     const actHtml = act ? `<div class="act">${act}</div>` : "";
     const inner = `${offersHtml}${histBlock}${lastRead}${other ? "" : cmp}${blockHtml}`;
     const detHtml = inner ? `<details class="det"${dk("d" + g.id)}><summary>${offs.length > 1 ? "Tous les prix et détails" : "Détails"}</summary><div class="inner">${inner}</div></details>` : "";
-    const head = `<div class="txt">${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h3>${esc(g.title)}</h3>${note}${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}</div>`;
+    const head = `<div class="txt">${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h3>${esc(g.title)}</h3>${note}${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}${altHtml(g)}</div>`;
     const mid = role === "owner" ? `${price}${cta}${see}${actHtml}` : `${price}${actHtml}${cta}${see}${extra}`;
     return `<li class="${cls}"><div class="media">${img}${badges ? `<div class="badges">${badges}</div>` : ""}</div><div class="body">${head}${mid}${detHtml}</div></li>`;
 }
@@ -1134,7 +1136,7 @@ refreshShare();
 const numTxt = n => n == null ? "" : String(n).replace(".", ",");
 const parseNum = t => { const r = String(t ?? "").trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,""); return r === "" ? null : parseFloat(r); };
 function newDraft(g){
-  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", variant:g.variant || "", category:g.category || "",
+  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", variant:g.variant || "", category:g.category || "", with:g.with || "",
     idealo:(g.cmp && g.cmp.idealo) || "", denicheur:(g.cmp && g.cmp.denicheur) || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
     offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out", open:false})),
     add:{store:"", price:"", ship:"", url:""}};
@@ -1157,6 +1159,7 @@ function editLi(g){
     <label>Version souhaitée (facultatif)<input type="text" maxlength="120" placeholder="Ex. noir, taille M, 256 Go" data-et="variant" value="${esc(d.variant)}"></label>
     <label>Catégorie (facultatif)<input type="text" maxlength="30" list="catlist" placeholder="Ex. Tech, Maison, Sport" data-et="category" value="${esc(d.category)}"></label>
     <datalist id="catlist">${[...new Set(["Tech","Maison","Cuisine","Sport","Jeux","Loisirs","Mode","Livres"].concat(gifts.map(x => x.category).filter(Boolean)))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <label>Va avec un autre cadeau (facultatif)<select data-et="with"><option value="">Aucun</option>${gifts.filter(x => x.id !== editing.id).map(x => `<option value="${x.id}"${String(d.with) === String(x.id) ? " selected" : ""}>${esc(x.title)}</option>`).join("")}</select></label>
     <label>Fiche idealo (facultatif)<input type="url" maxlength="500" placeholder="https://www.idealo.fr/prix/…" data-et="idealo" value="${esc(d.idealo)}"></label>
     <label>Fiche Le Dénicheur (facultatif)<input type="url" maxlength="500" placeholder="https://ledenicheur.fr/product.php?p=…" data-et="denicheur" value="${esc(d.denicheur)}"></label>
     <h4>Prix par marchand</h4>
@@ -1227,6 +1230,7 @@ function handleEdit(t){
     run(async()=>{
       await rpc("noel_update_gift",{p_code:code,p_id:id,p_title:title,p_url:d.url.trim(),p_note:d.note,p_image:d.image.trim(),p_gtin:d.gtin.trim()});
       await rpc("noel_set_extras",{p_code:code,p_id:id,p_variant:d.variant,p_category:d.category,p_idealo:idl,p_denicheur:dnl});
+      if(String(d.with || "") !== String(g.with || "")) await rpc("noel_set_with",{p_code:code,p_id:id,p_with:d.with ? +d.with : null});
       if(offers) await rpc("noel_edit_offers",{p_code:code,p_id:id,p_offers:offers});
       if(pinsChanged) await rpc("noel_set_pinned",{p_code:code,p_id:id,p_keys:pins});
       editing = null;
@@ -1300,7 +1304,12 @@ function famCard(g){
   } else if(offs.length) price = `<span class="fsrc">En rupture chez les marchands lus</span>`;
   else price = `<span class="fsrc">Prix à confirmer</span>`;
   const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
-  return `<li class="fcard"><button class="fimg${hasImg ? "" : " ph"}" type="button" data-open="${g.id}" aria-label="Voir ${esc(g.title)}">${img}</button><button class="fname" type="button" data-open="${g.id}">${esc(g.title)}</button>${price}${notes}<div class="fact"><button class="btn ghost big" type="button" data-open="${g.id}">Voir les prix</button></div></li>`;
+  return `<li class="fcard"><button class="fimg${hasImg ? "" : " ph"}" type="button" data-open="${g.id}" aria-label="Voir ${esc(g.title)}">${img}</button><button class="fname" type="button" data-open="${g.id}">${esc(g.title)}</button>${price}${notes}${altHtml(g)}<div class="fact"><button class="btn ghost big" type="button" data-open="${g.id}">Voir les prix</button></div></li>`;
+}
+function altHtml(g){
+  const ids = [g.with, ...gifts.filter(x => x.with === g.id).map(x => x.id)].filter(Boolean);
+  const l = [...new Set(ids)].map(i => gifts.find(x => x.id === i)).filter(Boolean);
+  return l.length ? `<p class="linked">Va avec : ${l.map(a => `<button type="button" data-open="${a.id}">${esc(a.title)}</button>`).join(", ")}</p>` : "";
 }
 function famHtml(){
   if(!gifts.length) return `<li class="empty"><strong>La liste arrive bientôt</strong>Reviens un peu plus tard.</li>`;
