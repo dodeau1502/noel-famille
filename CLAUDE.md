@@ -1,16 +1,16 @@
 # Liste de Noël famille : consignes pour l'IA
 
 Site d'une seule page, servi par un petit serveur Deno avec une base PostgreSQL, le tout sur le VPS de Dorian (`https://noel.dorianlab.fr`, Coolify). Supabase n'est plus utilisé en production depuis la bascule (novembre 2026).
-Depuis le 14 novembre, c'est un CATALOGUE en lecture seule : le propriétaire (Dorian) y met ses idées de cadeaux
-avec les prix relevés chez les marchands, et sa famille les consulte. L'interface ne permet plus de réserver (plus de « Je le prends », de prénom, de « Pris par »,
-d'« Acheté » ni de prix payé) : Dorian a décidé que sa famille ne s'en servirait pas. Les fonctions de réservation (`noel_claim`, `noel_unclaim`, `noel_set_bought`,
-`noel_set_paid`) et la table `noel_claims` restent dans la base, inutilisées ; les règles ci-dessous qui les concernent (1 et 2) restent valables si on les réactive.
+Depuis le 17 novembre, la réservation est RÉACTIVÉE en version ultra-simplifiée (1 clic, anonyme, sans prénom) :
+- Famille : ouvre le lien `#c=<code_famille>` qui est mémorisé à vie sur son appareil (`localStorage`). Chaque appareil génère un jeton aléatoire unique (`ftok`). Un bouton « Je le prends » réserve le cadeau en 1 clic via `noel_claim(code, id, ftok)` sans demander de prénom. Sur son propre appareil, un bouton « Annuler » (`noel_unclaim`) permet de se rétracter. Pour les autres membres de la famille, le cadeau est marqué « Déjà pris ».
+- Public sans code : ouvre `noel.dorianlab.fr` sans `#c=`, la page appelle `noel_public()` (lecture seule stricte : aucun état « Déjà pris » n'est visible ni renvoyé).
+- Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Un flag `is_owner` est gardé dans `localStorage` pour empêcher l'appareil du propriétaire d'enregistrer accidentellement un code famille. La base PostgreSQL ne renvoie JAMAIS les données de réservation au propriétaire (règle 1). Dans « Réglages de la liste », le propriétaire peut définir/renouveler le code famille et copier le message d'invitation prêt à l'envoi.
 Public : famille, y compris peu à l'aise avec le numérique, surtout sur téléphone. Langue : français.
 
-## Accès (depuis le 14 novembre)
-- Famille : aucune connexion, la page appelle `noel_public()` (lecture seule). Un ancien lien `#c=…` de famille est ignoré et le site s'ouvre en public.
-- Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Le code est gardé dans `localStorage` de l'appareil ; « Quitter la gestion » revient à la vue publique. La page est en `noindex`, mais l'adresse n'est pas un secret : seul le code protège la gestion.
-- Migration : `supabase/migrations/2026-11-14-noel-public.sql` (aussi dans `schema.sql`). `noel_set_family_code` et `noel_claim*` restent en base, inutilisées.
+## Accès (depuis le 17 novembre)
+- Famille : lien `#c=<code famille>` partagé par le propriétaire. Conservé dans `localStorage` dès la première visite.
+- Visiteur public : aucune connexion, appel à `noel_public()` (lecture seule, aucun état de réservation).
+- Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Le code est gardé dans `localStorage` de l'appareil ; « Quitter la gestion » revient à la vue publique. La page est en `noindex`, mais l'adresse n'est pas un secret : seul le code protège la gestion. Flag `is_owner` empêchant de basculer en vue famille par erreur.
 
 ## Structure
 - `site/index.html` : toute la page (HTML, CSS, JS, sans build). Seul ce dossier est publié.
