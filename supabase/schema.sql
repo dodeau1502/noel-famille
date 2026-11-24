@@ -28,6 +28,7 @@ create table public.noel_gifts (
   offers jsonb,
   offers_at timestamptz,
   top boolean not null default false,
+  rank int check (rank is null or rank between 1 and 1000),   -- classement choisi par le propriétaire (1 = en premier), identique pour tous
   gtin text check (gtin is null or gtin ~ '^[0-9]{8,14}$'),   -- code-barres lu sur la page collée
   checked_at timestamptz,                                      -- dernière relecture des pages des marchands
   pinned text[] not null default '{}',                         -- sites mis en avant sur cette fiche (clés de nom normalisées, 3 au plus)
@@ -124,7 +125,7 @@ begin
   select coalesce(jsonb_agg(
     jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
                        'image', g.image_url, 'price', g.price, 'store', g.store,
-                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
+                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top, 'rank', g.rank,
                        'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned), 'variant', g.variant, 'category', g.category, 'cmp', g.cmp, 'with', g.with_id,
                        'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
                                               from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
@@ -149,7 +150,7 @@ begin
   select coalesce(jsonb_agg(
     jsonb_build_object('id', g.id, 'title', g.title, 'url', g.url, 'note', g.note,
                        'image', g.image_url, 'price', g.price, 'store', g.store,
-                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top,
+                       'offers', g.offers, 'offers_at', g.offers_at, 'top', g.top, 'rank', g.rank,
                        'gtin', g.gtin, 'checked_at', g.checked_at, 'pinned', to_jsonb(g.pinned), 'variant', g.variant, 'category', g.category, 'cmp', g.cmp, 'with', g.with_id,
                        'history', coalesce((select jsonb_agg(jsonb_build_object('d', to_char(h.at at time zone 'Europe/Paris', 'YYYY-MM-DD'), 'p', h.price, 'v', h.verified) order by h.at)
                                               from (select * from public.noel_prices x where x.gift_id = g.id order by x.at desc limit 60) h), '[]'::jsonb))
@@ -195,6 +196,21 @@ declare r text := public.noel_role(p_code);
 begin
   if r is distinct from 'owner' then return public.noel_deny(r); end if;
   update public.noel_gifts set top = coalesce(p_top, false) where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Enregistre tout le classement d'un coup : la liste d'identifiants, dans l'ordre (1er, 2e…). Les autres cadeaux n'ont plus de rang.
+create or replace function public.noel_set_rank(p_code text, p_ids bigint[])
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare r text := public.noel_role(p_code);
+begin
+  if r is distinct from 'owner' then return public.noel_deny(r); end if;
+  if p_ids is null then p_ids := '{}'; end if;
+  if coalesce(array_length(p_ids, 1), 0) > 1000 or (select count(distinct x) from unnest(p_ids) x) <> coalesce(array_length(p_ids, 1), 0) then
+    return jsonb_build_object('error', 'invalid');
+  end if;
+  update public.noel_gifts set rank = null where rank is not null;
+  update public.noel_gifts g set rank = o.n from unnest(p_ids) with ordinality as o(id, n) where g.id = o.id;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -460,6 +476,7 @@ revoke all on function
   public.noel_set_pinned(text,bigint,text[]),
   public.noel_set_extras(text,bigint,text,text,text,text),
   public.noel_set_with(text,bigint,bigint),
+  public.noel_set_rank(text,bigint[]),
   public.noel_set_display(text,jsonb,text),
   public.noel_public()
 from public;
@@ -481,6 +498,7 @@ grant execute on function
   public.noel_set_pinned(text,bigint,text[]),
   public.noel_set_extras(text,bigint,text,text,text,text),
   public.noel_set_with(text,bigint,bigint),
+  public.noel_set_rank(text,bigint[]),
   public.noel_set_display(text,jsonb,text),
   public.noel_public()
 to anon, authenticated;

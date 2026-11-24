@@ -92,6 +92,10 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
 - « Comparer les prix » : si une fiche idealo / Dénicheur est saisie, le lien pointe vers elle (« fiche du produit ») ; sinon recherche (idealo) ou accueil (Le Dénicheur).
   Ce sont de simples liens : aucune lecture automatique ni prix stocké.
 
+## Classement (24 novembre)
+- `noel_gifts.rank` (entier, 1 = en premier, null = hors classement) ; `noel_set_rank(code, ids[])` (propriétaire) enregistre tout le classement d'un coup. Migration : `supabase/migrations/2026-11-24-noel-rank.sql` (à appliquer par `psql` sur `noel-db`, comme les autres).
+- Propriétaire : boutons « Classer », ↑ / ↓ et « Hors classement » sur chaque carte, tri « Mon classement », pastille « N° x ». Famille et public : section « Mon classement » en tête (cartes numérotées), puis « Mes préférés » (envies fortes hors classement) et « Autres idées ». Identique pour tous, aucun lien avec les réservations (règle 1).
+
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by`, `bought`, `paid` ni aucune donnée de réservation. Ne pas ajouter de colonne,
    de fonction ou d'affichage qui permette de le déduire (ni compteur de cadeaux pris, ni ordre qui change). Le relevé automatique
