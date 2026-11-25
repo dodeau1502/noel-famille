@@ -3,6 +3,7 @@
 // Interne (127.0.0.1:INTERNAL_PORT, 8001, non publié) : relais complet /rest/v1/* utilisé par les fonctions (SUPABASE_URL).
 import { handler as preview } from "../supabase/functions/noel-preview/index.ts";
 import { handler as refresh } from "../supabase/functions/noel-refresh/index.ts";
+import { startJobs } from "./jobs.ts";
 
 const PORT = Number(Deno.env.get("PORT") ?? 8000);
 const INTERNAL_PORT = Number(Deno.env.get("INTERNAL_PORT") ?? 8001);
@@ -59,6 +60,7 @@ async function serveStatic(pathname: string): Promise<Response> {
   try { p = decodeURIComponent(pathname); } catch (_) { return text("Requête invalide", 400); }
   if (p.includes("\0") || p.split("/").some((s) => s === "..")) return text("Introuvable", 404);
   if (p.endsWith("/")) p += "index.html";
+  if (p === "/gestion") p = "/gestion.html"; // adresse courte de la page de gestion (redirige vers ./#gestion)
   const rel = p.replace(/^\/+/, "");
   const ext = rel.split(".").pop()?.toLowerCase() ?? "";
   if (!MIME[ext]) return text("Introuvable", 404);
@@ -121,7 +123,8 @@ Deno.serve({ port: PORT }, async (req, info) => {
 
   if (p.startsWith("/rest/v1/")) {
     // Seules les fonctions noel_* sont joignables de l'extérieur (les tables sont de toute façon fermées).
-    if (req.method === "POST" && /^\/rest\/v1\/rpc\/noel_[a-z_]+$/.test(p) && !u.search) return relay(req, info, true);
+    // noel_job_lease, noel_radar_purge et noel_serp_bump sont réservées à la clé de service (le serveur interne) : jamais relayées de l'extérieur.
+    if (req.method === "POST" && /^\/rest\/v1\/rpc\/noel_(?!job_lease$|radar_purge$|serp_bump$)[a-z_]+$/.test(p) && !u.search) return relay(req, info, true);
     return text("Interdit", 403);
   }
   if (p === "/functions/v1/noel-preview") return preview(req);
@@ -139,3 +142,6 @@ Deno.serve({ port: INTERNAL_PORT, hostname: "127.0.0.1" }, (req, info) => {
   if (!new URL(req.url).pathname.startsWith("/rest/v1/")) return text("Introuvable", 404);
   return relay(req, info, false);
 });
+
+// --- Tâches périodiques du radar (production seulement : JOBS_ENABLED=1) ---------------------------------
+startJobs();

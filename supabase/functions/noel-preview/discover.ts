@@ -7,9 +7,21 @@ export type Offer = { store: string; price: number; url: string; shipping?: numb
 
 type Serp = { ok: boolean; data?: any; reason?: string };
 // Une recherche SerpAPI = 1 crédit (les recherches en cache ou en échec ne comptent pas)
-async function serp(params: Record<string, string>): Promise<Serp> {
+// kind « manual » (action du propriétaire) : comptée, jamais bloquée. kind « auto » (balayage hebdomadaire) : plafonnée par noel_serp_bump (cap), et sans compteur = pas de recherche.
+// Le compteur est incrémenté AVANT l'appel (une recherche en échec reste comptée : prudence).
+export type SerpUse = { kind: "auto" | "manual"; cap?: number };
+async function bump(use: SerpUse): Promise<boolean> {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/noel_serp_bump`, { method: "POST", headers: sbHeaders, body: JSON.stringify({ p_kind: use.kind, p_cap: use.kind === "auto" ? (use.cap ?? 0) : null }) });
+    const d = await r.json().catch(() => null);
+    if (r.ok && d?.ok === true) return true;
+    return use.kind === "manual";                        // un compteur en panne ne bloque pas une action du propriétaire, mais bloque le balayage
+  } catch (_) { return use.kind === "manual"; }
+}
+async function serp(params: Record<string, string>, use: SerpUse = { kind: "manual" }): Promise<Serp> {
   const key = Deno.env.get("SERPAPI_KEY");
   if (!key) return { ok: false, reason: "La recherche de prix n'est pas encore activée." };
+  if (!(await bump(use))) return { ok: false, reason: "Plafond mensuel automatique atteint." };
   const u = new URL("https://serpapi.com/search.json");
   u.search = new URLSearchParams({ gl: "fr", hl: "fr", ...params, api_key: key }).toString();
   try {
@@ -70,7 +82,8 @@ const hostOf = (u: string) => { try { return new URL(u).hostname.replace(/^www\.
 const isGoogle = (u: string) => /(^|\.)google\.[a-z.]+$/i.test(hostOf(u));
 
 // Pipeline complet : lecture de la page, recherche Google (2 recherches SerpAPI en général ; 4 au plus : code-barres en secours et seconde fiche), vérification directe des marchands.
-export async function discover(q: string, now = new Date(), opts: { token?: string; debug?: boolean } = {}) {
+export async function discover(q: string, now = new Date(), opts: { token?: string; debug?: boolean; use?: SerpUse } = {}) {
+  const use: SerpUse = opts.use ?? { kind: "manual" };
   let title = "", image = "", gtin = "";
   let searchText = q, pageOffer: Offer | null = null;
 
@@ -101,13 +114,13 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
   if (opts.token) {
     product = { token: opts.token, title: "", image: "", rows: [], alternatives: [], backups: [] };
   } else {
-    shop = await serp({ engine: "google_shopping", q: searchText.slice(0, 120), google_domain: "google.fr" });
+    shop = await serp({ engine: "google_shopping", q: searchText.slice(0, 120), google_domain: "google.fr" }, use);
     searches++;
     rows = shop.ok ? (shop.data?.shopping_results || []) : [];
     product = pickProduct(rows, searchText);
     // Sans résultat exploitable, le code-barres lu sur la page sert de seconde chance (1 recherche de plus)
     if (shop.ok && !product && gtin) {
-      const s2 = await serp({ engine: "google_shopping", q: gtin, google_domain: "google.fr" });
+      const s2 = await serp({ engine: "google_shopping", q: gtin, google_domain: "google.fr" }, use);
       searches++;
       if (s2.ok) { rows = s2.data?.shopping_results || []; product = pickProduct(rows, searchText); }
     }
@@ -122,14 +135,14 @@ export async function discover(q: string, now = new Date(), opts: { token?: stri
   let fichesRead = 0;
   for (const tk of fiches) {
     if (fichesRead >= 2 || (fichesRead >= 1 && storeOffers.length >= 3)) break;
-    const imm = await serp({ engine: "google_immersive_product", page_token: tk });
+    const imm = await serp({ engine: "google_immersive_product", page_token: tk }, use);
     searches++; fichesRead++;
     if (imm.ok) {
       const stores = imm.data?.product_results?.stores || [];
       rawStores = rawStores.concat(stores);
       storeOffers = mergeOffers(storeOffers, storesToOffers(stores, searchText));
       if (!title && opts.token) title = String(imm.data?.product_results?.title || "").slice(0, 120);
-    } else { immReason = imm.reason || ""; if (/Limite|refus/.test(immReason)) break; }
+    } else { immReason = imm.reason || ""; if (/Limite|refus|Plafond/.test(immReason)) break; }
   }
   // Les résultats de la liste plate ne servent que s'ils appartiennent à la fiche choisie
   const flat = pickOffers(product ? product.rows : rows, searchText).offers.map((o: Offer) => ({ ...o, via: "google" }));

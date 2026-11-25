@@ -24,12 +24,14 @@ Public : famille, y compris peu à l'aise avec le numérique, surtout sur télé
   seulement si la première donne moins de 3 marchands retenus). Le propriétaire peut choisir une autre fiche proposée (`token`, 1 recherche de plus).
   Chaque fiche Google ne liste que 2 à 5 marchands : c'est la limite de couverture, pas un défaut de filtrage.
 - `supabase/functions/noel-refresh/` : relecture GRATUITE des pages des marchands déjà connus (aucune recherche SerpAPI). Appelée par
-  la tâche planifiée Coolify (toutes les 2 h, 3 fiches au plus, les moins récemment lues ; en-tête `x-cron-secret`) et par le bouton « Actualiser » du propriétaire.
+  la tâche planifiée Coolify (toutes les 10 min, 3 fiches au plus : celles dont `next_check_at` est passé, voir « Fréquence de relecture » ; en-tête `x-cron-secret`) et par le bouton « Actualiser » du propriétaire.
+  L'enregistrement des offres (tri, meilleur prix, historique) est dans `noel-refresh/save.ts` (`saveOffers`), partagé avec le radar ; `refreshOne(id)` relit une fiche sur demande interne.
   Elle écrit le prix, l'état de vérification, le stock et l'historique (`noel_prices`).
 - `supabase/functions/noel-preview/{parse.js,offers.js,verify.js,net.ts}` sont copiés à l'identique dans `noel-refresh/`
   (`node supabase/functions/shared.test.mjs` le vérifie). Après une modification, recopier puis redéployer les deux fonctions.
   Tests : `parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` (dans `noel-preview/`) et `shared.test.mjs`.
   `trust.js` (sécurité des marchands) n'existe que dans `noel-preview/` ; `noel-refresh` conserve le champ `trust` des offres sans le recalculer.
+- `supabase/functions/noel-radar/` + `server/jobs.ts` : radar des promotions (section « Radar des promotions » plus bas).
 - `extension/` : extension de navigateur (Manifest V3, Firefox / Chrome / Safari) qui ajoute à la liste le produit de la page affichée (`noel_add`, et `noel-preview` seulement si la case est cochée : 2 recherches SerpAPI).
   Propriétaire seulement ; aucun code ni clé dans le dossier. Listes `MARKET` / `COMPARATOR` de `extension/lib.js` copiées de `offers.js` (à garder identiques). Détails et limites : `extension/README.md`. Test : `node extension/test/lib.test.mjs`. Non publiée (seul `site/` l'est).
 - `site/icon-*.png` : icônes d'écran d'accueil. Le manifeste est créé par la page elle-même (il contient le lien de la liste).
@@ -54,7 +56,7 @@ dépôt identique à ce qui est déployé. Le relevé toutes les 2 h est mainten
 Le secret `SERPAPI_KEY` est une variable de la ressource Coolify (vide pour l'instant : la recherche de produit est désactivée ; jamais dans le dépôt). Règle : on reste sur l'offre gratuite (environ 250 recherches
 par mois). Seul l'ajout d'une fiche, le choix d'une autre fiche proposée et le bouton « Autres marchands » (avec confirmation) consomment
 des recherches. L'actualisation des prix (automatique ou bouton) lit les pages des marchands directement et ne consomme rien.
-Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
+Règle décidée par Dorian le 25 novembre : *un seul balayage automatique hebdomadaire, plafonné à 120 recherches par mois (compteur `noel_serp_usage`), le reste du quota gratuit de 250 étant réservé aux actions manuelles ; sans `SERPAPI_KEY`, rien ne s'exécute.* Ce balayage (lot I) est écrit (section « Balayage Google ») ; il n'y a aucun autre appel SerpAPI automatique, et il ne faut pas en ajouter.
 
 ## Base : conventions
 - Les fonctions `noel_*` renvoient du jsonb `{"ok":true}` ou `{"error":"denied|throttled|taken|short|same_as_owner|empty|invalid"}`,
@@ -178,7 +180,53 @@ Thème SOMBRE PAR DÉFAUT, « Affichage » : sombre, clair ou automatique, et te
   contourner (ni Apify, ni mirroir, ni cache). Ces sites restent de simples liens « Comparer les prix ». Le jeton Apify transmis dans
   la conversation n'a pas été enregistré ni utilisé ; il ne doit jamais entrer dans le dépôt.
 
+## Radar des promotions (26 novembre 2026)
+But : ne rater aucune promotion publique sur les cadeaux de la liste, sans coût. Guide complet : `GUIDE-RADAR-PRIX.md` de Dorian (lots A à Q ; hors dépôt, qui est public). Fait à ce jour : A, B, C, D, E, F, G, K-minimal, le niveau MPN du lot N, Q (expiration des prix) et O (relevé par marchand) P (fréquence adaptée) et K-complet, L (test quotidien) et I (balayage Google). PAS fait : H (Keepa), J (e-mail).
+- `noel-radar/dealabs.js` (lecture du flux RSS : `parseFeed`, `extractFacts`, `cleanLink`), `match.js` (niveaux `exact` / `strict` / `loose`, exclusions), `conditions.js` (code promo, coupon, ODR, membres, nouveaux clients, public restreint, magasin, cagnotte), `index.ts` (collecteur `runDealabs`), `db.ts`.
+  Modules purs : tests `node`. Collecteur : `deno test --allow-env --allow-read supabase/functions/noel-radar/index.test.ts` (fetch et base simulés).
+- `server/jobs.ts` : planificateur interne (`JOBS_ENABLED=1`, production seulement), verrou `noel_job_lease`. `dealabs:tous` 2 min (1 min pendant 30 min après un trou), `dealabs:hot` 10 min, purge quotidienne 4 h 30. Keepa et e-mail : tâches prévues, désactivées sans variable (stubs).
+- Tables (aucune policy, `revoke all` pour `anon` et `authenticated`, droits de `service_role` dans `deploy/db/03-droits.sql`, JAMAIS de droit sur `noel_claims`) : `noel_signals` (pistes), `noel_feed_seen`, `noel_sources` (état et verrous), `noel_serp_usage`. Colonnes de `noel_gifts` : `aliases`, `asin`, `mpn`, `next_check_at` (lot P).
+- Fonctions : `noel_signal_decide`, `noel_set_aliases`, `noel_set_asin`, `noel_set_mpn`, `noel_status` (propriétaire) ; `noel_job_lease`, `noel_radar_purge` (service seulement : le relais public de `server/main.ts` les refuse). `noel_get` et `noel_public` renvoient `signals` (5 au plus, acceptées, publiées il y a moins de 72 h ou vérifiées il y a moins de 24 h), `aliases`, `asin` et `mpn`, avec EXACTEMENT les mêmes champs pour tous les rôles.
+- Règles : seul le flux RSS officiel de Dealabs est lu (décision du 25 novembre), avec un en-tête honnête, jamais de page de deal, de `/search`, `/graphql`, `/rest-api/`, `/visit/`, jamais de contournement après un 429, 403 ou 5xx. Dealabs reste un comparateur (règle 4) : une piste n'est fusionnée dans `offers` (`via:"dealabs"`) que confirmée sur la page du marchand ET sans condition (code, coupon, ODR, membre…) ; Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne sont pas lus (piste « non vérifiée »). Aucun lien affilié (`cleanLink`). Le radar lit `noel_gifts` sans jointure avec les réservations et traite toutes les fiches de la même façon (règle 1).
+- Les agents de code n'ouvrent JAMAIS dealabs.com, même le flux (`robots.txt` : robots d'IA exclus). Tout se teste sur `noel-radar/fixtures/dealabs-tous-2026-11-25.xml`, un flux SYNTHÉTIQUE (structure du vrai flux, textes inventés) : le fichier réduit du vrai flux, cité par le guide, n'était pas dans le dépôt.
+- Limites : une promotion hors Dealabs et sur un site illisible peut échapper au radar ; le flux ne garde que ~30 éléments (un trou est compté dans `noel_sources.gaps`, pas rattrapé) ; le compteur de 1 200 requêtes par jour est en mémoire (remis à zéro au redémarrage) ; `noel_edit_offers` remplace un `via` inconnu (dont `dealabs`) par une chaîne vide quand le propriétaire modifie les offres.
+
+## Fraîcheur des prix (lot Q, 25 novembre 2026)
+- `freshness(offer, now, fallbackAt)` dans `verify.js` (copié vers `noel-refresh`) : vérifiée 24 h `fresh`, 72 h `aging` ; non vérifiée 48 h `unverified` ; au-delà `stale` (« Ancien prix »). Sans aucune date : jamais `stale`. `bestOffer` ignore les `stale` ; `rank` les met avant les ruptures.
+- Page (`freshness`, `cleanOffers` → `_f`) : même tableau avec l'heure du navigateur (`freshness-parity.test.mjs` vérifie la parité). Si toutes les offres en stock sont périmées, la carte garde le dernier prix, barré, avec « Ancien prix, à confirmer ». Données identiques pour tous les rôles (règle 1).
+- Limite : `offers_at` est remis à jour à chaque enregistrement, donc une offre Google sans `at` ne vieillit pas par ce repli.
+
+## Relevé par marchand (lot O, 27 novembre 2026)
+- Table `noel_observations` (migration `2026-11-27-noel-observations.sql`, droits `select, insert, delete` de `service_role`, aucune policy ; jamais liée aux réservations). `noel_radar_purge` supprime au-delà de 180 jours. `noel_get` / `noel_public` renvoient `low30` (plus bas total VÉRIFIÉ par marchand sur 30 jours), identique pour tous.
+- `noel-radar/observe.js` (pur, `observe.test.mjs`) : `shouldRecord` (premier relevé, changement de total / stock / état vérifié, ou plus de 20 h), `low30`, `riseBeforeDrop`, `anomaly`. Écriture dans `saveOffers` (`noel-refresh/save.ts`, donc relecture ET radar ; test `save.test.ts`) : un échec du relevé ne bloque jamais l'enregistrement des offres.
+- Dans les offres : `rise` (date du plus bas d'avant la hausse) et `anom` (total < 0,5 × médiane des autres marchands, ≥ 3 relevés ; la page le traite comme « Prudence », jamais « Le moins cher »). Limite : `bestOffer` côté serveur ignore `anom`, comme « Prudence ».
+- `noel-preview` n'écrit pas de relevé (il ne touche pas la base) : le premier relevé vient de la première relecture. Migration NON appliquée : dev d'abord, après `pg_dump -Fc`.
+- Tests : `node supabase/functions/noel-radar/observe.test.mjs`, `deno test --allow-env --allow-read supabase/functions/noel-refresh/save.test.ts`.
+
+## Fréquence de relecture (lot P, 27 novembre 2026)
+- `noel-refresh/schedule.js` (pur, `schedule.test.mjs`) : `nextCheck` ne lit QUE `lastSignalAt`, `lastChangeAt`, `readableCount`, `inHighPeriod` (un test avec Proxy refuse toute autre clé, dont `claimed`, `bought`, `paid`). Échéances : 15 min (piste acceptée < 6 h), 30 min (total vérifié changé < 48 h), 45 min (période forte, `HIGH_PERIODS`), 60 min, 6 h sans offre lisible, ±10 %.
+- `noel-refresh` choisit les fiches par `next_check_at` (nulles d'abord) dans `noel_gifts` seulement. Plafonds : `REFRESH_MAX_READS_H` (120 par heure, `noel_sources` « refresh »), 20 s et 60 par heure par domaine (en mémoire). Sites illisibles (Amazon, Fnac, Darty, Sony, LEGO, Boulanger) jamais relus ; `offers[].fails` / `tried_at` : après 3 échecs, une lecture par 24 h. Le bouton « Actualiser » du propriétaire ignore ces plafonds (sauf pour les fiches elles-mêmes).
+- Le radar pose `next_check_at = now` pour une fiche qui reçoit une piste acceptée ; le prochain passage la relit. `REFRESH_MIN_AGE_MIN` n'est plus utilisée. Tâche Coolify `price-refresh` à passer en `*/10 * * * *` (par Dorian).
+- Limites : le plafond par domaine est en mémoire (remis à zéro au redémarrage) ; `refreshOne` est conservé mais plus appelé.
+
+## Interface du radar (K-complet, 27 novembre 2026)
+- Gestion (propriétaire seulement) : `load()` appelle `noel_status` ; carte « État des sources » (`#srcCard`, `renderSources`) avec dernière lecture, trous Dealabs, compteur Google, nombre de pistes à confirmer. Bandeau rouge (`sourceAlerts`) : `dealabs:tous` sans lecture réussie depuis 15 min entre 8 h et 1 h (heure du navigateur), autre source au-delà de 3 fois son intervalle, ou échec du `selftest` (lot L). Une source qui n'a jamais tourné ne déclenche rien.
+- Panneau d'un cadeau, section « Surveillance » (`watchHtml`) : surnoms, ASIN, référence constructeur (`noel_set_aliases`, `noel_set_asin`, `noel_set_mpn`, un seul bouton Enregistrer, brouillon `wdraft` gardé pendant les rafraîchissements), lien « Suivre sur Keepa » (`keepa.com/#!product/4-<ASIN>`, le domaine 4 = amazon.fr reste à confirmer par Dorian), pistes « À confirmer » avec « C'est ce cadeau » / « Non » (`noel_signal_decide`).
+- Test : `node supabase/functions/source-alerts.test.mjs`. Rendu vérifié à 375 px (sans défilement horizontal) et en bureau avec des réponses simulées.
+
+## Test quotidien (lot L, 27 novembre 2026)
+- `noel-radar/selftest.ts` (+ `selftest.js` pur), tâche `selftest` de `server/jobs.ts` à 7 h 15 (Paris, verrou 300 s). Trois contrôles : (1) `parseFeed` / `matchAll` / `conditionsOf` sur le fichier de test donnent le résumé attendu (régression du code) ; (2) la dernière lecture complète réelle de `dealabs:tous` (en mémoire, `feedStats`) avait au moins 5 éléments avec titre et lien et au moins 1 `pepper:merchant` (changement de format ; pas de lecture depuis le démarrage : non évalué, jamais un échec) ; (3) au moins 1 page sur les 2 premiers cadeaux (par id) ayant une offre sur un marchand lisible donne un prix (une seule page en panne est du bruit).
+- Résultat dans `noel_sources` (`selftest` : `last_ok`, ou `last_error` + `last_error_at`) : un échec allume le bandeau rouge de la gestion. Aucun e-mail ni notification. Lit seulement `noel_gifts`, sans lien avec les réservations.
+- Le `Dockerfile` autorise la lecture de `supabase/functions/noel-radar/fixtures` (`--allow-read=site,supabase/functions/noel-radar/fixtures`) pour le fichier de test. Tests : `deno test --allow-env --allow-read supabase/functions/noel-radar/selftest.test.ts`.
+
+## Balayage Google hebdomadaire (lot I, 28 novembre 2026)
+- `noel-radar/sweep.ts` (`runSweep`), tâche `google` de `server/jobs.ts` : lundi 4 h 10 (Paris), verrou 3 600 s, délai maximal 30 min, active seulement avec `SERPAPI_KEY`. Parcourt TOUS les cadeaux par id croissant (aucune priorité, règle 1), relance `discover` (même circuit que « Autres marchands » : filtres, vérification des pages, `trust.js`, liste noire) et fusionne prudemment (`mergeFound` : marchands nouveaux ajoutés ; un marchand connu n'est remplacé que par une lecture vérifiée plus fraîche, jamais une saisie manuelle) puis `saveOffers`. Curseur = `noel_sources` « google », `items_last` (dernier cadeau terminé ; 0 en fin de cycle).
+- Plafond : `SERP_AUTO_CAP` (défaut 120) recherches automatiques par mois. Chaque recherche SerpAPI passe par `noel_serp_bump` (migration `2026-11-28-noel-serp-bump.sql`, atomique, `service_role` seulement, refusée par le relais public de `server/main.ts`) qui incrémente AVANT l'appel ; au plafond, le balayage s'arrête net et reprend au cadeau suivant la semaine d'après. Les actions manuelles (`discover` sans `use`) sont comptées (`manual`) mais jamais bloquées, même si le compteur est en panne ; le balayage, lui, ne part pas sans compteur.
+- Les tâches à heure fixe (`fixed` : purge, selftest, google) ont un décalage de 0 à 5 min, pas ±10 % (sinon le lundi dériverait de ±17 h).
+- Migration NON appliquée : dev d'abord, après `pg_dump -Fc`. Tests : `deno test --allow-env --allow-read supabase/functions/noel-radar/sweep.test.ts`.
+
 ## Vérifier avant de pousser
-- `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` et `node supabase/functions/shared.test.mjs`
+- `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` et `node supabase/functions/shared.test.mjs`, `node supabase/functions/freshness-parity.test.mjs`
+- Radar : `node supabase/functions/noel-radar/dealabs.test.mjs`, `conditions.test.mjs`, `match.test.mjs` ; `deno test --allow-env --allow-read supabase/functions/noel-radar/index.test.ts` ; `deno test --allow-env server/jobs.test.ts` ; `deno test --allow-env --allow-read supabase/functions/noel-radar/selftest.test.ts supabase/functions/noel-refresh/save.test.ts`; `node supabase/functions/noel-radar/observe.test.mjs`, `noel-refresh/schedule.test.mjs`, `source-alerts.test.mjs`
 - Ouvrir `site/index.html` avec Playwright en simulant les appels `noel_get`, `noel-preview` et `noel-refresh` (aucune base réelle nécessaire),
   contrôler le rendu à 390 px de large en clair et en sombre, sans défilement horizontal ni erreur de console.

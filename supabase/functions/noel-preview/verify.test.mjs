@@ -34,3 +34,20 @@ assert.equal(bestOffer(list).store, "A");
 assert.deepEqual(rank(list).map(o => o.store), ["A", "B", "Y"]);
 assert.equal(bestOffer([O("Y", 1, { stock: "out" })]), null);
 console.log("verify OK");
+
+// Lot Q : fraîcheur aux bornes 24 h, 48 h et 72 h, à la minute près
+import { freshness } from "./verify.js";
+const ago = (h, m = 0) => new Date(NOW.getTime() - (h * 60 + m) * 60000).toISOString();
+const F = (verified, at, fb) => freshness({ verified, at }, NOW, fb);
+assert.equal(F(true, ago(24)), "fresh"); assert.equal(F(true, ago(24, 1)), "aging");
+assert.equal(F(true, ago(72)), "aging"); assert.equal(F(true, ago(72, 1)), "stale");
+assert.equal(F(false, ago(48)), "unverified"); assert.equal(F(false, ago(48, 1)), "stale");
+assert.equal(F(false, undefined, ago(10)), "unverified");       // date de la fiche à défaut
+assert.equal(F(false, undefined, ago(60)), "stale");
+assert.notEqual(F(false, undefined, undefined), "stale");       // sans date : jamais périmée
+// une offre périmée moins chère n'est jamais « Le moins cher » et passe en dernier (avant la rupture)
+const stale = O("Vieux", 100, { verified: true, at: ago(100) }), live = O("Frais", 150, { verified: true, at: ago(1) }), out = O("Rupt", 120, { stock: "out", verified: true, at: ago(1) });
+assert.equal(bestOffer([stale, live], NOW).store, "Frais");
+assert.equal(bestOffer([stale], NOW), null);
+assert.deepEqual(rank([out, stale, live], NOW).map(o => o.store), ["Frais", "Vieux", "Rupt"]);
+console.log("freshness OK");

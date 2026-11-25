@@ -41,10 +41,22 @@ Dans Coolify, déployer la branche `vps-migration` sur une adresse de test (ex. 
 - Ouverture avec le code propriétaire : aucune donnée de réservation ; avec le code famille : réservations visibles
 - Une vraie recherche SerpAPI avec la nouvelle clé (étape 0 du plan du projet)
 
-## D. Relevé toutes les 2 h
-Tâche planifiée Coolify sur le service `app`, `17 */2 * * *`, commande :
+## D. Relevé des pages marchandes (toutes les 10 minutes, fréquence adaptée par fiche)
+Tâche planifiée Coolify sur le service `app`, `*/10 * * * *` (`*/20` jusqu'au lot P, `17 */2 * * *` avant le 26 novembre), commande :
 `deno eval "await fetch('http://127.0.0.1:8000/functions/v1/noel-refresh',{method:'POST',headers:{'content-type':'application/json','x-cron-secret':Deno.env.get('CRON_SECRET')},body:'{\"cron\":true}'})"`
+Chaque passage relit 3 fiches au plus : celles dont `next_check_at` est passé (ou vide), les plus anciennes d'abord. Après chaque lecture, `schedule.js` fixe la prochaine échéance : 15 min si une piste a été acceptée il y a moins de 6 h, 30 min si un prix vérifié a changé il y a moins de 48 h, 45 min en période forte (`HIGH_PERIODS`), 60 min sinon, 6 h sans offre lisible (±10 %).
+Plafonds : `REFRESH_MAX_READS_H` lectures de pages par heure (défaut 120, compteur `noel_sources` « refresh »), 1 lecture toutes les 20 s et 60 par heure et par domaine. Amazon, Fnac, Darty, Sony, LEGO et Boulanger ne sont plus relus ; une offre en échec 3 fois n'est relue qu'une fois par 24 h. Le choix ne dépend que de données publiques (jamais des réservations).
+`REFRESH_MIN_AGE_MIN` n'est plus utilisée.
 (Interface et limites des tâches planifiées à vérifier dans la documentation Coolify de votre version.)
+
+## D2. Radar des promotions (planificateur interne)
+Le serveur lit lui-même le flux RSS officiel de Dealabs (`/rss/tous` toutes les 2 min, `/rss/hot` toutes les 10 min) : pas de tâche Coolify pour cela.
+- Variables du service `app` : `JOBS_ENABLED=1` (production seulement ; `noel-dev-app` le laisse vide), `DEALABS_FEEDS` (défaut `tous,hot`), `REFRESH_MAX_READS_H` (défaut 120), `SERP_AUTO_CAP` (défaut 120 ; le balayage Google du lundi 4 h 10 ne part qu'avec `SERPAPI_KEY`), `HIGH_PERIODS` (défaut `2026-11-27/2026-12-01,2026-12-14/2026-12-24`).
+- Avant d'activer : appliquer `supabase/migrations/2026-11-26-noel-radar.sql` (en `noel_owner`, après `pg_dump -Fc`, d'abord sur dev) puis `deploy/db/03-droits.sql`.
+  Contrôle : `\dp public.noel_claims` ne montre AUCUN droit pour `service_role`.
+- Après le redéploiement : le journal du service montre `noel-jobs : démarrage` puis des lignes `noel-diag` ; `select name, last_ok, items_last, last_error from noel_sources;` montre `dealabs:tous` lu depuis moins de 3 minutes.
+- Panne : `last_error` et `backoff_until` de `noel_sources` (un 429, 403 ou 5xx met la source en attente 2, 4, 8… 60 minutes ; on ne contourne jamais).
+- Pas encore écrits : Keepa, boîte e-mail, balayage Google hebdomadaire, test quotidien, bandeau d'état (voir `CLAUDE.md`, section « Radar des promotions »).
 
 ## E. Bascule (après validation de C et choix d'une date calme)
 1. Gel : ne rien modifier sur le site (~15 min). Recopier les données (B2 sur une base vide : `truncate` des 6 tables d'abord).

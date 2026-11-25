@@ -9,4 +9,4 @@ RUN deno cache server/main.ts
 USER deno
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["deno", "eval", "const r = await fetch('http://127.0.0.1:8000/healthz'); Deno.exit(r.ok ? 0 : 1)"]
-CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read=site", "server/main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read=site,supabase/functions/noel-radar/fixtures", "server/main.ts"]

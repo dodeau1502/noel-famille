@@ -8,6 +8,7 @@ Manifest V3, sans dépendance ni étape de compilation. Un même dossier sert à
 
 1. Tu ouvres une page produit et tu cliques sur l'icône (ou `Alt+Maj+N`).
 2. L'extension lit la page affichée, **uniquement à ce moment-là** (permission `activeTab`) : nom, photo, prix, code-barres, par ordre de priorité JSON-LD, microdonnées, Open Graph, titre de la page.
+2 bis. Les options choisies sur la page (modèle, taille, couleur…) sont lues et pré-remplies dans « Précision » (« Taille : M · Couleur : Bleu ») ; Amazon, listes déroulantes, boutons radio, pastilles `aria`, sinon données structurées. Modifiable avant l'ajout.
 3. Tu corriges si besoin (nom, prix, précision, « Envie forte »), puis « Ajouter à la liste ». Elle appelle `noel_add`, la même fonction que le site.
 4. Option « Chercher aussi chez d'autres marchands » : appelle `noel-preview` (2 recherches SerpAPI sur ~250 par mois, comme l'ajout depuis le site). **Décochée par défaut** ; le choix est mémorisé. Sans cette option, la fiche contient l'offre de la page seulement ; « Autres marchands » reste disponible depuis la fiche sur le site.
 
@@ -25,6 +26,7 @@ L'extension ne lit ni ne montre jamais les réservations (il n'y en a plus de to
 Au premier lancement, ouvre les réglages de l'extension : adresse de ta liste + code propriétaire (ou ton lien de gestion `…/#c=…`, le code en est extrait). Le navigateur te demande l'autorisation de joindre **ton site uniquement**. Le code est gardé dans le stockage local de l'extension, sur cet appareil.
 
 ### Firefox
+- Firefox 128 ou plus récent (nécessaire pour `optional_host_permissions`, qui sert à autoriser ton site).
 - Test : `about:debugging#/runtime/this-firefox` → « Charger un module complémentaire temporaire » → choisir `manifest.json`. Il disparaît à la fermeture de Firefox.
 - Permanent : Firefox n'accepte durablement qu'une extension signée. Signature gratuite en distribution « non listée » sur addons.mozilla.org (`npx web-ext sign --channel=unlisted` avec une clé API AMO).
 

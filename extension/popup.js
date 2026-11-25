@@ -49,10 +49,13 @@ async function init() {
   };
   marketPage = !!url && isMarket(page.store, url);
   $("reading").hidden = true; $("fields").hidden = false;
-  $("title").value = raw.title || (tab && tab.title) || "";
+  // La base refuse les noms de plus de 120 caractères (titres Amazon très longs) : on coupe proprement, sur un mot
+  const shorten = t => { t = String(t || "").trim(); if (t.length <= 120) return t; const c = t.slice(0, 120), i = Math.max(c.lastIndexOf(" "), c.lastIndexOf(",")); return (i > 60 ? c.slice(0, i) : c).replace(/[\s,;:\-–|]+$/, ""); };
+  $("title").value = shorten(raw.title || (tab && tab.title) || "");
   $("price").value = page.price != null ? String(page.price).replace(".", ",") : "";
   $("storeName").textContent = page.store || "Page non lisible";
   $("srcNote").textContent = raw.unreadable ? "Cette page n'a pas pu être lue : remplis les champs." : (page.price != null ? "Prix lu sur la page, à vérifier." : "Prix non trouvé : saisis-le.");
+  $("note").value = String(raw.variant || "").slice(0, 500);   // modèle, taille… choisis sur la page
   setThumb(page.image);
   $("srch").checked = !!cfg.search;
   if (page.foreignCur) warn(`Le prix de la page est en ${page.foreignCur} : saisis le prix en euros.`);
@@ -125,4 +128,10 @@ $("vMain").addEventListener("submit", async e => {
 $("gear").addEventListener("click", () => { api.runtime.openOptionsPage(); window.close(); });
 $("openOpts").addEventListener("click", () => { api.runtime.openOptionsPage(); window.close(); });
 $("close").addEventListener("click", () => window.close());
-init();
+// Ne jamais rester bloqué sur « Lecture de la page… » (Firefox peut refuser une API : on affiche le formulaire à remplir à la main)
+init().catch(e => {
+  if (!$("vSetup").hidden) return;
+  show("vMain"); $("reading").hidden = true; $("fields").hidden = false;
+  if (!page) page = { url: "", host: "", image: "", gtin: "", stockOut: false, store: "", price: null, foreignCur: "" };
+  $("err").textContent = "Lecture impossible (" + (e && e.message || e) + "). Remplis les champs à la main.";
+});

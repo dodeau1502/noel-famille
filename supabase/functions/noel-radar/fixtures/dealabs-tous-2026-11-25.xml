@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Flux RSS SYNTHETIQUE : structure du flux Dealabs (espace de noms pepper), textes et liens inventes. Aucun contenu de Dealabs. -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:pepper="http://www.pepper.com/rss">
+<channel>
+<title>Exemple - tous les deals</title>
+<link>https://www.dealabs.com/</link>
+<atom:link href="https://www.dealabs.com/rss/tous" rel="self" type="application/rss+xml"/>
+<item>
+<title>Violon 4/4 Stagg avec étui et archet</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469432</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469432</guid>
+<pubDate>Wed, 25 Nov 2026 19:58:00 +0000</pubDate>
+<category>Culture &amp; Divertissement</category>
+<pepper:merchant name="Bax Music" price="91,00€"/>
+<description><![CDATA[<p>Référence : 9000-0007-4142</p><p><a href="https://www.baxmusic.fr/violon-stagg-4-4">Voir chez Bax Music</a></p>]]></description>
+</item>
+<item>
+<title>26 € Billet d'entrée adulte Zooparc</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469431</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469431</guid>
+<pubDate>Wed, 25 Nov 2026 19:56:54 +0000</pubDate>
+<category>Famille &amp; Enfants</category>
+<pepper:merchant price="26,00€"/>
+<description><![CDATA[<p>Billet valable toute la saison.</p>]]></description>
+</item>
+<item>
+<title>Abonnement Prime gratuit 6 mois pour les nouveaux inscrits [Étudiants]</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469430</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469430</guid>
+<pubDate>Wed, 25 Nov 2026 19:55:48 +0000</pubDate>
+<category>Services</category>
+<pepper:merchant name="Amazon"/>
+<description><![CDATA[<p>Réservé aux nouveaux clients étudiants.</p><p><a href="https://www.amazon.fr/amazonprime">Amazon Prime</a></p>]]></description>
+</item>
+<item>
+<title>Sweat à capuche homme</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469429</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469429</guid>
+<pubDate>Wed, 25 Nov 2026 19:54:42 +0000</pubDate>
+<category>Mode</category>
+<pepper:merchant name="Pull&amp;Bear"/>
+<description><![CDATA[<p>Plusieurs coloris.</p>]]></description>
+</item>
+<item>
+<title>PC portable Lenovo LOQ 15 - Ryzen 7, RTX 4060, 16 Go, 512 Go</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469428</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469428</guid>
+<pubDate>Wed, 25 Nov 2026 19:53:36 +0000</pubDate>
+<category>High-Tech</category>
+<pepper:merchant name="Lenovo" price="1 299€"/>
+<description><![CDATA[<p>Code promo à saisir : BLACKFRIDAY</p><p><a href="https://www.lenovo.com/fr/fr/p/loq-15">Lenovo</a></p>]]></description>
+</item>
+<item>
+<title>Brosse à dents Philips Sonicare 3100</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469427</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469427</guid>
+<pubDate>Wed, 25 Nov 2026 19:52:30 +0000</pubDate>
+<category>Beauté &amp; Santé</category>
+<pepper:merchant name="Amazon" price="12,09€"/>
+<description><![CDATA[<p>Prix le plus bas des 30 derniers jours : 14,91 €</p><p>ASIN: B0DQQBGNV4</p><p>Livraison gratuite pour les membres Prime. Cagnotte fidélité possible.</p><p><a href="https://www.amazon.fr/dp/B0DQQBGNV4?tag=aff-21&amp;ref=sr_1_1">Amazon</a></p>]]></description>
+</item>
+<item>
+<title>Jeu DJ SET Nintendo Switch</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469426</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469426</guid>
+<pubDate>Wed, 25 Nov 2026 19:51:24 +0000</pubDate>
+<category>Jeux vidéo</category>
+<pepper:merchant name="Amazon" price="24,99€"/>
+<description><![CDATA[<p>ASIN: B0FVFCHC3W</p><p>Code article international: 03770022054332</p><p><a href="https://www.amazon.fr/dp/B0FVFCHC3W">Amazon</a></p>]]></description>
+</item>
+<item>
+<title>Mario Kart Carrera Yoshi - Radiocommandé 2,4 GHz</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469425</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469425</guid>
+<pubDate>Wed, 25 Nov 2026 19:50:18 +0000</pubDate>
+<category>Jouets</category>
+<pepper:merchant name="Amazon" price="39,90€"/>
+<description><![CDATA[<p>ASIN: B08Q3GLFXP</p><p>Code article international: 09003150122609</p><p>Référence fabricant : 370200997X</p><p><a href="https://www.amazon.fr/dp/B08Q3GLFXP">Amazon</a></p>]]></description>
+</item>
+<item>
+<title>Carte graphique MSI GeForce RTX 4070 Super</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469424</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469424</guid>
+<pubDate>Wed, 25 Nov 2026 19:49:12 +0000</pubDate>
+<category>High-Tech</category>
+<pepper:merchant name="PcComponentes" price="589€"/>
+<description><![CDATA[<p><a href="https://www.pccomponentes.fr/msi-rtx-4070-super?sv1=affiliate&amp;awc=1234_5678_abcdef&amp;utm_source=x">PcComponentes</a></p>]]></description>
+</item>
+<item>
+<title>Silent Hill 2 sur Steam</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469423</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469423</guid>
+<pubDate>Wed, 25 Nov 2026 19:48:06 +0000</pubDate>
+<category>Jeux vidéo</category>
+<pepper:merchant name="Steam" price="34,99€"/>
+<description><![CDATA[<p><a href="https://store.steampowered.com/app/2124490/Silent_Hill_2/?curator_clanid=4777282&amp;utm_medium=x">Steam</a></p>]]></description>
+</item>
+<item>
+<title>Robot aspirateur laveur Ecovacs Deebot T50 Omni Gen 2 - 21 000 Pa, Station OMNI, Ultra-fin 8,1 cm</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469422</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469422</guid>
+<pubDate>Wed, 25 Nov 2026 19:47:00 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Cdiscount" price="229€"/>
+<description><![CDATA[<p>Avec le code promo <strong>10DES129</strong>. Cagnotte de 20 € offerte.</p><p><a href="https://www.cdiscount.com/electromenager/robot-aspirateur/ecovacs-deebot-t50-omni-gen-2/f-110.html">Cdiscount</a></p>]]></description>
+</item>
+<item>
+<title>Montre connectée Garmin vívoactive 5 - GPS, AMOLED, 42 mm</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469421</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469421</guid>
+<pubDate>Wed, 25 Nov 2026 19:45:54 +0000</pubDate>
+<category>High-Tech</category>
+<pepper:merchant name="Amazon" price="169,99€"/>
+<description><![CDATA[<p>ASIN: B0BVFV123X</p><p><a href="https://www.amazon.fr/dp/B0BVFV123X">Amazon</a></p>]]></description>
+</item>
+<item>
+<title>Alimentation Cooler Master MWE Gold 850W V3 - 80+ Gold, ATX</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469420</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469420</guid>
+<pubDate>Wed, 25 Nov 2026 19:44:48 +0000</pubDate>
+<category>High-Tech</category>
+<pepper:merchant name="Cdiscount" price="89,99€"/>
+<description><![CDATA[<p>Référence : MPX-8503-AFAG-2EBEU</p><p><a href="https://www.cdiscount.com/informatique/alimentation-pc/cooler-master-mwe-gold-850-v3/f-10716.html">Cdiscount</a></p>]]></description>
+</item>
+<item>
+<title>[Prime] Objectif TTArtisan 75mm f1.5 M42 (Vendeur Tiers)</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469419</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469419</guid>
+<pubDate>Wed, 25 Nov 2026 19:43:42 +0000</pubDate>
+<category>Photo</category>
+<pepper:merchant name="Amazon" price="69€"/>
+<description><![CDATA[<p>Vendu et expédié par Photo Discount Boutique en ligne</p><p><a href="https://www.amazon.fr/dp/B0CQ12ABCD">Amazon</a></p>]]></description>
+</item>
+<item>
+<title>Processeur AMD Ryzen 7 7800X3D</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469418</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469418</guid>
+<pubDate>Wed, 25 Nov 2026 19:42:36 +0000</pubDate>
+<category>High-Tech</category>
+<pepper:merchant name="AliExpress" price="329€"/>
+<description><![CDATA[<p><a href="https://fr.aliexpress.com/item/1005005.html">AliExpress</a></p>]]></description>
+</item>
+<item>
+<title>Climatiseur réversible Daikin FTXC35D</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469417</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469417</guid>
+<pubDate>Wed, 25 Nov 2026 19:41:30 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="eBay" price="699€"/>
+<description><![CDATA[<p><a href="https://www.ebay.fr/itm/1234567890">eBay</a></p>]]></description>
+</item>
+<item>
+<title>Cafetière à dalle - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469416</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469416</guid>
+<pubDate>Wed, 25 Nov 2026 19:40:24 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Leroy Merlin" price="9,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Parapluie pliant - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469415</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469415</guid>
+<pubDate>Wed, 25 Nov 2026 19:39:18 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Decathlon" price="12,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Tapis de yoga - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469414</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469414</guid>
+<pubDate>Wed, 25 Nov 2026 19:38:12 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Action" price="15,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Lampe de bureau LED - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469413</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469413</guid>
+<pubDate>Wed, 25 Nov 2026 19:37:06 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Auchan" price="18,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Pack de piles AA - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469412</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469412</guid>
+<pubDate>Wed, 25 Nov 2026 19:36:00 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Leroy Merlin" price="21,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Casque de vélo - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469411</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469411</guid>
+<pubDate>Wed, 25 Nov 2026 19:34:54 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Decathlon" price="24,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Bouilloire inox - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469410</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469410</guid>
+<pubDate>Wed, 25 Nov 2026 19:33:48 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Action" price="27,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Sac à dos 25 L - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469409</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469409</guid>
+<pubDate>Wed, 25 Nov 2026 19:32:42 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Auchan" price="30,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Clé USB 128 Go - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469408</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469408</guid>
+<pubDate>Wed, 25 Nov 2026 19:31:36 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Leroy Merlin" price="33,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Gourde isotherme - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469407</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469407</guid>
+<pubDate>Wed, 25 Nov 2026 19:30:30 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Decathlon" price="36,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Couverture polaire - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469406</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469406</guid>
+<pubDate>Wed, 25 Nov 2026 19:29:24 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Action" price="39,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Set de tournevis - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469405</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469405</guid>
+<pubDate>Wed, 25 Nov 2026 19:28:18 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Auchan" price="42,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Balance de cuisine - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469404</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469404</guid>
+<pubDate>Wed, 25 Nov 2026 19:27:12 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Leroy Merlin" price="45,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+<item>
+<title>Chaussettes de sport - lot de 2</title>
+<link>https://www.dealabs.com/bons-plans/exemple-3469403</link>
+<guid isPermaLink="true">https://www.dealabs.com/bons-plans/exemple-3469403</guid>
+<pubDate>Wed, 25 Nov 2026 19:26:06 +0000</pubDate>
+<category>Maison</category>
+<pepper:merchant name="Decathlon" price="48,00€"/>
+<description><![CDATA[<p>Offre limitée.</p>]]></description>
+</item>
+</channel>
+</rss>

@@ -311,6 +311,24 @@
   .fpr b{font:400 2.4rem/1.1 var(--f-display); color:var(--pine); font-variant-numeric:tabular-nums}
   .fpr span{font-weight:600}
   .fsrc{font-size:.88rem; color:var(--muted)}
+  /* Bons plans repérés (radar) : pistes de prix, identiques pour tous */
+  .sigs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+  .sig{display:flex; flex-direction:column; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; min-width:0}
+  .sig .sp{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px}
+  .sig .sp b{font:400 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
+  .sig .sp span{font-weight:600; overflow-wrap:anywhere}
+  .sig small{font-size:.86rem; color:var(--muted)}
+  .sig small.ok{color:var(--pine)}
+  .sig small.warn{color:var(--err); font-weight:700}
+  .sig .conds{display:flex; flex-wrap:wrap; gap:6px}
+  .sig .cnd{font-size:.8rem; font-weight:700; color:var(--err); border:1px solid currentColor; border-radius:999px; padding:2px 10px}
+  .sig .cnd.info{color:var(--muted); font-weight:600}
+  .sig .sact{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px}
+  .sig .sact a{display:inline-flex; align-items:center; min-height:44px; padding:6px 14px; border-radius:12px; font-weight:700; text-decoration:none; border:1px solid var(--pine); color:var(--pine)}
+  .sig .sact a.main{background:var(--pine); color:var(--btn-ink)}
+  .fpr.old b{font-size:1.1rem; color:var(--muted); text-decoration:line-through; text-decoration-thickness:1px}
+  .chk.old{color:var(--muted); opacity:.8}
+  .fsrc.promo{color:var(--pine); font-weight:700}
   .fact{display:flex; flex-direction:column; gap:8px; margin-top:auto; padding-top:8px}
   .fbadge{align-self:flex-start; font-size:.82rem; font-weight:700; border-radius:999px; padding:4px 12px}
   .fbadge.taken{color:var(--muted); background:var(--line)}
@@ -407,6 +425,17 @@
   .menu>button[aria-expanded="true"]{background:var(--pine-soft)}
   .menu>button[disabled]{opacity:.55}
   .menu>.merch{display:flex; flex-direction:column; gap:10px; padding:12px; border-top:1px solid var(--line)}
+  .srcbar{background:var(--err); color:#fff; border-radius:14px; padding:12px 14px; font-weight:700}
+  .srcbar p{margin:0 0 4px} .srcbar p:last-child{margin:0}
+  .srcs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:.95rem}
+  .srcs li{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .srcs small{color:var(--muted)} .srcs .bad{color:var(--err); font-weight:700}
+  .watch{display:flex; flex-direction:column; gap:10px; padding:12px; border-top:1px solid var(--line)}
+  .watch label{display:flex; flex-direction:column; gap:4px; font-weight:600; font-size:.95rem}
+  .watch label small{font-weight:400; color:var(--muted)}
+  .cands{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+  .cands li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:4px}
+  .cands .rowbtns{display:flex; gap:8px; margin-top:4px}
   .danger{min-height:52px; margin-top:12px; border:0; background:transparent; color:var(--err); font-weight:700; cursor:pointer}
   .opanel .gifts{display:block}
   @media (min-width:960px){
@@ -462,6 +491,7 @@
 
       <!-- Vue propriétaire : ajout d'une idée -->
       <div id="ownerTop" class="stack" hidden>
+        <div id="srcCard" class="stack"></div>
         <form class="card addbar" id="addForm">
           <div class="addhead">
             <label for="gQuery">Ajouter une idée</label>
@@ -675,12 +705,23 @@ const isMarket = (store, url) => {
   return MARKET.concat(COMPARATOR).some(m => s.includes(m) || (h && h.includes(m))) || /^[a-z0-9]+([-_][a-z0-9]+)+$/.test(raw);
 };
 const totalOf = o => o.price + (typeof o.shipping === "number" ? o.shipping : 0);
-const rankKey = o => (o.stock === "out" ? 1e9 : 0) + totalOf(o);          // en rupture : à la fin
+const rankKey = o => (o.stock === "out" ? 2e9 : 0) + (o._f === "stale" ? 1e9 : 0) + totalOf(o);          // en rupture : à la fin
 // « Le moins cher » ne retient pas un marchand en « Prudence » tant qu'un autre marchand en stock est proposé
-const inStock = arr => { const ok = arr.filter(o => o.stock !== "out"), safe = ok.filter(o => !(o.trust && o.trust.l === "caution")); return safe.length ? safe : ok; };
+// Fraîcheur (lot Q) : même tableau que freshness() de verify.js (test de parité), calculé avec l'heure du navigateur
+const freshness = (o, at, now = Date.now()) => {
+  const t = new Date((o && o.at) || at || NaN).getTime();
+  if(!o || isNaN(t)) return o && o.verified ? "aging" : "unverified";
+  const age = now - t;
+  if(o.verified) return age <= 24 * 3600e3 ? "fresh" : age <= 72 * 3600e3 ? "aging" : "stale";
+  return age <= 48 * 3600e3 ? "unverified" : "stale";
+};
+const inStock = arr => { const ok = arr.filter(o => o.stock !== "out" && o._f !== "stale"), safe = ok.filter(o => !(o.trust && o.trust.l === "caution") && !o.anom); return safe.length ? safe : ok; };
 const cleanOffers = g => (Array.isArray(g.offers) ? g.offers : [])
   .filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url))
+  .map(o => ({...o, _f: freshness(o, g.offers_at)}))
   .sort((a,b) => rankKey(a) - rankKey(b));
+// Dernier prix connu quand toutes les offres en stock sont périmées : affiché en petit, jamais comme « le moins cher »
+const oldOf = g => cleanOffers(g).filter(o => o.stock !== "out" && o._f === "stale").sort((a,b) => totalOf(a) - totalOf(b))[0] || null;
 const bestOf = g => inStock(cleanOffers(g))[0] || null;
 // Sites mis en avant : ceux de la fiche d'abord, puis ceux de la liste commune. Seul l'ordre change, jamais « Le moins cher ».
 const keyOf = s => norm(s).replace(/[^a-z0-9]/g,"");
@@ -708,18 +749,29 @@ const dayD = d => D(d + "T12:00:00");
 function chkText(o, g){
   if(o.stock === "out") return `<small class="chk out">Rupture de stock${o.verified && o.at ? " · vu le " + D(o.at) : ""}</small>`;
   if(o.via === "manual" && !o.verified) return `<small class="chk">Prix saisi à la main${o.at ? " le " + D(o.at) : ""}, non vérifié</small>`;
+  if(o._f === "stale") return `<small class="chk old">Ancien prix (${D(o.at || g.offers_at)})</small>`;
+  if(o.verified && o._f === "aging") return `<small class="chk">Vérifié le ${o.at ? D(o.at) : "?"}, à reconfirmer</small>`;
   if(o.verified) return `<small class="chk ok">${CHECK} Vérifié sur le site${o.at ? " le " + D(o.at) : ""}${o.stock === "pre" ? " · précommande" : ""}</small>`;
   return `<small class="chk">Non vérifié · ${o.at ? "dernier contrôle le " + D(o.at) : (g.offers_at ? "prix Google du " + D(g.offers_at) : "prix Google")}</small>`;
 }
 
 // Niveau de confiance du marchand, calculé côté serveur à la recherche : jamais une garantie
 function trustText(o){
+  if(o && o.anom) return `<small class="trust warn">Prudence : prix très inférieur aux relevés des autres marchands</small>`;
   const t = o && o.trust; if(!t || typeof t !== "object") return "";
   const r = (Array.isArray(t.r) ? t.r : []).filter(x => typeof x === "string").slice(0,3).map(x => esc(x.slice(0,120))).join(" · ");
   if(t.l === "known") return `<small class="trust ok">Marchand connu</small>`;
   if(t.l === "caution") return `<small class="trust warn">Prudence${r ? " : " + r : ""}</small>`;
   if(t.l === "unknown") return `<small class="trust">Marchand non évalué : contrôle avant d'acheter</small>`;
   return "";
+}
+// Relevés par marchand (lot O) : plus bas relevé vérifié sur 30 jours, et baisse qui ne fait que revenir au niveau d'avant une hausse. Mêmes données pour tous.
+function obsText(o, g){
+  if(!o || !o.verified) return "";
+  const l = (Array.isArray(g.low30) ? g.low30 : []).find(x => x && x.mkey === keyOf(o.store) && +x.total > 0 && x.at);
+  const low = l && Math.abs(+l.total - totalOf(o)) > 0.005 ? `<small class="chk">Plus bas relevé ici sur 30 jours : ${eur(+l.total)} (le ${D(l.at, {day:"numeric", month:"2-digit"})})</small>` : "";
+  const rise = o.rise ? `<small class="chk">Baisse après une hausse récente : le prix était plus bas le ${D(o.rise, {day:"numeric", month:"2-digit"})}</small>` : "";
+  return low + rise;
 }
 const hostOfUrl = u => { try{ const h = new URL(u).hostname.replace(/^www\./,""); return /(^|\.)google\./.test(h) ? "" : h; }catch(e){ return ""; } };
 // Propriétaire : écarter un marchand sur toutes les fiches (liste noire)
@@ -833,6 +885,8 @@ async function load(){
   const d = code ? await rpc("noel_get", {p_code:code}) : await rpc("noel_public", {});
   role = d.role === "owner" ? "owner" : (d.role === "family" ? "family" : "public");
   if(role === "owner") store.set("is_owner", "1");
+  radar = null;
+  if(role === "owner"){ try{ radar = await rpc("noel_status", {p_code:code}); }catch(e){ radar = null; } }
   gifts = d.gifts || []; if(pendingOrder) applyOrder(pendingOrder); blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
   const dp = d.display && typeof d.display === "object" ? d.display : {};
   display = {
@@ -853,13 +907,42 @@ async function load(){
       ? "Voici mes idées de cadeaux. Touche « Je le prends » pour réserver en un clic !"
       : "Voici mes idées de cadeaux, avec les prix relevés chez les marchands.");
   render();
+  renderSources();
   renderBlocked();
   renderFav();
   setManifest();
 }
+function renderSources(){
+  const el = $("srcCard"); if(!el) return;
+  if(role !== "owner" || !radar){ el.innerHTML = ""; return; }
+  const src = (Array.isArray(radar.sources) ? radar.sources : []).filter(s => s && SRC_LABEL[s.name] && (s.last_ok || s.last_error));
+  const al = sourceAlerts(radar.sources);
+  const bar = al.length ? `<div class="srcbar" role="alert">${al.map(a => `<p>${esc(a)}</p>`).join("")}</div>` : "";
+  const li = src.map(s => `<li><span>${esc(SRC_LABEL[s.name])}</span><span>${s.last_ok ? "dernière lecture " + ago(s.last_ok) : `<span class="bad">jamais lu</span>`}${s.name === "dealabs:tous" && s.gaps ? ` · <small>${+s.gaps} trou(s) détecté(s)</small>` : ""}</span></li>`).join("");
+  const sp = radar.serp && typeof radar.serp === "object" ? radar.serp : null, nc = Array.isArray(radar.candidates) ? radar.candidates.length : 0;
+  el.innerHTML = bar + `<details class="card"${dk("src")}><summary>État des sources</summary><div class="sub"><ul class="srcs">${li || "<li><small>Aucune source active (le radar est désactivé sur ce serveur).</small></li>"}</ul>
+    ${nc ? `<p class="fsrc">${nc} piste${nc > 1 ? "s" : ""} à confirmer, dans la fiche du cadeau concerné.</p>` : ""}
+    ${sp ? `<p class="fsrc">Google : ${+sp.auto || 0} recherche(s) automatique(s) et ${+sp.manual || 0} manuelle(s) ce mois-ci, sur 250.</p>` : ""}</div></details>`;
+}
+// Section « Surveillance » d'un cadeau : surnoms, références, pistes à confirmer
+function watchHtml(g){
+  const d = wdraft[g.id] || {}, val = (k, v) => esc(d[k] !== undefined ? d[k] : (v || ""));
+  const cands = (radar && Array.isArray(radar.candidates) ? radar.candidates : []).filter(c => c && c.gift_id === g.id);
+  const cl = cands.map(c => `<li><b>${c.price > 0 ? eur(+c.price) : "Prix inconnu"}</b>${c.merchant ? " chez " + esc(c.merchant) : ""}
+      <span class="fsrc">${esc(String(c.title || "").slice(0,120))}</span><span class="fsrc">${esc(SIG_SRC[c.source] || "Repéré")} ${ago(c.seen_at)}</span>
+      <div class="rowbtns"><button type="button" class="btn small" data-sigyes="${+c.id}">C'est ce cadeau</button><button type="button" class="btn ghost small" data-signo="${+c.id}">Non</button></div></li>`).join("");
+  const keepa = g.asin ? `<a class="btn ghost small" href="https://keepa.com/#!product/4-${esc(g.asin)}" target="_blank" rel="noopener noreferrer">Suivre sur Keepa</a>` : "";
+  return `<details class="watchbox"${dk("w" + g.id)}><summary><b>Surveillance${cands.length ? " (" + cands.length + " à confirmer)" : ""}</b></summary><div class="watch">
+    <label>Surnoms<input type="text" data-wd="aliases" data-wid="${g.id}" maxlength="400" autocomplete="off" value="${val("aliases", (g.aliases || []).join(", "))}"><small>Autres façons de nommer ce cadeau, séparées par des virgules (8 au plus). Elles servent à reconnaître les promotions.</small></label>
+    <label>Référence Amazon (ASIN)<input type="text" data-wd="asin" data-wid="${g.id}" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${val("asin", g.asin)}"></label>
+    <label>Référence constructeur<input type="text" data-wd="mpn" data-wid="${g.id}" maxlength="40" autocomplete="off" spellcheck="false" value="${val("mpn", g.mpn)}"></label>
+    <button type="button" class="btn small" data-wsave="${g.id}">Enregistrer</button>${keepa}
+    ${cands.length ? `<h4>À confirmer</h4><ul class="cands">${cl}</ul>` : ""}</div></details>`;
+}
 
 // Classement choisi par le propriétaire : « Mes préférés » (envie forte) puis « Autres idées », chacun dans l'ordre des rangs.
 // Identique pour tous, sans lien avec les réservations.
+let radar = null, wdraft = {};
 let selId = null, merchOpen = false, notice = "", orderHist = [], pendingOrder = null, saveSeq = 0, saving = Promise.resolve(), dragging = false, focusKey = "";
 const dirtyTop = new Set();
 function ordered(){
@@ -932,12 +1015,64 @@ const imgOf = g => /^https:\/\//.test(g.image || "") ? `<img src="${esc(g.image)
 function metaText(g, o){
   if(!o) return ["Non vérifié", g.offers_at ? "relevé le " + D(g.offers_at) : ""].filter(Boolean).join(" · ");
   const at = o.at || g.offers_at;
-  const st = o.stock === "out" ? "Rupture de stock" : o.verified ? "Vérifié" + (o.at ? " le " + D(o.at) : "") : o.via === "manual" ? "Saisi à la main, non vérifié" : "Non vérifié";
+  const st = o.stock === "out" ? "Rupture de stock" : o._f === "stale" ? "Ancien prix (" + D(at) + ")" : o.verified && o._f === "aging" ? "Vérifié le " + D(o.at) + ", à reconfirmer" : o.verified ? "Vérifié" + (o.at ? " le " + D(o.at) : "") : o.via === "manual" ? "Saisi à la main, non vérifié" : "Non vérifié";
   return [st, !o.verified && at ? "relevé le " + D(at) : "", typeof o.shipping === "number" ? "livraison comprise" : "hors livraison"].filter(Boolean).join(" · ");
 }
+// ---------- Pistes de prix (radar des promotions) : mêmes données pour tous les rôles, jamais liées aux réservations ----------
+const SIG_SRC = {dealabs:"Repéré sur Dealabs", keepa:"Repéré via Keepa", google:"Repéré via Google", idealo:"Repéré via idealo", mail:"Repéré par alerte e-mail"};
+// État des sources (lot K-complet) : alertes calculées à partir de noel_status (propriétaire seulement)
+const SRC_LABEL = {"dealabs:tous":"Dealabs (flux principal)", "dealabs:hot":"Dealabs (populaires)", keepa:"Keepa", mail:"Boîte d'alertes", google:"Google (balayage)", refresh:"Relecture des pages", selftest:"Test quotidien"};
+const SRC_EVERY = {"dealabs:hot":600, keepa:900, mail:300, refresh:600};   // secondes : alerte au-delà de 3 fois
+function sourceAlerts(sources, now = new Date()){
+  const out = [], list = Array.isArray(sources) ? sources : [], min = iso => Math.round((now.getTime() - new Date(iso).getTime()) / 60000);
+  const h = now.getHours(), day = h >= 8 || h < 1;                      // Dealabs est surveillé de 8 h à 1 h
+  for(const s of list){
+    if(!s || typeof s.name !== "string") continue;
+    const lab = SRC_LABEL[s.name] || s.name;
+    if(s.name === "dealabs:tous"){
+      if(day && s.last_ok && min(s.last_ok) > 15) out.push(lab + " : aucune lecture réussie depuis " + min(s.last_ok) + " min.");
+      else if(day && !s.last_ok && s.last_error) out.push(lab + " : aucune lecture réussie (" + String(s.last_error).slice(0,80) + ").");
+    } else if(s.name === "selftest"){
+      if(s.last_error_at && (!s.last_ok || new Date(s.last_error_at) > new Date(s.last_ok))) out.push(lab + " : échec (" + String(s.last_error || "").slice(0,80) + ").");
+    } else if(SRC_EVERY[s.name] && s.last_ok && min(s.last_ok) * 60 > 3 * SRC_EVERY[s.name]) out.push(lab + " : aucune lecture réussie depuis " + min(s.last_ok) + " min.");
+  }
+  return out;
+}
+const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? "à l'instant" : m < 60 ? "il y a " + m + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
+const dhm = iso => { const d = new Date(iso); return D(iso, {day:"2-digit", month:"2-digit"}) + " à " + d.getHours() + " h " + String(d.getMinutes()).padStart(2, "0"); };
+// Une piste n'est montrée que récente (72 h après sa publication, ou 24 h après sa vérification) : la page vieillit aussi toute seule
+function sigsOf(g){
+  const now = Date.now();
+  return (Array.isArray(g.signals) ? g.signals : []).filter(s => s && typeof s === "object" && !isNaN(new Date(s.seen_at)) && !isMarket(s.merchant, s.url))
+    .filter(s => now - new Date(s.seen_at).getTime() < 72 * 3600e3 || (s.verified_at && now - new Date(s.verified_at).getTime() < 24 * 3600e3))
+    .map(s => ({
+      title: String(s.title || "").slice(0, 200), merchant: String(s.merchant || "").slice(0, 80), price: +s.price > 0 ? +s.price : null, source: SIG_SRC[s.source] ? s.source : "dealabs",
+      url: /^https:\/\//.test(s.url || "") ? s.url : "", page: /^https:\/\/(www\.)?dealabs\.com\//.test(s.page_url || "") ? s.page_url : "",
+      conds: (Array.isArray(s.conditions) ? s.conditions : []).filter(c => c && typeof c.label === "string").map(c => ({type: String(c.type || ""), label: c.label.slice(0, 80)})),
+      verified: !!s.verified && !!s.verified_at, vat: s.verified_at, seen: s.seen_at,
+    }))
+    .sort((a, b) => (a.price == null) - (b.price == null) || a.price - b.price);
+}
+const sigConditional = s => s.conds.some(c => c.type !== "cagnotte");
+function sigLi(s){
+  const cond = sigConditional(s);
+  return `<li class="sig"><div class="sp">${s.price != null ? `<b>${eur(s.price)}</b>` : ""}<span>${s.merchant ? esc(s.merchant) : "Marchand à voir sur l'offre"}</span></div>
+    ${s.verified ? `<small class="ok">${CHECK} Vérifié sur le site le ${dhm(s.vat)}</small>` : `<small>Non vérifié</small>`}
+    ${s.conds.length ? `<div class="conds">${s.conds.map(c => `<span class="cnd${c.type === "cagnotte" ? " info" : ""}">${esc(c.label)}</span>`).join("")}</div>` : ""}
+    ${cond ? `<small class="warn">Prix sous conditions</small>` : ""}
+    <small>${SIG_SRC[s.source]} ${ago(s.seen)}</small>
+    ${s.url || s.page ? `<div class="sact">${s.url ? `<a class="main" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">Voir l'offre</a>` : ""}${s.page ? `<a href="${esc(s.page)}" target="_blank" rel="noopener noreferrer">Voir sur Dealabs</a>` : ""}</div>` : ""}</li>`;
+}
+function sigsHtml(g){
+  const l = sigsOf(g);
+  if(!l.length) return "";
+  return `<h3>Bons plans repérés</h3><ul class="sigs">${l.slice(0, 3).map(sigLi).join("")}</ul>` + (l.length > 3 ? `<details class="allp"${dk("s" + g.id)}><summary>Voir les ${l.length - 3} autres pistes</summary><ul class="sigs">${l.slice(3).map(sigLi).join("")}</ul></details>` : "");
+}
+// Carte famille : « Promo repérée » si une piste sans condition est moins chère que le prix affiché
+function promoSeen(g, best){ return best != null && sigsOf(g).some(s => s.price != null && s.price < best && !sigConditional(s)); }
 function priceOf(g){
   const offs = cleanOffers(g), bo = inStock(offs)[0] || null, best = bestPrice(g);
-  return {offs, bo: bo && bo.stock !== "out" ? bo : null, best, store: bo ? bo.store : (best != null ? g.store || "" : "")};
+  return {offs, bo: bo && bo.stock !== "out" ? bo : null, best, store: bo ? bo.store : (best != null ? g.store || "" : ""), old: best == null ? oldOf(g) : null};
 }
 
 function render(){ if(dragging) return; renderList(); refreshSheet(); restoreFocus(); }
@@ -971,9 +1106,9 @@ function ownerHtml(){
   const lis = rows.map((id,i) => {
     if(id === "sep") return `<li class="sep" data-row="sep">Autres idées</li>`;
     const g = gifts.find(x => x.id === id); if(qt.length && !match(g)) return "";
-    const {bo, best, store: st, offs} = priceOf(g), fav = i < sep, t = esc(g.title);
+    const {bo, best, store: st, offs, old} = priceOf(g), fav = i < sep, t = esc(g.title);
     const todo = !bo || !bo.verified;
-    const state = best == null ? (offs.length ? "En rupture" : "Prix à saisir") : (bo && bo.verified ? "Vérifié" + (bo.at ? " le " + D(bo.at) : "") : metaText(g, bo).split(" · ").slice(0,2).join(" · "));
+    const state = best == null ? (old ? "Ancien prix, à confirmer" : offs.length ? "En rupture" : "Prix à saisir") : (bo && bo.verified ? "Vérifié" + (bo.at ? " le " + D(bo.at) : "") : metaText(g, bo).split(" · ").slice(0,2).join(" · "));
     const lock = qt.length ? " disabled" : "";
     return `<li data-row="${id}"><div class="row${wide.matches && id === selId ? " sel" : ""}">
       <button type="button" class="grab" data-grab aria-hidden="true" tabindex="-1"${lock}>⠿</button>
@@ -1015,11 +1150,12 @@ function panelHtml(g){
       <button type="button" data-merch aria-expanded="${merchOpen}"><b>Gérer les marchands</b><small>${offs.length} marchand${offs.length > 1 ? "s" : ""} · ajouter, chercher, écarter</small></button>
       ${merch}
     </div>
+    ${watchHtml(g)}
     ${confirm || `<button type="button" class="danger" data-del="${g.id}">Retirer de la liste…</button>`}`;
 }
 function offerLi(g, o, bo){
   const fk = favKeys(g);
-  return `<li class="${bo && o.url === bo.url && o.store === bo.store ? "best" : ""}${o.stock === "out" ? " out" : ""}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${favIdx(fk, o) >= 0 ? '<span class="tag fav">Choix de Dorian</span>' : ""}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
+  return `<li class="${bo && o.url === bo.url && o.store === bo.store ? "best" : ""}${o.stock === "out" ? " out" : ""}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${favIdx(fk, o) >= 0 ? '<span class="tag fav">Choix de Dorian</span>' : ""}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}${obsText(o, g)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
 }
 
 async function run(fn){
@@ -1049,7 +1185,7 @@ let meta = {image:"", price:null, store:"", offers:[], link:"", gtin:"", alts:[]
 let searching = false;
 // Offre telle qu'elle est enregistrée : prix, livraison, état de vérification, date de lecture, stock
 const offerOut = o => ({store:String(o.store).slice(0,60), price:o.price, url:o.url, shipping: typeof o.shipping === "number" ? o.shipping : null,
-  verified: !!o.verified, at: o.at || null, stock: o.stock || "", via: o.via || "",
+  verified: !!o.verified, at: o.at || null, stock: o.stock || "", via: o.via || "", rise: o.rise || null, anom: !!o.anom,
   trust: o.trust && ["known","unknown","caution"].includes(o.trust.l) ? {l:o.trust.l, r:(Array.isArray(o.trust.r) ? o.trust.r : []).filter(x => typeof x === "string").slice(0,3).map(x => x.slice(0,120))} : null});
 const isLink = q => !/\s/.test(q) && (/^https?:\/\//i.test(q) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(q));
 
@@ -1344,6 +1480,8 @@ const onEditChange = e=>{
     else editing.d.pinned = p.filter(x => x !== k);
   }
 };
+const onWatchInput = e=>{ const i = e.target; if(i && i.dataset && i.dataset.wd){ (wdraft[+i.dataset.wid] = wdraft[+i.dataset.wid] || {})[i.dataset.wd] = i.value; } };
+["list","sheet"].forEach(id => { $(id).addEventListener("input", onWatchInput); });
 ["list","sheet"].forEach(id => { $(id).addEventListener("input", onEditInput); $(id).addEventListener("change", onEditChange); });
 // Liste de prix déroulante : son état est gardé quand la liste est redessinée
 const onToggle = e=>{
@@ -1387,9 +1525,10 @@ function famActions(g){
   return {badge:`<span class="fbadge taken">Déjà pris</span>`, act:""};
 }
 function famCard(g){
-  const {offs, bo, best, store: st} = priceOf(g), img = imgOf(g), dr = dropOf(g);
+  const {offs, bo, best, store: st, old} = priceOf(g), img = imgOf(g), dr = dropOf(g);
   const price = best != null
-    ? `<div class="fpr"><b>${eur(best)}</b>${st ? `<span>${esc(st)}</span>` : ""}</div><span class="fsrc">${metaText(g, bo)}</span>`
+    ? `<div class="fpr"><b>${eur(best)}</b>${st ? `<span>${esc(st)}</span>` : ""}</div><span class="fsrc">${metaText(g, bo)}</span>${promoSeen(g, best) ? `<span class="fsrc promo">Promo repérée</span>` : ""}`
+    : old ? `<div class="fpr old"><b>${eur(totalOf(old))}</b><span>${esc(old.store)}</span></div><span class="fsrc">Ancien prix, à confirmer · ${D(old.at || g.offers_at)}</span>`
     : `<span class="fsrc">${offs.length ? "En rupture chez les marchands lus" : "Prix à confirmer"}</span>`;
   const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
   const {badge, act} = famActions(g), taken = role === "family" && g.claimed_by && g.claimed_by !== ftok;
@@ -1415,7 +1554,7 @@ function giftView(g){
   const go = bo ? `<a class="go" href="${esc(bo.url)}" target="_blank" rel="noopener noreferrer">Acheter chez ${esc(bo.store)}</a>`
     : (url && !offs.length ? `<a class="go" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit${g.store ? " chez " + esc(g.store) : ""}</a>` : "");
   const buy = `<div class="buy">${best != null ? `<div class="fpr"><b>${eur(best)}</b>${st ? `<span>${esc(st)}</span>` : ""}</div>` : `<strong>${offs.length ? "En rupture chez les marchands lus" : "Prix à confirmer"}</strong>`}
-    ${bo ? chkText(bo, g) + `<span class="fsrc">${typeof bo.shipping === "number" ? "Livraison comprise" : "Livraison à vérifier"}</span>` + (favIdx(fk, bo) >= 0 ? `<span class="fsrc">Choix de Dorian</span>` : "") + trustText(bo) : (best != null ? `<span class="fsrc">${metaText(g, null)}</span>` : "")}${go}</div>`;
+    ${bo ? chkText(bo, g) + `<span class="fsrc">${typeof bo.shipping === "number" ? "Livraison comprise" : "Livraison à vérifier"}</span>` + (favIdx(fk, bo) >= 0 ? `<span class="fsrc">Choix de Dorian</span>` : "") + trustText(bo) + obsText(bo, g) : (best != null ? `<span class="fsrc">${metaText(g, null)}</span>` : "")}${go}</div>`;
   const others = orderedOffers(g, offs).filter(o => o !== bo);
   const li = o => offerLi(g, o, bo);
   const list = others.length
@@ -1431,7 +1570,7 @@ function giftView(g){
   return `<div class="fx"><div class="photo${img ? "" : " ph"}">${img || PLACEHOLDER}</div><div class="fcol">
     ${g.category ? `<span class="cat">${esc(g.category)}</span>` : ""}<h2>${esc(g.title)}</h2>
     ${g.variant ? `<p class="variant"><b>Version souhaitée</b>${esc(g.variant)}</p>` : ""}${g.note ? `<p class="fnote">${esc(g.note)}</p>` : ""}${altHtml(g)}
-    ${badge}${dr ? `<span class="fbadge drop">Baisse de ${eur(dr.by)}</span>` : ""}${buy}${act}
+    ${badge}${dr ? `<span class="fbadge drop">Baisse de ${eur(dr.by)}</span>` : ""}${buy}${sigsHtml(g)}${act}
     <h3>Autres prix</h3>${list}${histHtml(g)}${cmp}</div></div>`;
 }
 let sheetId = null, preview = false;
@@ -1480,6 +1619,17 @@ const onListClick = e=>{
   if(t.dataset.mv){ focusKey = t.dataset.key; moveRow(+t.dataset.rid, +t.dataset.mv); return; }
   if(t.hasAttribute("data-undo")){ const o = orderHist.pop(); if(o){ focusKey = "undo"; commitOrder(o, false); } return; }
   if(t.hasAttribute("data-merch")){ merchOpen = !merchOpen; render(); return; }
+  if(t.dataset.sigyes || t.dataset.signo){ const sid = +(t.dataset.sigyes || t.dataset.signo), acc = !!t.dataset.sigyes; run(()=>rpc("noel_signal_decide",{p_code:code,p_id:sid,p_accept:acc})); return; }
+  if(t.dataset.wsave){
+    const wid = +t.dataset.wsave, g0 = gifts.find(x => x.id === wid), d = wdraft[wid] || {}; if(!g0) return;
+    const al = (d.aliases !== undefined ? d.aliases : (g0.aliases || []).join(", ")).split(/[,;]/).map(x => x.trim()).filter(Boolean);
+    run(async()=>{
+      await rpc("noel_set_aliases",{p_code:code,p_id:wid,p_aliases:al});
+      await rpc("noel_set_asin",{p_code:code,p_id:wid,p_asin:d.asin !== undefined ? d.asin : (g0.asin || "")});
+      await rpc("noel_set_mpn",{p_code:code,p_id:wid,p_mpn:d.mpn !== undefined ? d.mpn : (g0.mpn || "")});
+      delete wdraft[wid]; notice = "Surveillance enregistrée.";
+    }); return;
+  }
   if(handleEdit(t)) return;
   const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.block || t.dataset.claim || t.dataset.unclaim || 0);
   const g = gifts.find(x=>x.id===id);

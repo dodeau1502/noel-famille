@@ -13,6 +13,12 @@ services:
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:?}
       - SERPAPI_KEY=${SERPAPI_KEY:-}
       - CRON_SECRET=${CRON_SECRET:?}
+      # Radar des promotions (26 novembre). JOBS_ENABLED=1 en production SEULEMENT (le dev le laisse vide : on ne lit pas Dealabs deux fois).
+      - JOBS_ENABLED=${JOBS_ENABLED:-}
+      - DEALABS_FEEDS=${DEALABS_FEEDS:-tous,hot}
+      - SERP_AUTO_CAP=${SERP_AUTO_CAP:-120}
+      - REFRESH_MAX_READS_H=${REFRESH_MAX_READS_H:-120}
+      - HIGH_PERIODS=${HIGH_PERIODS:-2026-11-27/2026-12-01,2026-12-14/2026-12-24}
       - POSTGREST_URL=http://postgrest:3000
       # Valeurs par défaut = production (rien d'injecté). En dev seulement : APP_ENV=dev + les 3 suivantes (voir vps-infra/dev-feedback).
       - APP_ENV=${APP_ENV:-production}
