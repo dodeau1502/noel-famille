@@ -51,3 +51,11 @@ assert.equal(bestOffer([stale, live], NOW).store, "Frais");
 assert.equal(bestOffer([stale], NOW), null);
 assert.deepEqual(rank([out, stale, live], NOW).map(o => o.store), ["Frais", "Vieux", "Rupt"]);
 console.log("freshness OK");
+
+// Page à déclinaisons : le prix connu (55 €, grande taille) est confirmé s'il figure parmi les déclinaisons, même si la page affiche 40 € d'abord
+r = applyPage(O("Greige", 55), { price: 40, stock: "in", prices: 2, name: "Drap de bain", variants: [{ price: 40, stock: "in" }, { price: 55, stock: "out" }] }, "Drap de bain Greige", NOW);
+assert.equal(r.verified, true); assert.equal(r.price, 55); assert.equal(r.stock, "out"); assert.equal(r.at, NOW.toISOString());
+// aucune déclinaison au prix connu : reste non vérifié (lecture ambiguë)
+r = applyPage(O("Greige", 70), { price: 40, stock: "in", prices: 2, name: "Drap de bain", variants: [{ price: 40, stock: "in" }, { price: 55, stock: "in" }] }, "Drap de bain Greige", NOW);
+assert.equal(r.verified, false); assert.equal(r.price, 70);
+console.log("variants OK");

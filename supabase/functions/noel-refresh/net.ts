@@ -1,7 +1,9 @@
 // Lecture des pages des marchands (sans crédit SerpAPI). Partagé par noel-preview et noel-refresh.
 import { extract, isPrivateIp, badHostname } from "./parse.js";
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+// En-tête honnête : se faire passer pour Chrome trahit un faux navigateur (l'empreinte réseau de Deno n'est pas celle de Chrome) et
+// Cloudflare / Shopify répondent alors 429 à chaque lecture (constaté le 25 novembre : Greige, Mello, Sea to Summit).
+const UA = "Mozilla/5.0 (compatible; NoelFamille/1.0; +https://noel.dorianlab.fr)";
 
 export async function assertPublic(u: URL) {
   if (u.protocol !== "https:") throw new Error("Seuls les liens https sont acceptés.");
@@ -55,7 +57,7 @@ export async function readMerchant(raw: string, timeoutMs = 8000): Promise<Page>
       res = await fetch(url, {
         redirect: "manual",
         signal: AbortSignal.timeout(timeoutMs),
-        headers: { "User-Agent": UA, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.5" },
+        headers: { "User-Agent": UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8", "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.5" },
       });
       status = res.status;
       const loc = res.headers.get("location");

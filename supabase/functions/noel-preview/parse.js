@@ -87,6 +87,15 @@ export function extract(html, finalUrl) {
     const spec = o.priceSpecification && !Array.isArray(o.priceSpecification) ? o.priceSpecification : {};
     cand.push([o.price ?? o.lowPrice ?? spec.price, o.priceCurrency || spec.priceCurrency]);
   }
+  // Déclinaisons (taille, couleur…) : la liste des offres JSON-LD de la page, et celle qui correspond au lien (?variant=…, Shopify)
+  const variants = [], ldOffers = [...new Set(ld.offers.concat([].concat(prod.offers || [])))];
+  for (const o of ldOffers.slice(0, 80)) {
+    const spec = o.priceSpecification && !Array.isArray(o.priceSpecification) ? o.priceSpecification : {};
+    const n = parsePrice(o.price ?? spec.price), c = String(o.priceCurrency || spec.priceCurrency || "EUR").toUpperCase();
+    if (n !== null && n > 0 && c === "EUR") variants.push({ price: n, stock: findStock({ offers: [o] }), url: String(o.url || "") });
+  }
+  const chosen = selectedVariant(variants, finalUrl);
+  if (chosen) cand.unshift([chosen.price, "EUR"]);
   for (const [p, c] of cand) {
     const n = parsePrice(p);
     if (n !== null && n > 0) { price = n; currency = String(c || "EUR").toUpperCase(); break; }
@@ -100,9 +109,21 @@ export function extract(html, finalUrl) {
   const heading = h ? decode(h[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ")).slice(0, 160) : "";
   return {
     title: title.slice(0, 120), heading, image, price, store: store.slice(0, 80),
-    gtin: findGtin(prod, ld, html), stock: findStock(ld, prod), name: String(prod.name || "").slice(0, 160),
-    prices: distinctPrices(cand),
+    gtin: findGtin(prod, ld, html), stock: chosen && chosen.stock ? chosen.stock : findStock(ld, prod), name: String(prod.name || "").slice(0, 160),
+    prices: chosen ? 1 : distinctPrices(cand),       // déclinaison désignée par le lien : lecture non ambiguë
+    variants: variants.map(v => ({ price: v.price, stock: v.stock })),
   };
+}
+
+// Déclinaison désignée par le lien (?variant=ID) : l'offre JSON-LD dont l'adresse porte le même identifiant, sinon l'offre unique
+// de la page (Shopify n'écrit alors que la déclinaison choisie). Sans ?variant= : aucune (la page montre plusieurs prix).
+export function selectedVariant(variants, finalUrl) {
+  let id = "";
+  try { id = new URL(finalUrl).searchParams.get("variant") || ""; } catch (_) { /* adresse illisible */ }
+  if (!/^\d+$/.test(id)) return null;
+  const hit = variants.find(v => { try { return !!v.url && new URL(v.url, finalUrl).searchParams.get("variant") === id; } catch (_) { return false; } });
+  if (hit) return hit;
+  return variants.length === 1 ? variants[0] : null;
 }
 
 // Code-barres (EAN/GTIN) : 8, 12, 13 ou 14 chiffres
@@ -124,7 +145,7 @@ function findGtin(prod, ld, html) {
 
 // Disponibilité annoncée par la page : "in", "out", "pre" ou "" (inconnue)
 export function findStock(ld, prod = {}) {
-  const list = ld.offers.concat([].concat(prod.offers || []));
+  const list = (ld.offers || []).concat([].concat(prod.offers || []));
   const seen = new Set();
   for (const o of list) {
     const a = String(o?.availability ?? "").toLowerCase();

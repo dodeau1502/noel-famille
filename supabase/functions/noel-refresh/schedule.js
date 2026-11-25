@@ -4,7 +4,7 @@ const MIN = 60e3, H = 3600e3;
 export const INPUT_KEYS = ["lastSignalAt", "lastChangeAt", "readableCount", "inHighPeriod"];
 
 // Sites que l'on ne sait pas lire : aucun prix à en tirer, donc jamais relus
-const UNREADABLE = /(^|\.)(amazon|fnac|darty|sony|lego|boulanger)\./;
+const UNREADABLE = /(^|\.)(amazon|fnac|darty|sony|lego|boulanger|decathlon|uniqlo)\./;
 export const hostOf = (u) => { try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ""); } catch (_) { return ""; } };
 export const isUnreadable = (url) => UNREADABLE.test(hostOf(url) + ".");
 

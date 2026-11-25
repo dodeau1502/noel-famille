@@ -162,7 +162,9 @@ Thème SOMBRE PAR DÉFAUT, « Affichage » : sombre, clair ou automatique, et te
 - Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
-- Amazon, Fnac, Darty, Sony, LEGO, Boulanger ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix Google connu).
+- Amazon, Fnac, Darty, Sony, LEGO, Boulanger, Decathlon (défi Cloudflare) et Uniqlo (prix chargé en JavaScript) ne se laissent pas lire : leurs offres restent « non vérifiées » (dernier prix connu, affiché avec sa date, y compris dans la liste de gestion). Seul le balayage Google (SerpAPI) peut les remettre à jour.
+- Lecture des pages (`net.ts`) : en-tête `User-Agent` honnête (`NoelFamille/1.0`). Ne pas revenir à un faux « Chrome » : Cloudflare / Shopify répondaient 429 à toutes les lectures (cause des « Ancien prix » du 25 novembre).
+- Pages à déclinaisons (tailles, couleurs) : `extract` renvoie `variants` et choisit la déclinaison du lien `?variant=ID` (Shopify) ; `applyPage` confirme le prix connu s'il correspond à l'une des déclinaisons (limite : si la déclinaison voulue change de prix et qu'une autre a l'ancien prix, l'ancien prix est confirmé à tort).
 - Cas réel corrigé (DJI Lito X1 Fly More Combo RC-N3) : un seul résultat sur un site inconnu, car la référence RC-N3 était exigée dans
   les titres Google. Les fiches Google restent bruitées (accessoires, autres versions) et ne donnent que 2 à 5 marchands ; avec peu de
   marchands, c'est la couverture de Google qui limite, pas le filtre. Une fiche peut contenir une offre reconditionnée non signalée
@@ -205,7 +207,7 @@ But : ne rater aucune promotion publique sur les cadeaux de la liste, sans coût
 
 ## Fréquence de relecture (lot P, 27 novembre 2026)
 - `noel-refresh/schedule.js` (pur, `schedule.test.mjs`) : `nextCheck` ne lit QUE `lastSignalAt`, `lastChangeAt`, `readableCount`, `inHighPeriod` (un test avec Proxy refuse toute autre clé, dont `claimed`, `bought`, `paid`). Échéances : 15 min (piste acceptée < 6 h), 30 min (total vérifié changé < 48 h), 45 min (période forte, `HIGH_PERIODS`), 60 min, 6 h sans offre lisible, ±10 %.
-- `noel-refresh` choisit les fiches par `next_check_at` (nulles d'abord) dans `noel_gifts` seulement. Plafonds : `REFRESH_MAX_READS_H` (120 par heure, `noel_sources` « refresh »), 20 s et 60 par heure par domaine (en mémoire). Sites illisibles (Amazon, Fnac, Darty, Sony, LEGO, Boulanger) jamais relus ; `offers[].fails` / `tried_at` : après 3 échecs, une lecture par 24 h. Le bouton « Actualiser » du propriétaire ignore ces plafonds (sauf pour les fiches elles-mêmes).
+- `noel-refresh` choisit les fiches par `next_check_at` (nulles d'abord) dans `noel_gifts` seulement. Plafonds : `REFRESH_MAX_READS_H` (120 par heure, `noel_sources` « refresh »), 20 s et 60 par heure par domaine (en mémoire). Sites illisibles (Amazon, Fnac, Darty, Sony, LEGO, Boulanger, Decathlon, Uniqlo) jamais relus ; `offers[].fails` / `tried_at` : après 3 échecs, une lecture par 24 h. Le bouton « Actualiser » du propriétaire ignore ces plafonds (sauf pour les fiches elles-mêmes).
 - Le radar pose `next_check_at = now` pour une fiche qui reçoit une piste acceptée ; le prochain passage la relit. `REFRESH_MIN_AGE_MIN` n'est plus utilisée. Tâche Coolify `price-refresh` à passer en `*/10 * * * *` (par Dorian).
 - Limites : le plafond par domaine est en mémoire (remis à zéro au redémarrage) ; `refreshOne` est conservé mais plus appelé.
 

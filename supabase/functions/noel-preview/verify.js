@@ -10,6 +10,11 @@ export function applyPage(offer, info, query, now = new Date()) {
   if (!info || !(info.price > 0)) return { ...o, verified: false };            // page illisible ou bloquée : on garde le dernier prix connu
   const diff = Math.abs(info.price - o.price) / o.price;
   const same = diff <= TOLERANCE;
+  if (!same && Array.isArray(info.variants)) {
+    // Page à plusieurs déclinaisons (tailles, couleurs) : le prix connu est confirmé s'il correspond à l'une d'elles
+    const v = info.variants.find(x => x && x.price > 0 && Math.abs(x.price - o.price) / o.price <= TOLERANCE);
+    if (v) return { ...o, price: v.price, verified: true, stock: v.stock || info.stock || "", at: now.toISOString() };
+  }
   if (!same) {
     // La page annonce un autre prix : on l'accepte seulement si la page décrit bien le produit et si la lecture n'est pas ambiguë
     const ratio = info.price / o.price;

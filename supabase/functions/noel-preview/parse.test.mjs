@@ -28,3 +28,17 @@ assert.equal(extract("<html></html>", "https://x.fr/p").stock, "");
 assert.equal(cleanGtin("0 0000 0000 0000"), ""); assert.equal(cleanGtin("abc"), ""); assert.equal(cleanGtin("6941565969903"), "6941565969903");
 assert.equal(extract(`<script>var x={"gtin13":"6941565969903"}</script>`, "https://x.fr/p").gtin, "6941565969903");
 console.log("parse v6 OK");
+
+// Déclinaisons (Shopify) : le lien ?variant=ID désigne la déclinaison, même si la balise meta annonce le prix le plus bas
+const shop = (offers) => `<meta property="og:price:amount" content="189.90"><script type="application/ld+json">{"@type":"Product","name":"Surmatelas Duo","offers":${JSON.stringify(offers)}}</script>`;
+r = extract(shop([{ "@type": "Offer", price: "259.90", priceCurrency: "EUR", availability: "http://schema.org/InStock", url: "https://m.fr/products/duo" }]), "https://m.fr/products/duo?variant=231");
+assert.equal(r.price, 259.9); assert.equal(r.prices, 1); assert.equal(r.stock, "in");
+r = extract(shop([{ "@type": "Offer", price: "189.90", priceCurrency: "EUR", url: "https://m.fr/products/duo?variant=1" }, { "@type": "Offer", price: "259.90", priceCurrency: "EUR", availability: "OutOfStock", url: "https://m.fr/products/duo?variant=231" }]), "https://m.fr/products/duo?variant=231");
+assert.equal(r.price, 259.9); assert.equal(r.prices, 1); assert.equal(r.stock, "out");
+// sans ?variant= : plusieurs prix, lecture ambiguë, mais la liste des déclinaisons est fournie
+r = extract(shop([{ "@type": "Offer", price: "40", priceCurrency: "EUR" }, { "@type": "Offer", price: "55", priceCurrency: "EUR", availability: "InStock" }]), "https://g.fr/products/drap");
+assert.equal(r.prices > 1, true); assert.deepEqual(r.variants, [{ price: 40, stock: "" }, { price: 55, stock: "in" }]);
+// ?variant= inconnu et plusieurs offres : aucune déclinaison choisie
+r = extract(shop([{ "@type": "Offer", price: "40", priceCurrency: "EUR" }, { "@type": "Offer", price: "55", priceCurrency: "EUR" }]), "https://g.fr/products/drap?variant=9");
+assert.equal(r.prices > 1, true);
+console.log("variants OK");

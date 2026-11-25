@@ -24,7 +24,7 @@ const VERIFY_GAP_MS = 30 * 60_000;    // une lecture par cadeau et par marchand 
 const GAP_WINDOW_MS = 10 * 60_000, FAST_MS = 30 * 60_000;
 const TOLERANCE = 0.03;
 // Marchands qui ne se laissent pas lire (CLAUDE.md, limites connues) : on n'essaie pas, la piste reste « non vérifiée »
-const UNREADABLE = /(^|\.)(amazon|fnac|darty|sony|lego|boulanger)\./;
+const UNREADABLE = /(^|\.)(amazon|fnac|darty|sony|lego|boulanger|decathlon|uniqlo)\./;
 
 // État en mémoire (remis à zéro au redémarrage : acceptable, les plafonds durs restent respectés au jour près)
 const fails = new Map<string, number>();

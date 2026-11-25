@@ -1108,12 +1108,14 @@ function ownerHtml(){
     const g = gifts.find(x => x.id === id); if(qt.length && !match(g)) return "";
     const {bo, best, store: st, offs, old} = priceOf(g), fav = i < sep, t = esc(g.title);
     const todo = !bo || !bo.verified;
-    const state = best == null ? (old ? "Ancien prix, à confirmer" : offs.length ? "En rupture" : "Prix à saisir") : (bo && bo.verified ? "Vérifié" + (bo.at ? " le " + D(bo.at) : "") : metaText(g, bo).split(" · ").slice(0,2).join(" · "));
+    // Toujours un prix : à défaut d'un prix récent, le dernier prix connu avec sa date
+    const shown = best != null ? eur(best) + (st ? " · " + esc(st) : "") : old ? eur(totalOf(old)) + " · " + esc(old.store) : "";
+    const state = best == null ? (old ? "Dernier prix relevé le " + D(old.at || g.offers_at) + ", à confirmer" : offs.length ? "En rupture" : "Prix à saisir") : (bo && bo.verified ? "Vérifié" + (bo.at ? " le " + D(bo.at) : "") : metaText(g, bo).split(" · ").slice(0,2).join(" · "));
     const lock = qt.length ? " disabled" : "";
     return `<li data-row="${id}"><div class="row${wide.matches && id === selId ? " sel" : ""}">
       <button type="button" class="grab" data-grab aria-hidden="true" tabindex="-1"${lock}>⠿</button>
       <span class="rthumb">${imgOf(g) || PLACEHOLDER}</span>
-      <button type="button" class="rmain" data-sel="${id}" data-key="s${id}"><strong>${t}</strong><span>${best != null ? eur(best) + (st ? " · " + esc(st) : "") : ""}</span><small class="${todo ? "todo" : ""}">${state}</small></button>
+      <button type="button" class="rmain" data-sel="${id}" data-key="s${id}"><strong>${t}</strong><span>${shown}</span><small class="${todo ? "todo" : ""}">${state}</small></button>
       <button type="button" class="sq" data-mv="-1" data-rid="${id}" data-key="u${id}" aria-label="Monter ${t}"${i === 0 || lock ? " disabled" : ""}>↑</button>
       <button type="button" class="sq" data-mv="1" data-rid="${id}" data-key="d${id}" aria-label="Descendre ${t}"${i === rows.length - 1 || lock ? " disabled" : ""}>↓</button>
       <button type="button" class="sq" data-top="${id}" data-key="t${id}" aria-pressed="${fav}" aria-label="Préféré : ${t}"${lock}>${fav ? "★" : "☆"}</button>
