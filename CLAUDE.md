@@ -96,9 +96,12 @@ Ne jamais ajouter de relevé automatique qui appelle SerpAPI.
 - « Comparer les prix » : si une fiche idealo / Dénicheur est saisie, le lien pointe vers elle (« fiche du produit ») ; sinon recherche (idealo) ou accueil (Le Dénicheur).
   Ce sont de simples liens : aucune lecture automatique ni prix stocké.
 
-## Classement (24 novembre)
-- `noel_gifts.rank` (entier, 1 = en premier, null = hors classement) ; `noel_set_rank(code, ids[])` (propriétaire) enregistre tout le classement d'un coup. Migration : `supabase/migrations/2026-11-24-noel-rank.sql` (à appliquer par `psql` sur `noel-db`, comme les autres).
-- Propriétaire : boutons « Classer », ↑ / ↓ et « Hors classement » sur chaque carte, tri « Mon classement », pastille « N° x ». Famille et public : section « Mon classement » en tête (cartes numérotées), puis « Mes préférés » (envies fortes hors classement) et « Autres idées ». Identique pour tous, aucun lien avec les réservations (règle 1).
+## Classement (refait le 25 novembre)
+- Données inchangées : `noel_gifts.top` (préféré) et `noel_gifts.rank` ; `noel_set_top`, `noel_set_rank(code, ids[])`. Aucune migration.
+- Ordre affiché (`ordered()`) : « Mes préférés » (`top`), puis « Autres idées » ; dans chaque section par `rank` (sans rang : à la fin). Plus de section « Mon classement » ni de numéros.
+- Gestion : glisser la poignée (souris et doigt, `startDrag` : la ligne tenue ne sort jamais de la page, sinon le geste tactile est coupé), flèches ↑ ↓, étoile, « Annuler ».
+  Franchir « Autres idées » change `top`. Enregistrement automatique en file (`saveOrder`) ; la mise à jour de 20 s est suspendue pendant un geste ou un enregistrement.
+  Une recherche en cours désactive le classement. Identique pour tous, aucun lien avec les réservations (règle 1).
 
 ## Règles à ne jamais enfreindre
 1. Confidentialité : le propriétaire ne reçoit jamais `claimed_by`, `bought`, `paid` ni aucune donnée de réservation. Ne pas ajouter de colonne,
@@ -144,24 +147,16 @@ But : ne pas proposer de site d'arnaque ou douteux. Ce n'est jamais une garantie
   `noel-refresh` peut encore compter une offre « Prudence » dans `bestOffer` et l'historique. Les mentions légales du site ne sont volontairement pas lues.
 
 ## Style
-Refonte du 14 novembre (direction « Catalogue », `site/index.html` seulement : aucune base ni fonction serveur touchée). Polices : Bebas Neue (titres, prix, noms) et Figtree
-(texte), chargées depuis Google Fonts. Palette : violet (accent) et rouge (action), thème SOMBRE PAR DÉFAUT (`<html data-theme="dark">`) ; « Affichage » propose sombre, clair
-ou automatique (`localStorage` `theme`), et le texte agrandi (`size`). Interface sobre, gros boutons, mobile en priorité, texte français simple.
-- En-tête : compte à rebours, bouton « Affichage », titre et phrase d'explication dans un bloc centré.
-- Vue famille (`famHtml`, `famCard`) : deux sections, « Mes préférés » (cadeaux marqués « Envie forte », sans limite) puis « Autres idées ». Aucun onglet, aucune recherche,
-  aucun tri ni filtre pour la famille (les réglages `cat`, `bud`, `sort`, `om` gardés sur l'appareil sont ignorés). Grille de 2 colonnes (3 dès 760 px). Carte : photo carrée
-  (`object-fit:contain`), nom souligné, meilleur prix, marchand et « prix vérifié » / « non vérifié », précision et « Version : … », bouton « Voir les prix ». Un cadeau sans prix
-  affiche « Prix à confirmer » ; l'ajout d'un cadeau sans prix est refusé.
-- Fiche détaillée (`#sheet`, `openSheet`, `refreshSheet`) : s'ouvre au toucher de la photo, du nom ou du bouton. Elle contient la carte complète `giftHtml(g)` (meilleur prix,
-  « Voir l'offre », puis « Tous les prix et détails » replié : liste de prix, historique, comparateurs). Elle est redessinée à chaque mise à jour (`render()`), sauf pendant
-  une saisie (`tick`). Fermeture : bouton « Fermer », fond, touche Échap. La bannière « Prix en baisse » concerne tous les cadeaux.
-- Propriétaire : liste en une colonne avec `giftHtml` (même carte détaillée), formulaire d'ajout en haut, recherche et « Trier et filtrer » conservés, « Inviter la famille »,
-  « Sites en avant » et « Marchands écartés » dans le bloc replié « Réglages de la liste » (`#settings`). Le message d'invitation ne parle plus de réservation.
-- L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`), sinon la mise à jour toutes les 20 s les refermerait.
-- Refonte de la partie propriétaire (14 novembre, `site/index.html` seulement, règles CSS sous `body[data-role="owner"]`, la vue famille n'est pas touchée) : page large (1120 px) sur ordinateur,
-  en-tête compact, barre d'ajout en une ligne (`#addForm`, aperçu à gauche, précision / « Envie forte » / « Corriger le nom ou le prix » / « Ajouter à la liste » à droite), barre d'outils
-  « Mes idées N » + recherche + « Trier et filtrer » + « Actualiser tous les prix » sur une ligne, liste en grille (3 colonnes dès 960 px, 2 dès 640 px, 1 sur téléphone), fiche en modification
-  sur toute la largeur et en deux colonnes dès 860 px, réglages côte à côte. Les identifiants des éléments et la logique d'ajout sont inchangés. Le nombre affiché est le total des idées (aucun lien avec les réservations, règle 1).
+Direction « Catalogue » (refaite le 25 novembre, `site/index.html` seulement). Polices : Bebas Neue (noms, prix, titres) et Figtree (texte). Violet : action principale ; rouge : suppression et erreurs.
+Thème SOMBRE PAR DÉFAUT, « Affichage » : sombre, clair ou automatique, et texte agrandi. Gros boutons, mobile en priorité.
+- Famille et public (`famCard`) : une colonne sur téléphone, grille sur ordinateur (déroge à « une seule colonne », choix validé sur maquettes). Photo pleine largeur, nom, précision, prix,
+  marchand, état et date du prix, « Je le prends » (famille) et « Voir le cadeau ». Aucun filtre ni tri.
+- Fiche (`giftView`, dans `#sheet`) : photo, prix et « Acheter chez X », réservation, autres prix, historique, idealo et Le Dénicheur, autres sites repliés. Deux colonnes dès 760 px.
+- Propriétaire (`ownerHtml`, `panelHtml`) : ajout en haut, recherche, « Actualiser tous les prix », liste compacte à classer. Actions du cadeau choisi : colonne de droite dès 960 px, fenêtre sur téléphone
+  (Voir comme la famille, Modifier, Actualiser, Gérer les marchands, Retirer). « Voir comme la famille » n'affiche aucun bouton de réservation.
+- Retirés le 25 novembre : tri, filtres Catégorie / Budget et choix local de l'ordre des marchands (l'ordre par défaut des « Réglages » s'applique). Le champ catégorie reste dans « Modifier ».
+  Les sections plus haut qui les décrivent sont historiques.
+- L'état ouvert / fermé des blocs repliés est gardé dans `openK` (attribut `data-k`, fonction `dk()`).
 - Les icônes d'écran d'accueil (`icon-*.png`) sont restées vertes.
 
 ## Limites connues (à ne pas cacher à l'utilisateur)
