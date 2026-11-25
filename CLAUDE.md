@@ -37,7 +37,11 @@ Public : famille, y compris peu à l'aise avec le numérique, surtout sur télé
 - `redirect/` + `.github/workflows/pages.yml` : GitHub Pages ne publie plus qu'une redirection vers `noel.dorianlab.fr` (le `#c=` est conservé).
 
 ## Publier
-Le site est déployé par Coolify depuis ce dépôt (projet `noel`, ressource `noel-app`) : fusionner sur la branche suivie, puis « Redeploy » à la main dans Coolify (pas de webhook), puis vérifier `https://noel.dorianlab.fr/healthz`. Un push sur `main` ne publie que la page de redirection sur GitHub Pages. Documentation d'exploitation : dossier `vps-infra` de Dorian (`JOURNAL.md`, `ARCHITECTURE.md`).
+Le site est déployé par Coolify depuis ce dépôt (projet `noel`, ressource `noel-app`) : fusionner sur la branche suivie, puis « Redeploy » à la main dans Coolify (pas de webhook), puis vérifier `https://noel.dorianlab.fr/healthz`. Un push sur `main` ne publie que la page de redirection sur GitHub Pages.
+
+**Piège récurrent : Coolify suit la branche `vps-migration`, PAS `main`.** Un « Redeploy » après un push sur `main` redéploie l'ancien commit. Avant de redéployer : `git push origin main:vps-migration` (avance rapide), puis « Redeploy » et contrôler que le commit affiché par Coolify est le bon.
+Base de production : conteneur PostgreSQL `iytbupytjfucaiabhuezrm3g` (base `noel`, 9 cadeaux au 25 novembre) ; celui de dev est `vaognnqx0rsscghmbhfkvwsu` (`noel.dev.dorianlab.fr`). Accès : `ssh ovh` (utilisateur `debian`, pas dans le groupe docker : `sudo docker …`). `noel_owner` ne peut pas se connecter : appliquer une migration avec `psql -U postgres -d noel -v ON_ERROR_STOP=1 --single-transaction` en commençant par `set role noel_owner;` (les fonctions gardent ainsi le bon propriétaire), après un `pg_dump -Fc`.
+Documentation d'exploitation : dossier `vps-infra` de Dorian (`JOURNAL.md`, `ARCHITECTURE.md`).
 
 ## Base et fonctions (VPS)
 La base est `noel-db` (PostgreSQL 17, ressource Coolify privée, aucun port publié). Changer la base : écrire une migration SQL, l'appliquer par SSH dans le conteneur (`psql`) en tant que `noel_owner`, puis mettre à jour `supabase/schema.sql`. Les fonctions `noel-preview` et `noel-refresh` tournent dans le service `app` (code du dossier `supabase/functions/`). L'ancien projet Supabase `pegojglksepcfvispcrs` n'est plus la production (gardé quelques semaines, puis en pause) : ne plus y déployer. Les anciennes instructions ci-dessous (`apply_migration`, `deploy_edge_function`, `verify_jwt`) sont obsolètes.
