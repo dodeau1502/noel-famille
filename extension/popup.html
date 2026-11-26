@@ -26,6 +26,13 @@
       <div class="thumb" id="thumb"></div>
       <div class="pmeta"><span class="store" id="storeName"></span><span class="srcnote" id="srcNote"></span></div>
     </div>
+    <div id="upd" hidden>
+      <label for="updGift">Déjà dans ta liste ? Mets son prix à jour avec celui de cette page
+        <select id="updGift"></select>
+      </label>
+      <button class="btn big" type="button" id="updBtn">Mettre à jour le prix</button>
+      <p class="muted">Ou ajoute un nouveau cadeau :</p>
+    </div>
     <label for="title">Nom du cadeau
       <input id="title" type="text" maxlength="120" autocomplete="off">
     </label>
@@ -51,7 +58,7 @@
 
 <!-- Terminé -->
 <section id="vDone" hidden>
-  <h1>Ajouté ✓</h1>
+  <h1 id="doneTitle">Ajouté ✓</h1>
   <p id="doneTxt"></p>
   <div class="row2">
     <a class="btn" id="openList" target="_blank" rel="noopener">Ouvrir ma liste</a>

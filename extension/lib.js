@@ -110,6 +110,33 @@ export function dupOf(gifts, title, url) {
   return null;
 }
 
+const pathOf = u => { try { const x = new URL(u); return x.hostname.replace(/^www\./, "") + x.pathname.replace(/\/+$/, ""); } catch (e) { return ""; } };
+
+// Cadeau auquel la page ouverte correspond : même fiche chez un marchand, sinon nom proche, sinon seul cadeau chez ce marchand
+export function giftForPage(gifts, title, url) {
+  const list = gifts || [], urls = g => [g.url, ...(g.offers || []).map(o => o && o.url)].filter(Boolean);
+  const p = pathOf(url), h = hostOf(url);
+  const same = p && list.find(g => urls(g).some(u => pathOf(u) === p));
+  if (same) return same;
+  const dup = dupOf(list, title, url);
+  if (dup) return dup;
+  const here = h ? list.filter(g => urls(g).some(u => hostOf(u) === h)) : [];
+  return here.length === 1 ? here[0] : null;
+}
+
+// Offres d'un cadeau avec le prix lu sur la page ouverte : l'offre du même marchand est remplacée, sinon ajoutée.
+// Toujours « non vérifiée » (lue dans le navigateur, pas par le serveur), datée du jour. null : page non acceptée ou liste pleine.
+export function updatedOffers(gift, page, now = new Date().toISOString()) {
+  if (!page || !(page.price > 0) || !/^https:\/\//.test(page.url || "") || page.url.length > 500 || isMarket(page.store, page.url)) return null;
+  const offers = ((gift && gift.offers) || []).filter(o => o && /^https:\/\//.test(o.url || "") && +o.price > 0 && !isMarket(o.store, o.url)).map(offerOut);
+  const i = offers.findIndex(o => hostOf(o.url) === hostOf(page.url));
+  const old = i >= 0 ? offers[i] : null;
+  const next = offerOut({ store: old ? old.store : page.store, price: page.price, url: page.url, shipping: old ? old.shipping : null,
+    verified: false, at: now, stock: page.stockOut ? "out" : "", via: "page", trust: old ? old.trust : null });
+  if (old) offers[i] = next; else offers.push(next);
+  return offers.length > 12 ? null : offers;
+}
+
 export function normalizeSite(input) {
   let t = String(input || "").trim();
   if (!t) return "";

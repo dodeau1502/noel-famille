@@ -12,6 +12,10 @@ Manifest V3, sans dépendance ni étape de compilation. Un même dossier sert à
 3. Tu corriges si besoin (nom, prix, précision, « Envie forte »), puis « Ajouter à la liste ». Elle appelle `noel_add`, la même fonction que le site.
 4. Option « Chercher aussi chez d'autres marchands » : appelle `noel-preview` (2 recherches SerpAPI sur ~250 par mois, comme l'ajout depuis le site). **Décochée par défaut** ; le choix est mémorisé. Sans cette option, la fiche contient l'offre de la page seulement ; « Autres marchands » reste disponible depuis la fiche sur le site.
 
+### Mettre à jour un prix
+
+Sur la page d'un cadeau déjà dans la liste, choisis-le (il est présélectionné quand la page est reconnue), vérifie le champ « Prix », puis « Mettre à jour le prix ». C'est le moyen de rafraîchir les sites que le serveur ne peut pas lire (Amazon, Uniqlo, Decathlon, Fnac, Darty…). L'offre du même marchand est remplacée (sinon ajoutée) avec `noel_edit_offers`, « non vérifiée » et datée du jour : elle redevient « Ancien prix » après 48 h.
+
 Règles reprises du site (CLAUDE.md, règle 4) :
 - places de marché, sites d'occasion et comparateurs : jamais enregistrés comme offre (listes `MARKET` / `COMPARATOR` de `lib.js`) ; sur ces pages, la recherche est imposée ;
 - l'offre lue sur la page est enregistrée **« non vérifiée »**, avec la date du jour ; la relecture serveur (`noel-refresh`) pourra la confirmer ;

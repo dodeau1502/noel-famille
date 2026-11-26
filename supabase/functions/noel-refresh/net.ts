@@ -1,5 +1,6 @@
 // Lecture des pages des marchands (sans crédit SerpAPI). Partagé par noel-preview et noel-refresh.
 import { extract, isPrivateIp, badHostname } from "./parse.js";
+import { productRef, catalogRequest, infoFromCatalog } from "./shopify.js";
 
 // En-tête honnête : se faire passer pour Chrome trahit un faux navigateur (l'empreinte réseau de Deno n'est pas celle de Chrome) et
 // Cloudflare / Shopify répondent alors 429 à chaque lecture (constaté le 25 novembre : Greige, Mello, Sea to Summit).
@@ -44,12 +45,45 @@ const BLOCKED = /just a moment|access denied|attention required|robot|captcha|ma
 
 export type Page = { url: string; status: number; info: ReturnType<typeof extract> | null };
 
+// Boutique Shopify : interface officielle d'abord (pas de page HTML à lire). L'adresse du profil est publiée par ce site (site/ucp-agent.json).
+// null : pas une boutique Shopify, ou produit introuvable par cette voie -> lecture de la page. Un 429 ou un 403 est respecté : pas de repli.
+async function readCatalog(raw: string, timeoutMs: number): Promise<Page | null> {
+  const ref = productRef(raw);
+  if (!ref) return null;
+  try {
+    const url = new URL(ref.origin + "/api/ucp/mcp");
+    await assertPublic(url);
+    let profile = "https://noel.dorianlab.fr/ucp-agent.json";
+    try { profile = Deno.env.get("UCP_PROFILE") || profile; } catch (_) { /* pas d'accès à l'environnement */ }
+    const res = await fetch(url, {
+      method: "POST",
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { "User-Agent": UA, "Content-Type": "application/json", "Accept": "application/json, text/event-stream" },
+      body: JSON.stringify(catalogRequest(ref, profile)),
+    });
+    if (res.status === 429 || res.status === 403) { await res.body?.cancel(); return { url: cleanUrl(raw), status: res.status, info: null }; }
+    if (res.status !== 200 || !/json/i.test(res.headers.get("content-type") || "")) {
+      // 404 : pas une boutique Shopify. Autre refus (profil illisible…) : on le note dans le journal.
+      if (res.status !== 404) console.log("noel-diag " + JSON.stringify({ ucp: url.hostname, status: res.status }));
+      await res.body?.cancel();
+      return null;
+    }
+    const info = infoFromCatalog(JSON.parse(await readLimited(res)), ref);
+    return info ? { url: cleanUrl(raw), status: 200, info } : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 // Lit la page d'un marchand. Ne lève jamais. Suit les redirections à la main (contrôle des adresses internes à chaque étape),
 // ce qui résout aussi les liens Google « /goto?url=… ». info vaut null si la page est bloquée, illisible ou sans prix.
 export async function readMerchant(raw: string, timeoutMs = 8000): Promise<Page> {
   let url: URL;
   try { url = new URL(/^https?:\/\//i.test(raw) ? raw : "https://" + raw); } catch (_) { return { url: raw, status: 0, info: null }; }
   let status = 0;
+  const shop = await readCatalog(url.toString(), timeoutMs);
+  if (shop) return shop;
   try {
     let res: Response | null = null;
     for (let hop = 0; hop < 5; hop++) {

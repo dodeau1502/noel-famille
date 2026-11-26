@@ -1,4 +1,4 @@
-import { parsePrice, eur, isMarket, storeFromHost, cleanUrl, buildOffers, totalOf, dupOf } from "./lib.js";
+import { parsePrice, eur, isMarket, storeFromHost, cleanUrl, buildOffers, totalOf, dupOf, giftForPage, updatedOffers } from "./lib.js";
 import { api, store, rpc, search } from "./api.js";
 
 const $ = id => document.getElementById(id);
@@ -71,8 +71,42 @@ async function init() {
     if (d.role !== "owner") throw Object.assign(new Error("Le code propriétaire est refusé."), { code: "denied" });
     gifts = d.gifts || [];
     checkDup();
+    fillUpdate();
   } catch (e) { if (e.code === "denied") $("err").textContent = e.message + " Ouvre les réglages pour le corriger."; }
 }
+
+// Mise à jour du prix d'un cadeau existant (noel_edit_offers). Le prix repris est celui du champ « Prix », modifiable avant.
+function fillUpdate() {
+  if (!gifts.length || !/^https:\/\//.test(page.url) || marketPage) return;
+  const sel = $("updGift"), found = giftForPage(gifts, $("title").value, page.url);
+  sel.textContent = "";
+  sel.add(new Option("Choisir un cadeau…", ""));
+  for (const g of gifts) sel.add(new Option(g.title, String(g.id)));
+  sel.value = found ? String(found.id) : "";
+  $("upd").hidden = false;
+}
+
+$("updBtn").addEventListener("click", async () => {
+  if (busy) return;
+  $("err").textContent = "";
+  const id = $("updGift").value, price = parsePrice($("price").value.trim());
+  if (!id) { $("err").textContent = "Choisis le cadeau à mettre à jour."; return; }
+  if (price == null) { $("err").textContent = "Saisis le prix affiché sur la page."; $("price").focus(); return; }
+  busy = true; $("updBtn").disabled = true; $("add").disabled = true;
+  try {
+    // Relu juste avant d'écrire : la relecture automatique a pu changer les offres depuis l'ouverture
+    const d = await rpc(cfg, "noel_get", { p_code: cfg.code });
+    const g = (d.gifts || []).find(x => String(x.id) === id);
+    const offers = d.role === "owner" && g ? updatedOffers(g, { url: page.url, store: page.store, price, stockOut: page.stockOut }) : null;
+    if (!offers) throw new Error("Impossible de mettre ce cadeau à jour depuis cette page.");
+    await rpc(cfg, "noel_edit_offers", { p_code: cfg.code, p_id: g.id, p_offers: offers });
+    $("doneTitle").textContent = "Prix mis à jour ✓";
+    $("doneTxt").textContent = `« ${g.title} » : ${eur(price)} chez ${page.store}, relevé aujourd'hui.`;
+    $("openList").href = cfg.site + "/gestion.html";
+    show("vDone");
+  } catch (err) { $("err").textContent = err.message + (err.code === "denied" ? " Ouvre les réglages." : ""); }
+  busy = false; $("updBtn").disabled = false; $("add").disabled = false;
+});
 
 function checkDup() {
   const g = dupOf(gifts, $("title").value, page && page.url);

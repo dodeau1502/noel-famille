@@ -63,3 +63,23 @@ assert.ok(dupOf(gifts, "Autre chose", "https://www.boulanger.com/ref/9"));
 assert.ok(!dupOf(gifts, "Casque Sony WH-1000XM4", ""), "un chiffre différent n'est pas un doublon");
 assert.ok(!dupOf(gifts, "Cocotte Staub 28 cm", ""));
 console.log("lib.test.mjs : OK");
+
+// Mise à jour du prix d'un cadeau existant
+{
+  const { giftForPage, updatedOffers } = await import("../lib.js");
+  const assert = (await import("node:assert/strict")).default;
+  const gifts = [
+    { id: 1, title: "Drap de bain", offers: [{ store: "Greige", price: 55, url: "https://www.greige.fr/products/drap" }] },
+    { id: 2, title: "Parure de lit", offers: [{ store: "Greige", price: 212, url: "https://www.greige.fr/products/parure" }] },
+    { id: 3, title: "Pull", offers: [{ store: "UNIQLO", price: 49.9, url: "https://www.uniqlo.com/p/1", verified: true, shipping: 3 }] },
+  ];
+  assert.equal(giftForPage(gifts, "x", "https://greige.fr/products/parure?v=1").id, 2);
+  assert.equal(giftForPage(gifts, "x", "https://www.uniqlo.com/autre").id, 3);
+  assert.equal(giftForPage(gifts, "x", "https://www.greige.fr/autre"), null);
+  const o = updatedOffers(gifts[2], { url: "https://www.uniqlo.com/p/1", store: "Uniqlo FR", price: 39.9, stockOut: false }, "2026-11-26T10:00:00.000Z");
+  assert.deepEqual([o.length, o[0].store, o[0].price, o[0].shipping, o[0].verified, o[0].via, o[0].at], [1, "UNIQLO", 39.9, 3, false, "page", "2026-11-26T10:00:00.000Z"]);
+  assert.equal(updatedOffers(gifts[2], { url: "https://www.decathlon.fr/x", store: "Decathlon", price: 10 }).length, 2);
+  assert.equal(updatedOffers(gifts[2], { url: "https://www.ebay.fr/x", store: "eBay", price: 10 }), null);
+  assert.equal(updatedOffers(gifts[2], { url: "https://www.uniqlo.com/p/1", store: "U", price: null }), null);
+  console.log("mise à jour du prix OK");
+}

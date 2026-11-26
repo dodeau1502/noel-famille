@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Liste de Noël : ajouter ce produit",
   "short_name": "Liste de Noël",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ajoute en un clic le produit affiché sur n'importe quel site à ta liste de Noël (réservé au propriétaire de la liste).",
   "action": {
     "default_title": "Ajouter à ma liste de Noël",

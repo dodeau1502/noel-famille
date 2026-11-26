@@ -47,3 +47,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(-
 .msg{color:var(--err); font-size:.92rem; min-height:1.2em}
 .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px}
 .ok{color:var(--pine); font-weight:600}
+
+select{width:100%; min-height:42px; padding:8px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:inherit; font:inherit; font-weight:400}
+#upd { display: grid; gap: 8px; }
+#upd[hidden] { display: none; }

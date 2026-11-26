@@ -15,6 +15,9 @@ export function applyPage(offer, info, query, now = new Date()) {
     const v = info.variants.find(x => x && x.price > 0 && Math.abs(x.price - o.price) / o.price <= TOLERANCE);
     if (v) return { ...o, price: v.price, verified: true, stock: v.stock || info.stock || "", at: now.toISOString() };
   }
+  // Catalogue d'une boutique : il ignore les remises affichées par le site (Black Friday…). Un prix plus haut que le prix connu
+  // ne le remplace donc pas ; le prix connu reste, « non vérifié ».
+  if (!same && info.catalog && info.price > o.price) return { ...o, verified: false };
   if (!same) {
     // La page annonce un autre prix : on l'accepte seulement si la page décrit bien le produit et si la lecture n'est pas ambiguë
     const ratio = info.price / o.price;
