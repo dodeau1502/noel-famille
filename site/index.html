@@ -11,1722 +11,603 @@
 <meta name="apple-mobile-web-app-title" content="Noël">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<title>Liste de Noël</title>
+<title>Listes de Noël</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Principes : une seule colonne, l'action principale visible sans défiler, les détails repliés.
-     Famille : catalogue en lecture seule. Propriétaire : ajout en haut, réglages regroupés en bas. */
   :root{
-    --bg:#eef1f5; --surface:#ffffff; --ink:#111111; --muted:#5d6470; --line:#dfe3ea;
-    --berry:#b1233a; --berry-ink:#ffffff; --pine:#4b3a8f; --pine-soft:#ece9f7;
-    --seg-off:#dfe3ea; --focus:#4b3a8f; --err:#a31d2f; --shadow:0 1px 2px rgb(17 17 17 / .06), 0 6px 18px rgb(17 17 17 / .05);
+    --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
+    --main:#b8a8ff; --main-ink:#17102f; --soft:#251f3f; --err:#ff8c9b; color-scheme:dark;
     --f-display:"Bebas Neue","Oswald","Impact","Arial Narrow",sans-serif;
     --f-body:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;
   }
-  @media (prefers-color-scheme:dark){
-    :root:not([data-theme="light"]){
-      --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
-      --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
-      --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
-    }
+  :root[data-theme="light"]{
+    --bg:#eef1f5; --surface:#fff; --ink:#111; --muted:#565d69; --line:#dfe3ea;
+    --main:#4b3a8f; --main-ink:#fff; --soft:#ece9f7; --err:#a31d2f; color-scheme:light;
   }
-  :root[data-theme="dark"]{
-    --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
-    --berry:#ec6d82; --berry-ink:#1b0a0e; --pine:#b8a8ff; --pine-soft:#251f3f;
-    --seg-off:#2a3342; --focus:#b8a8ff; --err:#ff8c9b; --shadow:0 1px 2px rgb(0 0 0 / .4); color-scheme:dark;
-  }
-
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
   html[data-size="big"]{font-size:118%}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font:1.0625rem/1.5 var(--f-body);
-    padding-block:max(16px, env(safe-area-inset-top,0px)) max(48px, env(safe-area-inset-bottom,0px));
-    padding-left:max(16px, env(safe-area-inset-left,0px));
-    padding-right:max(16px, env(safe-area-inset-right,0px));
-  }
+  body{margin:0; background:var(--bg); color:var(--ink); font:1.0625rem/1.5 var(--f-body);
+    padding:max(16px,env(safe-area-inset-top,0px)) 16px max(48px,env(safe-area-inset-bottom,0px))}
   main{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
-  [hidden]{display:none!important}
-  h1,h2,p{margin:0}
-  button,input,select,textarea{font:inherit; color:inherit}
-  a{color:var(--pine); text-underline-offset:3px}
-  :focus-visible{outline:3px solid var(--focus); outline-offset:2px; border-radius:8px}
-  svg.i{width:1em; height:1em; vertical-align:-.12em; flex:none}
-  summary{cursor:pointer}
-  summary::-webkit-details-marker{display:none}
+  h1,h2,h3,p{margin:0}
+  h1{font:400 clamp(2rem,9vw,2.6rem)/1.05 var(--f-display); text-wrap:balance; overflow-wrap:anywhere}
+  h2{font:400 1.45rem/1.2 var(--f-display)}
+  h3{font:400 1.35rem/1.2 var(--f-display); overflow-wrap:anywhere}
+  button,input{font:inherit; color:inherit}
+  a{color:var(--main)}
+  :focus-visible{outline:3px solid var(--main); outline-offset:2px; border-radius:8px}
+  .muted{color:var(--muted); font-size:.95rem}
+  .err{color:var(--err); font-weight:600}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px}
+  label{display:flex; flex-direction:column; gap:6px; font-weight:600}
+  input[type=text],input[type=password],input[type=url],textarea.field{width:100%; min-height:52px; padding:10px 14px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); font-weight:400}
+  input.pin{font-size:1.8rem; letter-spacing:.5em; text-align:center}
+  label.check{flex-direction:row; align-items:center; gap:10px; min-height:44px; cursor:pointer}
+  label.check input{width:24px; height:24px; accent-color:var(--main); flex:none}
+  .btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:52px; padding:10px 18px; border-radius:14px; border:1.5px solid var(--main); background:var(--main); color:var(--main-ink); font-weight:700; cursor:pointer; text-align:center; text-decoration:none}
+  .btn.ghost{background:transparent; color:var(--ink); border-color:var(--line)}
+  .btn.danger{background:transparent; color:var(--err); border-color:var(--err)}
+  .btn.small{width:auto; min-height:44px; padding:6px 14px; font-size:.95rem}
+  .btn[disabled]{opacity:.45; cursor:default}
+  .row{display:flex; gap:8px; flex-wrap:wrap}
+  .row > .btn{flex:1 1 0; width:auto; min-width:max-content}
+  .row > .btn.small{flex:0 0 auto}
+  .link{background:none; border:0; padding:10px 4px; min-height:44px; color:var(--main); font-weight:600; text-decoration:underline; cursor:pointer}
+  .back{align-self:flex-start}
+  .days{align-self:flex-start; background:var(--soft); color:var(--main); border-radius:999px; padding:5px 14px; font-weight:700; font-size:.92rem}
 
-  /* En-tête */
-  .head{display:flex; flex-direction:column; gap:8px; padding-top:2px}
-  .toprow{display:flex; align-items:center; justify-content:space-between; gap:10px}
-  .days{
-    display:inline-flex; align-items:baseline; gap:8px;
-    background:var(--pine-soft); color:var(--pine); border-radius:999px; padding:6px 14px 6px 12px;
-    font-weight:600; font-size:.95rem;
-  }
-  .days b{font:400 1.35rem/1 var(--f-display); font-variant-numeric:tabular-nums}
-  .view{position:relative; margin-left:auto}
-  .view summary{list-style:none; display:flex; align-items:center; min-height:40px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); font-weight:600; font-size:.92rem}
-  .view[open] summary{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  .viewpanel{position:absolute; right:0; top:calc(100% + 6px); z-index:30; width:min(300px,86vw); display:flex; flex-direction:column; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px; box-shadow:0 10px 28px rgb(0 0 0 / .22)}
-  .tool{
-    min-height:44px; padding:8px 14px; border-radius:12px; border:1.5px solid var(--line); background:transparent;
-    font-weight:600; font-size:.95rem; cursor:pointer; color:var(--ink); text-align:left;
-  }
-  .tool[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  h1{font:400 clamp(1.75rem,7.5vw,2.3rem)/1.08 var(--f-display); letter-spacing:-.02em; text-wrap:balance}
-  .lead{color:var(--muted); max-width:46ch; font-size:1rem}
+  .people{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px}
+  .person{display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; height:100%; min-height:128px; padding:14px 8px; background:var(--surface); border:1px solid var(--line); border-radius:18px; cursor:pointer}
+  .person i{display:grid; place-items:center; width:58px; height:58px; border-radius:50%; background:var(--c); color:#14101f; font:400 1.9rem/1 var(--f-display); font-style:normal}
+  .person b{overflow-wrap:anywhere}
+  .person span{color:var(--muted); font-size:.85rem}
+  .person em{font-style:normal; font-weight:700; font-size:.82rem; color:var(--main)}
+  .mylist{flex-direction:row; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; width:100%; background:var(--soft); border-color:var(--main)}
 
-  /* Cartes et champs */
-  .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px}
-  .login{display:flex; flex-direction:column; gap:12px}
-  .login h2,.panel h2{font:400 1.2rem/1.2 var(--f-display)}
-  label{display:flex; flex-direction:column; gap:6px; font-weight:600; font-size:.95rem}
-  input[type=text],input[type=password],input[type=url],input[type=search],select,textarea{
-    width:100%; min-height:48px; padding:10px 14px; border-radius:12px; border:1.5px solid var(--line);
-    background:var(--bg); font-size:1rem; font-weight:400; -webkit-appearance:none; appearance:none;
-  }
-  select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position:calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size:6px 6px; background-repeat:no-repeat; padding-right:36px}
-  textarea{min-height:96px; resize:vertical; line-height:1.4}
-  input::placeholder{color:var(--muted); opacity:.8}
-  input:focus-visible{outline-offset:1px}
-  label.check{flex-direction:row; align-items:center; gap:10px; min-height:44px; font-weight:600; cursor:pointer}
-  label.check input{width:22px; height:22px; min-height:0; accent-color:var(--pine); flex:none}
+  .gifts{list-style:none; margin:0; padding:0; display:grid; gap:14px}
+  @media (min-width:760px){ main:has(.gifts){max-width:880px} .gifts{grid-template-columns:1fr 1fr} }
+  .gift{display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-radius:20px; overflow:hidden}
+  .gift .top{display:block; color:inherit; text-decoration:none}
+  .img{display:grid; place-items:center; aspect-ratio:4/3; background:var(--soft); color:var(--main); overflow:hidden}
+  .img img{width:100%; height:100%; min-height:0; object-fit:contain; background:#fff; padding:10px; display:block}
+  .img svg{width:64px; height:64px}
+  .gift .txt{display:flex; flex-direction:column; gap:6px; padding:14px 16px}
+  .gift .price{font:400 1.6rem/1.2 var(--f-display)}
+  .gift .price small{font:400 .95rem var(--f-body); color:var(--muted); margin-left:8px}
+  .gift .see{color:var(--main); font-weight:600; font-size:.95rem}
+  .gift .acts{display:flex; flex-direction:column; gap:8px; padding:0 16px 16px; margin-top:auto}
+  .gift.taken .img,.gift.taken .txt{opacity:.5}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none}
+  .chips li{background:var(--soft); border-radius:10px; padding:4px 10px; font-size:.95rem; overflow-wrap:anywhere}
+  .star{color:var(--main); font-weight:700; font-size:.9rem}
+  .state{font-weight:700; background:var(--soft); border-radius:12px; padding:12px 14px; text-align:center}
+  .shares{background:var(--soft); border-radius:12px; padding:10px 14px}
+  .shares ul{margin:4px 0 0; padding-left:18px}
+  .photo{align-self:center; max-width:100%; max-height:180px; border-radius:12px; background:#fff}
+  details > summary{cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:600}
+  details[open] > summary{margin-bottom:8px}
+  details.card{gap:0}
+  details.card > * + *{margin-top:10px}
+  .thumb{width:72px; height:72px; flex:none; border-radius:12px; aspect-ratio:auto}
+  .thumb img{padding:4px}
+  .thumb svg{width:34px; height:34px}
+  .line{display:flex; gap:12px; align-items:flex-start}
+  .line > div{min-width:0; overflow-wrap:anywhere}
 
-  .btn{
-    min-height:48px; padding:10px 20px; border-radius:12px; border:0; cursor:pointer;
-    font-weight:700; background:var(--berry); color:var(--berry-ink);
-    transition:transform .12s ease, opacity .12s ease;
-  }
-  .btn:active{transform:scale(.97)}
-  .btn[disabled]{opacity:.55; cursor:default}
-  .btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line)}
-  .btn.ghost[aria-pressed="true"]{background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  .btn.small{min-height:44px; padding:6px 14px; font-size:.95rem}
-  .btn.big{min-height:54px; font-size:1.08rem; width:100%}
-
-  .linkbtn{background:none; border:0; padding:10px 6px; color:var(--pine); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; font-size:inherit}
-
-  /* Onglets (collés en haut), recherche, filtres */
-  .listbar{display:flex; flex-direction:column; gap:10px}
-  .filters summary{list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; padding:8px 14px; border:1.5px solid var(--line); border-radius:12px; font-weight:600; background:var(--surface)}
-  .filters summary .fc{font-size:.85rem; color:var(--pine); background:var(--pine-soft); border-radius:999px; padding:2px 10px}
-  .filters[open] summary{border-color:var(--pine)}
-  .filtergrid{display:grid; grid-template-columns:1fr; gap:10px; padding-top:10px}
-  .filtergrid label{font-size:.88rem; color:var(--muted)}
-  #bulkWrap .btn{width:100%}
-
-  /* Liste */
-  .gifts{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:16px}
-  .gift{display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-radius:20px; overflow:hidden; box-shadow:var(--shadow)}
-  .gift .media{position:relative; height:200px; overflow:hidden; background:var(--pine-soft); display:grid; place-items:center; color:var(--pine)}
-  .gift .media img{position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; object-fit:contain; display:block; padding:10px}
-  .gift .media > svg{width:56px; height:56px}
-  .gift .media .badges{position:absolute; left:10px; top:10px; right:10px}
-  .gift .media .badge{background:var(--surface); box-shadow:0 1px 3px rgb(0 0 0 / .18)}
-  .gift .body{display:flex; flex-direction:column; gap:12px; padding:16px}
-  .gift .txt{min-width:0; display:flex; flex-direction:column; gap:4px}
-  .gift h3{margin:0; font:400 1.2rem/1.25 var(--f-display); overflow-wrap:anywhere}
-  .gift .note{color:var(--muted); font-size:.95rem; overflow-wrap:anywhere}
-  .gift .see{font-size:.95rem; font-weight:600}
-  .badges{display:flex; flex-wrap:wrap; gap:6px}
-  .badge{
-    display:inline-flex; align-items:center; gap:6px; font-size:.9rem; font-weight:700;
-    color:var(--pine); background:var(--pine-soft); padding:4px 10px; border-radius:999px;
-  }
-  .badge.star{color:var(--berry); border:1.5px solid var(--berry)}
-  .badge.drop{color:var(--pine)}
-  .badge.rank{color:var(--berry-ink); background:var(--berry); font-weight:800}
-  .rk{display:inline-flex; gap:6px}
-  .badge.taken{color:var(--muted); background:var(--surface); border:1.5px solid var(--line)}
-  .badge.mine{color:var(--pine); background:var(--pine-soft); border:1.5px solid var(--pine)}
-  .gift.taken .media img{opacity:.5}
-  .gift.taken .hp{opacity:.75}
-  .cat{font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
-  .linked{font-size:.95rem; margin-top:6px}
-  .linked button{font:inherit; background:none; border:0; padding:0; color:var(--pine); text-decoration:underline; cursor:pointer; text-align:left}
-  .variant{font-size:.95rem; background:var(--pine-soft); border-radius:10px; padding:8px 12px; margin-top:4px}
-  .variant b{display:block; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine)}
-
-  /* Meilleur prix */
-  .hp{display:flex; flex-direction:column; gap:2px; background:var(--pine-soft); border-radius:14px; padding:12px 14px}
-  .hp .lbl{font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--pine); font-weight:800}
-  .hp .hpr{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px}
-  .hp b{font:400 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
-  .hp .at{font-weight:600}
-  .hp small{color:var(--muted); font-size:.85rem}
-  .hp .chk{display:flex; align-items:center; gap:5px; color:var(--muted)}
-  .hp .chk.ok{color:var(--pine)}
-  .hp .save{font-weight:700; color:var(--pine); font-size:.92rem; margin-top:2px}
-
-  /* Actions */
-  .act{display:flex; flex-wrap:wrap; gap:8px}
-  .act .btn{flex:1 1 auto; min-width:0}
-  .act .btn.big{flex:1 1 100%}
-  .confirm{display:flex; gap:8px; width:100%}
-  .confirm .btn{flex:1}
-  .cta{display:flex; align-items:center; justify-content:center; min-height:48px; padding:10px 18px; border-radius:12px; border:1.5px solid var(--pine); color:var(--pine); font-weight:700; text-decoration:none; text-align:center}
-  .more summary{list-style:none; color:var(--muted); font-weight:600; min-height:44px; display:flex; align-items:center}
-  .act .more{flex:1 1 100%}
-  .more .act{padding-top:4px}
-
-  /* Détails repliés : tous les prix, historique, comparateurs */
-  .det{border-top:1px solid var(--line); padding-top:4px}
-  .det > summary{list-style:none; display:flex; align-items:center; justify-content:space-between; min-height:48px; font-weight:700; color:var(--pine)}
-  .det > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display)}
-  .det[open] > summary::after{content:"–"}
-  .det > .inner{display:flex; flex-direction:column; gap:12px; padding-bottom:4px}
-  .offers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px; overflow:hidden}
-  .offers li{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; min-height:48px; border-top:1px solid var(--line)}
-  .offers li:first-child{border-top:0}
-  .offers a{color:var(--ink); font-weight:600; text-decoration:none; min-width:0; overflow-wrap:anywhere; padding:10px 0; flex:1}
-  .offers a:hover{text-decoration:underline}
-  .offers b{font:400 1.05rem var(--f-display); font-variant-numeric:tabular-nums; white-space:nowrap}
-  .offers li.best{background:var(--pine-soft)}
-  .offers li.best b{color:var(--pine)}
-  .offers a small{display:block; font-weight:500; font-size:.82rem; color:var(--muted)}
-  .offers .tag{font-size:.8rem; font-weight:700; color:var(--pine); margin-left:8px; white-space:nowrap}
-  .offers .tag.fav{color:var(--berry)}
-  .offers .chk{display:flex; align-items:center; gap:5px}
-  .offers .chk.ok{color:var(--pine)}
-  .offers .chk.out{color:var(--err)}
-  .offers li.out b{color:var(--muted); text-decoration:line-through}
-  .offers .trust{display:block; font-size:.82rem; color:var(--muted)}
-  .offers .trust.ok{color:var(--pine)}
-  .offers .trust.warn{color:var(--err); font-weight:600}
-  .allp > summary{list-style:none; font-weight:600; color:var(--pine); min-height:44px; display:flex; align-items:center}
-  .allp .offers{margin-top:2px}
-  .cmp > summary{list-style:none; font-weight:600; color:var(--pine); min-height:44px; display:flex; align-items:center}
-  .cmp .chips{display:flex; flex-wrap:wrap; gap:8px; padding-top:6px}
-  .chips a{display:inline-flex; align-items:center; min-height:44px; padding:6px 14px; border-radius:999px; border:1.5px solid var(--line); text-decoration:none; font-weight:600; color:var(--ink)}
-  .cmp small{display:block; color:var(--muted); padding-top:8px}
-  .blk > summary{list-style:none; font-weight:600; color:var(--muted); min-height:44px; display:flex; align-items:center}
-  .blk .chips,#blockedList{display:flex; flex-wrap:wrap; gap:8px; padding-top:6px}
-  .hist{display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; font-size:.92rem; color:var(--muted)}
-  .spark{width:96px; height:28px; flex:none; overflow:visible}
-  .spark polyline{fill:none; stroke:var(--pine); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-  .gift .inner .note{font-size:.88rem}
-
-  /* Prix payé, prix moins cher trouvé (famille) */
-  .paid{display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--line); padding-top:12px}
-  .paid .row{display:flex; gap:8px; align-items:flex-end}
-  .paid .row label{flex:1; min-width:0}
-  .paid .note{color:var(--muted); font-size:.9rem}
-  .cheaper{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem; border-left:4px solid var(--pine)}
-  .dropbar ul{margin:6px 0 0; padding-left:1.1em; font-weight:500}
-  .dropbar li{margin-top:2px; overflow-wrap:anywhere}
-
-  /* Ajout (propriétaire) */
-  .thumb{width:96px; height:96px; border-radius:12px; overflow:hidden; background:var(--pine-soft); display:grid; place-items:center; color:var(--pine)}
-  .thumb img{width:100%; height:100%; object-fit:cover; display:block}
-  .thumb svg{width:36px; height:36px}
-  .alts{display:flex; flex-direction:column; gap:8px}
-  .alts p{font-size:.95rem; color:var(--muted)}
-  .alt{display:grid; grid-template-columns:48px minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; min-height:56px; text-align:left; padding:8px 12px; border-radius:12px; border:1.5px solid var(--line); background:transparent; cursor:pointer; color:var(--ink)}
-  .alt .thumb{width:48px; height:48px; border-radius:8px}
-  .alt .t{overflow-wrap:anywhere; font-weight:600; font-size:.95rem; line-height:1.3}
-  .alt b{font:400 1rem var(--f-display); white-space:nowrap}
-  .preview{display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; background:var(--pine-soft); border-radius:12px; padding:10px}
-  .preview .thumb{width:72px; height:72px}
-  .preview h3{margin:0; font:400 1rem/1.25 var(--f-display); overflow-wrap:anywhere}
-  .preview .more{display:flex; flex-direction:column; gap:2px; margin-top:4px; font-size:.92rem; color:var(--muted)}
-  .status{font-size:.95rem; color:var(--muted)}
-  .warn{font-weight:600; background:var(--pine-soft); border-radius:12px; padding:10px 12px; font-size:.95rem}
-  .search-row{display:flex; gap:8px}
-  .search-row input{flex:1; min-width:0}
-  #result{display:flex; flex-direction:column; gap:12px}
-  details.manual summary,details.share summary{list-style:none; font-weight:600; color:var(--pine); min-height:44px; display:flex; align-items:center}
-  details.manual .grid2{padding-top:6px}
-  details.share[open] > summary{padding-bottom:6px}
-  .sharebox{display:flex; flex-direction:column; gap:12px}
-  .rowbtns{display:flex; flex-wrap:wrap; gap:8px}
-  .rowbtns .btn{flex:1 1 auto}
-  /* Réglages regroupés (propriétaire) */
-  .settings > summary{list-style:none; font:400 1.1rem var(--f-display); min-height:48px; display:flex; align-items:center; justify-content:space-between}
-  .settings > summary::after{content:"+"; font:400 1.4rem/1 var(--f-display); color:var(--pine)}
-  .settings[open] > summary::after{content:"–"}
-  .settings > .sub{display:flex; flex-direction:column; gap:10px; padding-top:8px}
-  .settings details.share{border:1px solid var(--line); border-radius:12px; padding:4px 14px}
-  .chipx{display:inline-flex; align-items:center; gap:2px; padding:2px 4px 2px 14px; border-radius:999px; border:1.5px solid var(--line); font-weight:600}
-  .chipx button{padding:8px 10px}
-  #favList{display:flex; flex-wrap:wrap; gap:8px}
-
-  .empty{padding:28px 16px; text-align:center; color:var(--muted); border:1.5px dashed var(--line); border-radius:16px}
-  .empty strong{display:block; color:var(--ink); font:400 1.1rem var(--f-display); margin-bottom:4px}
-  .skeleton{height:84px; border-radius:16px; background:linear-gradient(90deg,var(--line),var(--surface),var(--line)); background-size:200% 100%; animation:sh 1.4s linear infinite}
-  @keyframes sh{to{background-position:-200% 0}}
-
-  .msg{color:var(--err); font-weight:600; font-size:.95rem}
-  .msg:empty{display:none}
-  .note-owner{color:var(--muted); font-size:.95rem; background:var(--pine-soft); border-radius:12px; padding:12px 14px}
-  .panel{display:flex; flex-direction:column; gap:12px}
-  .grid2{display:grid; grid-template-columns:1fr; gap:12px}
-  .stack{display:flex; flex-direction:column; gap:16px}
-  .foot{display:flex; justify-content:center; padding-top:4px}
-  #priceNoteBox{padding:12px 16px}
-  #priceNoteBox > summary{list-style:none; font-weight:600; color:var(--muted); min-height:44px; display:flex; align-items:center}
-
-  /* Modification d'une fiche */
-  .edit{border-color:var(--pine)}
-  .gift.edit{padding:16px; gap:12px; box-shadow:none}
-  .edit h4{margin:0; font:400 1.05rem var(--f-display)}
-  .edit .erow{display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px}
-  .edit details.erow{display:block; padding:0}
-  .edit .erow > summary{list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center; min-height:52px; padding:0 12px; font-weight:600}
-  .edit .erow .fields{display:flex; flex-direction:column; gap:10px; padding:0 12px 12px}
-  .edit .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-  .edit .addrow{display:flex; flex-direction:column; gap:10px; background:var(--pine-soft); border-radius:12px; padding:12px}
-  .edit .stick{position:sticky; bottom:0; display:flex; gap:8px; background:var(--surface); border-top:1px solid var(--line); padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px)); margin-top:4px}
-  .edit .stick .btn{flex:1}
-  .edit input[list]{width:100%}
-
-  /* ===== Interface du 25 novembre : famille en catalogue, gestion en liste à classer ===== */
-  :root{--btn-ink:#ffffff}
-  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--btn-ink:#17122e} }
-  :root[data-theme="dark"]{--btn-ink:#17122e}
-  .btn{background:var(--pine); color:var(--btn-ink)}
-  h1{font:400 clamp(2.2rem,10.5vw,3.1rem)/1 var(--f-display); letter-spacing:.02em; text-transform:uppercase; text-wrap:balance}
-  .hd{padding:6px 2px 0}
-  .hd .lead{margin:8px 0 0}
-  main{max-width:1160px}
-  .login,#priceNoteBox,.dropbar{width:100%; max-width:640px; margin-inline:auto}
-
-  /* Famille et public : une seule liste numérotée, dans l'ordre du propriétaire */
-  body:not([data-role="owner"]) main{max-width:640px}
-  .fsec{list-style:none}
-  .fsec h2{font:700 1.15rem/1.3 var(--f-body); margin:8px 0 12px}
-  .fsec.pref h2{color:var(--pine)}
-  .flist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
-  .fcard{display:flex; flex-direction:column; gap:12px; background:var(--surface); border-radius:18px; padding:14px; box-shadow:var(--shadow); min-width:0}
-  .ftop{display:grid; grid-template-columns:96px minmax(0,1fr); gap:14px; align-items:start; color:inherit; text-decoration:none; border-radius:12px}
-  .fimg{position:relative; width:96px; height:96px; border-radius:12px; background:#fff; overflow:hidden; display:grid; place-items:center}
-  .fimg img{position:absolute; inset:0; width:100%; height:100%; padding:6px; object-fit:contain}
-  .fimg.ph{background:var(--pine-soft); color:var(--pine)}
-  .fimg.ph svg{width:44px; height:44px}
-  .rank{position:absolute; z-index:1; left:0; top:0; min-width:30px; padding:2px 6px; border-radius:0 0 10px 0; background:var(--pine); color:var(--btn-ink); font-weight:800; text-align:center}
-  .ftxt{display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0}
-  .fname{margin:0; font:700 1.05rem/1.3 var(--f-body); overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
-  .fnote{font-size:.95rem; font-weight:700; background:var(--pine-soft); border-radius:8px; padding:3px 9px; overflow-wrap:anywhere}
-  .fpr{display:flex; flex-wrap:wrap; align-items:baseline; gap:0 10px}
-  .fpr b{font:400 2rem/1.15 var(--f-display); color:var(--pine); font-variant-numeric:tabular-nums}
-  .fpr span{font-size:.92rem; color:var(--muted)}
-  .fcard.taken .ftop{opacity:.55}
-  .fstate{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:52px; padding:4px 6px 4px 14px; border-radius:14px; font-weight:700; background:var(--line); overflow-wrap:anywhere}
-  .fstate.mine{background:var(--pine-soft); color:var(--pine); border:1.5px solid var(--pine)}
-  .nameform{display:flex; flex-direction:column; gap:10px}
-  .mine-box{list-style:none; display:flex; flex-direction:column; gap:6px; background:var(--pine-soft); border-radius:16px; padding:12px 16px}
-  .mine-box ul{margin:0; padding-left:1.2em}
-  .mine-box li{overflow-wrap:anywhere}
-  .mine-box .linkbtn{align-self:flex-start; padding:10px 0; min-height:44px}
-  .fhint{list-style:none; text-align:center; font-size:.92rem; color:var(--muted)}
-  .sigs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
-
-  /* Bons plans repérés (radar) : pistes de prix, identiques pour tous */
-  .sig{display:flex; flex-direction:column; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; min-width:0}
-  .sig .sp{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px}
-  .sig .sp b{font:400 1.9rem/1.1 var(--f-display); font-variant-numeric:tabular-nums}
-  .sig .sp span{font-weight:600; overflow-wrap:anywhere}
-  .sig small{font-size:.86rem; color:var(--muted)}
-  .sig small.ok{color:var(--pine)}
-  .sig small.warn{color:var(--err); font-weight:700}
-  .sig .conds{display:flex; flex-wrap:wrap; gap:6px}
-  .sig .cnd{font-size:.8rem; font-weight:700; color:var(--err); border:1px solid currentColor; border-radius:999px; padding:2px 10px}
-  .sig .cnd.info{color:var(--muted); font-weight:600}
-  .sig .sact{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px}
-  .sig .sact a{display:inline-flex; align-items:center; min-height:44px; padding:6px 14px; border-radius:12px; font-weight:700; text-decoration:none; border:1px solid var(--pine); color:var(--pine)}
-  .sig .sact a.main{background:var(--pine); color:var(--btn-ink)}
-  .chk.old{color:var(--muted); opacity:.8}
-
-  /* Fenêtre : fiche d'un cadeau (famille) ou actions (propriétaire sur téléphone) */
-  .fbg{position:fixed; inset:0; z-index:50; background:rgb(0 0 0 / .6); display:flex; align-items:flex-end; justify-content:center}
-  .fsheet{width:100%; max-width:560px; max-height:94vh; max-height:94dvh; overflow-y:auto; overscroll-behavior:contain; background:var(--bg); border-radius:20px 20px 0 0; padding:10px 16px calc(24px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:14px; outline:0}
-  .fsheet>*{flex:none}
-  body.nosc{overflow:hidden}
-  .back{align-self:flex-start; background:none; border:0; min-height:44px; padding:0; font-weight:700; color:var(--pine); cursor:pointer}
-  .btn.wide{display:flex; align-items:center; justify-content:center; text-align:center; min-height:52px; padding:10px 16px; border-radius:14px; border:1.5px solid var(--line); background:transparent; color:var(--ink); font-weight:700}
-  .opanel h3{margin:6px 0 0; font-size:1.1rem}
-  @media (min-width:760px){
-    .fbg{align-items:center; padding:24px}
-  }
-
-  /* Gestion */
-  body[data-role="owner"] .head{flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px}
-  body[data-role="owner"] .toprow{order:2; margin-left:auto; gap:8px}
-  body[data-role="owner"] .hd{order:1; flex:1 1 320px}
-  body[data-role="owner"] h1{font-size:clamp(1.8rem,7vw,2.6rem)}
-  .addbar{display:flex; flex-direction:column; gap:10px; padding:16px; box-shadow:var(--shadow)}
-  .addhead{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 12px}
-  .addhead label{font:700 1.05rem/1.3 var(--f-body)}
-  .addhead .hint{color:var(--muted); font-size:.92rem}
-  .addbar .search-row input{min-height:54px}
-  .addbar .search-row .btn{min-height:54px; padding-inline:26px}
-  .addbar #result{display:grid; grid-template-columns:1fr; gap:14px; border-top:1px solid var(--line); padding-top:14px}
-  .addbar .res-a,.addbar .res-b{display:flex; flex-direction:column; gap:12px; min-width:0}
-  .addbar .preview{padding:12px; grid-template-columns:88px minmax(0,1fr)}
-  .addbar .preview .thumb{width:88px; height:88px}
-  label.check.pill{align-self:flex-start; padding:6px 16px 6px 12px; border:1.5px solid var(--line); border-radius:999px}
-  label.check.pill:has(input:checked){background:var(--pine-soft); border-color:var(--pine); color:var(--pine)}
-  .addbar details.manual{border:1px dashed var(--line); border-radius:12px; padding:0 14px}
-  .addbar details.manual[open]{padding-bottom:12px}
-  body[data-role="owner"] .listbar{flex-direction:row; flex-wrap:wrap; align-items:center}
-  body[data-role="owner"] .listbar .lh{font-size:1.1rem; margin-right:4px}
-  body[data-role="owner"] .listbar .lh span{color:var(--pine)}
-  body[data-role="owner"] .listbar input[type=search]{flex:1 1 200px; width:auto}
-  body[data-role="owner"] #bulkWrap .btn{width:auto}
-  .own{list-style:none; display:grid; grid-template-columns:minmax(0,1fr); gap:24px; align-items:start}
-  .olist{display:flex; flex-direction:column; gap:10px; min-width:0}
-  .otools{display:flex; align-items:center; justify-content:space-between; gap:10px}
-  .otools p{font-size:.92rem; color:var(--muted)}
-  .otools .btn{flex:none}
-  .olist h3{margin:4px 0 0; font-size:1.1rem; color:var(--pine)}
-  .rows{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
-  .rows .sep{padding:12px 0 2px; font-weight:700; font-size:1.1rem}
-  .row{display:flex; align-items:center; gap:5px; background:var(--surface); border:1.5px solid var(--surface); border-radius:16px; padding:8px 6px}
-  .row.sel{background:var(--pine-soft); border-color:var(--pine-soft)}
-  .row.drag{border-color:var(--pine); background:var(--pine-soft)}
-  .grab{width:36px; height:56px; flex:none; border:0; background:transparent; color:var(--muted); font-size:1.5rem; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none}
-  body.dragging{user-select:none; -webkit-user-select:none; cursor:grabbing}
-  .rthumb{display:none; width:64px; height:64px; flex:none; border-radius:10px; background:#fff; overflow:hidden; place-items:center; color:#4b3a8f}
-  .rthumb img{width:100%; height:100%; object-fit:contain}
-  .rthumb svg{width:30px; height:30px}
-  .rmain{display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:1px; flex:1; min-width:0; min-height:56px; padding:0 2px; border:0; background:transparent; text-align:left; cursor:pointer; font-size:.95rem; line-height:1.3}
-  .rmain strong{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere}
-  .rmain small{font-size:.84rem; color:var(--muted)}
-  .rmain small.todo{color:#9a5b00}
-  :root[data-theme="dark"] .rmain small.todo{color:#ffc36b}
-  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .rmain small.todo{color:#ffc36b} }
-  .sq{width:44px; height:48px; flex:none; border:0; border-radius:12px; background:var(--bg); font-size:1.2rem; cursor:pointer}
-  .sq[disabled]{opacity:.35; cursor:default}
-  .sq[aria-pressed="true"]{color:var(--pine)}
-  @media (max-width:359px){ .grab{width:28px} .sq{width:38px} }
-  @media (min-width:560px){ .rthumb{display:grid} .row{gap:8px; padding:8px 10px} }
-  .opanel{display:flex; flex-direction:column; gap:12px; min-width:0}
-  .opanel h2{font:400 1.8rem/1.1 var(--f-display); letter-spacing:.02em; overflow-wrap:anywhere}
-  .menu{display:flex; flex-direction:column; background:var(--surface); border-radius:18px; overflow:hidden}
-  .menu>button{display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:64px; padding:10px 16px; border:0; border-top:1px solid var(--line); background:transparent; text-align:left; cursor:pointer}
-  .menu>button:first-child{border-top:0}
-  .menu>button b{font-size:1.05rem}
-  .menu>button small{color:var(--muted); font-size:.86rem}
-  .menu>button[aria-expanded="true"]{background:var(--pine-soft)}
-  .menu>button[disabled]{opacity:.55}
-  .menu>.merch{display:flex; flex-direction:column; gap:10px; padding:12px; border-top:1px solid var(--line)}
-  .srcbar{background:var(--err); color:#fff; border-radius:14px; padding:12px 14px; font-weight:700}
-  .srcbar p{margin:0 0 4px} .srcbar p:last-child{margin:0}
-  .srcs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:.95rem}
-  .srcs li{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
-  .srcs small{color:var(--muted)} .srcs .bad{color:var(--err); font-weight:700}
-  .watch{display:flex; flex-direction:column; gap:10px; padding:12px; border-top:1px solid var(--line)}
-  .watch label{display:flex; flex-direction:column; gap:4px; font-weight:600; font-size:.95rem}
-  .watch label small{font-weight:400; color:var(--muted)}
-  .cands{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
-  .cands li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:4px}
-  .cands .rowbtns{display:flex; gap:8px; margin-top:4px}
-  .danger{min-height:52px; margin-top:12px; border:0; background:transparent; color:var(--err); font-weight:700; cursor:pointer}
-  .opanel .gifts{display:block}
-  @media (min-width:960px){
-    .own{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
-    .own>.opanel{position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto}
-    .own>.opanel>*{flex:none}
-  }
-  body[data-role="owner"] .settings{padding:6px 18px}
-  body[data-role="owner"] #priceNoteBox{max-width:none}
-  @media (min-width:860px){
-    .addbar #result{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:20px; align-items:start}
-    body[data-role="owner"] .settings > .sub{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:start}
-  }
-  @media (max-width:559px){
-    .addbar .search-row{flex-direction:column}
-    .addbar .search-row .btn{width:100%}
-  }
-
-  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  .offer{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--line); padding-top:10px}
+  .offer:first-of-type{border-top:0; padding-top:0}
+  .foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; padding-top:8px}
+  textarea{width:100%; min-height:120px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:inherit; font:inherit; font-size:.95rem}
 </style>
 </head>
 <body>
-<main>
-  <header class="head">
-    <div class="toprow">
-      <span class="days" id="days" hidden><b id="daysN">0</b> jours avant Noël</span>
-      <details class="view" id="viewOpts">
-        <summary>Affichage</summary>
-        <div class="viewpanel">
-          <button class="tool" id="sizeBtn" type="button" aria-pressed="false">Texte plus grand</button>
-          <button class="tool" id="themeBtn" type="button">Thème : automatique</button>
-        </div>
-      </details>
-    </div>
-    <div class="hd">
-      <h1 id="title">Liste de Noël</h1>
-      <p class="lead" id="lead">Voici mes idées de cadeaux, avec les prix relevés chez les marchands.</p>
-    </div>
-  </header>
-
-  <!-- Connexion de secours (le lien direct s'en passe) -->
-  <form class="card login" id="login" hidden>
-    <h2>Gestion de la liste</h2>
-    <label for="code">Ton code propriétaire
-      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle ton code">
-    </label>
-    <button class="btn" type="submit">Ouvrir la gestion</button>
-    <p class="msg" id="loginErr" role="alert"></p>
-  </form>
-
-  <section id="app" hidden>
-    <div class="stack">
-
-      <!-- Vue propriétaire : ajout d'une idée -->
-      <div id="ownerTop" class="stack" hidden>
-        <div id="srcCard" class="stack"></div>
-        <form class="card addbar" id="addForm">
-          <div class="addhead">
-            <label for="gQuery">Ajouter une idée</label>
-            <span class="hint">Colle l'adresse d'un produit, ou écris son nom</span>
-          </div>
-          <div class="search-row">
-            <input id="gQuery" type="text" maxlength="300" placeholder="https://… ou « casque Sony WH-1000XM5 »" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
-            <button class="btn" type="button" id="searchBtn">Rechercher</button>
-          </div>
-          <p class="status" id="lookup" aria-live="polite" hidden></p>
-          <div id="result" hidden>
-            <div class="res-a">
-              <div class="preview">
-                <div class="thumb" id="pvThumb"></div>
-                <div><h3 id="pvTitle"></h3><div class="more" id="pvMore"></div></div>
-              </div>
-              <div class="alts" id="alts" hidden></div>
-              <p class="warn" id="dupWarn" role="alert" hidden></p>
-            </div>
-            <div class="res-b">
-              <label for="gNote">Précision (facultatif)
-                <input id="gNote" type="text" maxlength="500" placeholder="Taille, couleur, modèle" autocomplete="off">
-              </label>
-              <label class="check pill" for="gTop"><input id="gTop" type="checkbox"> Envie forte</label>
-              <details class="manual" id="manual">
-                <summary>Corriger le nom ou le prix</summary>
-                <div class="grid2">
-                  <label for="gTitle">Nom du cadeau
-                    <input id="gTitle" type="text" maxlength="120" autocomplete="off">
-                  </label>
-                  <label for="gPrice">Prix en euros
-                    <input id="gPrice" type="text" inputmode="decimal" maxlength="9" placeholder="Ex. 129,90" autocomplete="off">
-                  </label>
-                </div>
-              </details>
-              <button class="btn big" type="submit" id="addBtn">Ajouter à la liste</button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <p class="msg" id="appErr" role="alert"></p>
-      <p class="status" id="bulkStatus" aria-live="polite" hidden></p>
-      <div class="warn dropbar" id="dropBar" hidden></div>
-
-      <!-- Recherche, tri et filtres (repliés) -->
-      <div class="listbar" id="listbar" hidden>
-        <h2 class="lh">Mes idées <span id="gcount"></span></h2>
-        <input id="q" type="search" placeholder="Chercher un cadeau" autocomplete="off" aria-label="Chercher un cadeau dans la liste" enterkeyhint="search">
-        <div id="bulkWrap" hidden>
-          <button class="btn ghost small" type="button" id="bulkBtn">Actualiser tous les prix</button>
-        </div>
-      </div>
-      <p class="status" id="bulkHint" hidden></p>
-      <ul class="gifts" id="list"></ul>
-      <details class="card share" id="priceNoteBox" hidden><summary>Comment lire les prix</summary><p class="status" id="priceNote"></p></details>
-
-      <!-- Réglages de la liste (propriétaire) : un seul bloc replié, en bas -->
-      <details class="card settings" id="settings" hidden>
-        <summary>Réglages de la liste</summary>
-        <div class="sub">
-          <details class="share" id="share">
-            <summary>Inviter la famille</summary>
-            <div class="sharebox">
-              <label for="famCode">Code famille
-                <input id="famCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Colle le code famille ou renouvelle-le">
-              </label>
-              <textarea id="shareMsg" readonly aria-label="Message à envoyer"></textarea>
-              <div class="rowbtns">
-                <button class="btn" type="button" id="copyBtn">Copier le message</button>
-                <button class="btn ghost" type="button" id="renewBtn">Renouveler le code</button>
-              </div>
-              <div class="confirm" id="renewConfirm" hidden>
-                <button class="btn small" type="button" id="renewYes">Oui, renouveler</button>
-                <button class="btn ghost small" type="button" id="renewNo">Non</button>
-              </div>
-              <p class="status" id="shareStatus" aria-live="polite"></p>
-            </div>
-          </details>
-
-          <details class="share" id="dispBox">
-            <summary>Sites en avant et ordre des prix</summary>
-            <div class="sharebox">
-              <p class="status">Les sites choisis ici passent en premier quand l'ordre « Choix de Dorian d'abord » est actif, et portent la mention « Choix de Dorian ». Ils ne changent ni les prix ni la mention « Le moins cher ». Chaque personne peut aussi changer l'ordre sur son appareil.</p>
-              <div id="favList"></div>
-              <div class="search-row">
-                <input id="favName" type="text" maxlength="60" placeholder="Nom du site (ex. Darty)" autocomplete="off" aria-label="Nom du site à mettre en avant">
-                <button class="btn" type="button" id="favAdd">Ajouter</button>
-              </div>
-              <label for="favMode">Ordre proposé par défaut
-                <select id="favMode">
-                  <option value="price">Moins cher d'abord</option>
-                  <option value="featured">Choix de Dorian</option>
-                </select>
-              </label>
-            </div>
-          </details>
-
-          <details class="share" id="blockedBox" hidden>
-            <summary>Marchands écartés</summary>
-            <div class="sharebox">
-              <p class="status">Ces marchands ne sont plus proposés. « Réautoriser » ne remet pas les offres retirées : relance « Autres marchands » sur la fiche.</p>
-              <div id="blockedList"></div>
-            </div>
-          </details>
-        </div>
-      </details>
-    </div>
-  </section>
-
-  <footer class="foot" id="foot" hidden>
-    <button class="linkbtn" id="logout" type="button">Quitter la gestion sur cet appareil</button>
-  </footer>
-</main>
-
-<!-- Fiche détaillée d'un cadeau et saisie du prénom (famille) -->
-<div class="fbg" id="sheetBg" hidden><div class="fsheet" id="sheet" role="dialog" aria-modal="true" aria-label="Détail du cadeau" tabindex="-1"></div></div>
-
+<main id="app" aria-live="polite"><p class="muted">Chargement…</p></main>
+<noscript><p>Cette page a besoin de JavaScript.</p></noscript>
 <script>
-// Renseignés pour ce projet Supabase (clé publique, sans danger : les tables ne sont pas lisibles directement)
-const SUPABASE_URL = location.origin;
 const SUPABASE_KEY = "__SUPABASE_ANON_KEY__"; // remplacé par le serveur au service de la page (clé publique par conception)
-
-const $ = id => document.getElementById(id);
+const app = document.getElementById("app");
 const store = {
   get(k){ try{ return localStorage.getItem(k) || "" }catch(e){ return "" } },
   set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} },
-  del(k){ try{ localStorage.removeItem(k) }catch(e){} },
-  sget(k){ try{ return sessionStorage.getItem(k) || "" }catch(e){ return "" } }
+  del(k){ try{ localStorage.removeItem(k) }catch(e){} }
 };
-let code = "", role = "", gifts = [];
-let display = {featured:[], mode:"price"}, editing = null, query = "";
-// Jeton anonyme de l'appareil (famille) : permet d'annuler sa propre réservation sans jamais demander de prénom
-let ftok = store.get("ftok");
-if(!ftok || ftok.length < 8){
-  const a = new Uint8Array(8); crypto.getRandomValues(a);
-  ftok = Array.from(a, b => b.toString(16).padStart(2, "0")).join("");
-  store.set("ftok", ftok);
-}
-// Blocs repliés que l'utilisateur a ouverts : leur état est gardé quand la liste est redessinée (mise à jour toutes les 20 s)
-const openK = new Set();
-const dk = k => ` data-k="${k}"${openK.has(k) ? " open" : ""}`;
-let pendingDelete = null, pendingResearch = null, pendingBlock = null, blocked = [], busy = false, refreshing = new Set(), dupAck = false, manifestSet = false;
+let token = store.get("session");
+let home = null, list = null, admin = null;       // dernières réponses du serveur
+let draft = null;                                  // cadeau en cours d'ajout ou de modification
+let invite = null;                                 // lien d'activation affiché à l'administrateur
+let confirming = "", error = "", busy = false, lastHtml = "";
+const opened = new Set();                          // blocs dépliés, gardés ouverts quand l'écran est redessiné
 
 const MSG = {
-  denied: "Ce lien n'est plus valide. Demande-en un nouveau.",
-  throttled: "Trop d'essais. Réessaie dans quelques minutes.",
-  taken: "Quelqu'un vient de prendre ce cadeau. La liste est mise à jour.",
-  short: "Ce code est trop court.",
-  same_as_owner: "Ce code est déjà utilisé. Renouvelle-le.",
-  empty: "Aucune offre trouvée.",
-  invalid: "Une valeur n'est pas valide. Vérifie les champs puis réessaie."
+  denied:"Action impossible.", throttled:"Trop d'essais. Réessaie dans quelques minutes.",
+  locked:"Trop d'erreurs : ce compte est bloqué un moment. Réessaie plus tard.",
+  used:"Ce lien a déjà servi. Connecte-toi avec ton identifiant et ton code.",
+  taken:"Quelqu'un vient de prendre ce cadeau.", exists:"Ce nom ou cet identifiant existe déjà.",
+  invalid:"Vérifie les champs puis réessaie.", full:"La liste est pleine (100 cadeaux).",
+  session:"Reconnecte-toi.", pin:"Écris ton code à 4 chiffres.", oldpin:"L'ancien code n'est pas le bon.",
+  shared:"Des personnes participent déjà à ce cadeau : tu peux participer aussi."
 };
-async function rpc(fn, args){
+async function post(path, body){
   let r;
   try{
-    r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method:"POST",
+    r = await fetch(location.origin + path, {method:"POST",
       headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-      body:JSON.stringify(args)
-    });
-  }catch(e){ throw new Error("Connexion impossible. Vérifie ta connexion internet puis réessaie.") }
-  const data = await r.json().catch(()=>null);
-  if(!r.ok) throw new Error("Une erreur est survenue. Réessaie dans un instant.");
-  if(data && data.error){
-    throw Object.assign(new Error(MSG[data.error] || "Une erreur est survenue. Réessaie dans un instant."), {code:data.error, bad:data.error === "denied" || data.error === "throttled"});
-  }
-  return data;
-}
-// Recherche complète (2 recherches SerpAPI au plus). « token » : fiche produit choisie parmi les propositions.
-async function callSearch(query, token){
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-preview`, {
-    method:"POST",
-    headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-    body:JSON.stringify(token ? {code, query, token} : {code, query})
-  });
+      body:JSON.stringify(body)});
+  }catch(e){ throw new Error("Pas de connexion internet. Réessaie.") }
   const d = await r.json().catch(()=>null);
-  if(!r.ok || !d) throw new Error("Recherche impossible pour le moment.");
+  if(!r.ok || !d) throw new Error("Une erreur est survenue. Réessaie dans un instant.");
   return d;
 }
-// Relecture gratuite des pages des marchands déjà connus (aucune recherche SerpAPI)
-async function callRefresh(id){
-  const r = await fetch(`${SUPABASE_URL}/functions/v1/noel-refresh`, {
-    method:"POST",
-    headers:{apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, "Content-Type":"application/json"},
-    body:JSON.stringify({code, id})
-  });
-  const d = await r.json().catch(()=>null);
-  if(r.status === 403) throw Object.assign(new Error(MSG.denied), {code:"denied", bad:true});
-  if(!r.ok || !d) throw new Error("Actualisation impossible pour le moment.");
+async function rpc(fn, args){
+  const d = await post("/rest/v1/rpc/" + fn, args);
+  if(d.error) throw Object.assign(new Error(MSG[d.error] || "Une erreur est survenue."), {code:d.error});
   return d;
 }
+const api = (fn, args = {}) => rpc(fn, {p_token:token, ...args});
 
-const eur = n => new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits: Number.isInteger(+n)?0:2}).format(n);
-const PLACEHOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
-const STAR = '<svg class="i" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
-const CHECK = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const safeUrl = u => /^https?:\/\//i.test(u||"") ? u : "";
-const same = (a,b) => String(a||"").trim().toLowerCase() === String(b||"").trim().toLowerCase();
-const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-const tk = s => norm(s).split(/[^a-z0-9]+/).filter(t=>t.length>=2);
-// Places de marché, sites d'occasion et comparateurs : jamais affichés comme marchands
-// (même liste que MARKET et COMPARATOR dans supabase/functions/noel-preview/offers.js : à garder identiques)
-const MARKET = ["leboncoin","vinted","ebay","backmarket","facebook","marketplace","cashconverters","easycash","rakuten","aliexpress","alibaba","temu","rebuy","momox","recommerce","etsy","shein","olx","ricardo","kleinanzeigen","2ememain","ubuy","onbuy","beebs","wish","joom","banggood","dhgate","brickowl","bricklink","stockx","madeinchina","seller","vendeur"];
-const COMPARATOR = ["achatmoinscher","kulturegeek","idealo","kelkoo","leguide","shopzilla","pricerunner","dealabs","pricespy","twenga","shopmania","googleshopping","comparer"];
-const isMarket = (store, url) => {
-  const raw = String(store||"").trim();
-  const s = norm(raw).replace(/[^a-z0-9]/g,"");
-  let h = ""; try{ h = new URL(url).hostname.toLowerCase().replace(/[^a-z0-9]/g,""); }catch(e){}
-  return MARKET.concat(COMPARATOR).some(m => s.includes(m) || (h && h.includes(m))) || /^[a-z0-9]+([-_][a-z0-9]+)+$/.test(raw);
+const webUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
+const imgUrl = u => /^https:\/\//i.test(u || "") ? u : "";
+const eur = n => new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits:Number.isInteger(+n)?0:2}).format(n);
+const plural = n => n === 0 ? "liste vide" : n + (n > 1 ? " cadeaux" : " cadeau");
+const errHtml = () => error ? `<p class="err" role="alert">${esc(error)}</p>` : "";
+const GIFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
+const picture = (u, cls = "") => `<div class="img ${cls}">${imgUrl(u) ? `<img src="${esc(u)}" alt="" loading="lazy">` : GIFT}</div>`;
+const COLORS = ["#b8a8ff","#ffb4a2","#9fe0c0","#ffd98a","#a8d4ff","#f4b0dc","#cfe58c","#8fdde7"];
+const amountOf = v => { const raw = String(v).replace(/[€\s]/g, "").replace(",", "."); return raw === "" ? null : Number(raw); };
+const total = shares => shares.reduce((n, x) => n + Number(x.amount), 0);
+const sharesHtml = (shares, price) => `<div class="shares"><b>${eur(total(shares))} réunis${price != null ? " sur environ " + eur(price) : ""}</b>
+  <ul>${shares.map(x => `<li>${x.mine ? "Toi" : esc(x.name)} : ${eur(x.amount)}</li>`).join("")}</ul></div>`;
+const shareForm = (id, current) => `<form class="card" data-form="share" data-id="${id}">
+  <label>Combien veux-tu mettre ? (€)<input type="text" name="amount" inputmode="decimal" maxlength="9" required value="${current != null ? esc(String(current).replace(".", ",")) : ""}"></label>
+  <div class="row"><button class="btn">Valider</button><button type="button" class="btn ghost" data-confirm="">Annuler</button></div></form>`;
+const backBtn = (to, label) => `<button type="button" class="link back" data-go="${to}">← ${label}</button>`;
+
+/* ---------- Adresses : "" menu, #liste/3, #ajouter, #modifier/12, #famille, #inv=…, #installation ---------- */
+const route = () => location.hash.replace(/^#\/?/, "");
+const go = h => { if(route() === h) show(); else location.hash = h; };
+
+/* ---------- Écrans sans connexion ---------- */
+function loginView(note){
+  return `<h1>Listes de Noël</h1>
+  <form class="card" data-form="login">
+    ${note ? `<p>${esc(note)}</p>` : ""}
+    <label>Ton identifiant<input type="text" name="login" autocomplete="username" autocapitalize="none" required maxlength="40" value="${esc(store.get("login"))}"></label>
+    <label>Ton code à 4 chiffres<input class="pin" type="password" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password"></label>
+    ${errHtml()}
+    <button class="btn">Entrer</button>
+    <details data-k="forgot"${opened.has("forgot") ? " open" : ""}><summary>Code oublié ?</summary><p>Demande à Dorian de le réinitialiser. Ensuite, écris ton identifiant ici, laisse le code vide et touche « Entrer » : tu pourras en choisir un nouveau.</p></details>
+    <p class="muted">Pas encore d'accès ? Demande ton lien d'invitation.</p>
+  </form>`;
+}
+const activateView = who => `<h1>Bonjour ${esc(who.name)} !</h1>
+  <form class="card" data-form="activate">
+    <p>Choisis ${who.reset ? "un nouveau" : "un"} code secret à 4 chiffres.</p>
+    <p>Ton identifiant : <b>${esc(who.login)}</b></p>
+    <input type="text" name="username" autocomplete="username" value="${esc(who.login)}" hidden>
+    <label>Ton code<input class="pin" type="password" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" required></label>
+    <label>Encore une fois<input class="pin" type="password" name="pin2" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" required></label>
+    ${errHtml()}
+    <button class="btn">C'est parti</button>
+  </form>`;
+const setupView = () => `<h1>Installation</h1>
+  <form class="card" data-form="setup">
+    <p>Pour la personne qui gère le site. La première fois, la liste actuelle devient la sienne. Plus tard, sert à retrouver son accès si elle a oublié son code.</p>
+    <label>Ancien code propriétaire<input type="password" name="code" required maxlength="100" autocomplete="off"></label>
+    <label>Ton prénom<input type="text" name="name" required maxlength="40" autocomplete="given-name"></label>
+    <label>Ton identifiant<input type="text" name="login" required minlength="2" maxlength="30" autocapitalize="none" autocomplete="off"></label>
+    ${errHtml()}
+    <button class="btn">Continuer</button>
+  </form>`;
+
+/* ---------- Menu ---------- */
+const days = () => {
+  const now = new Date(), d = new Date(now.getFullYear(), 11, 25), n = Math.round((d - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+  return n > 1 ? `Noël dans ${n} jours` : n === 1 ? "Noël est demain" : n === 0 ? "Joyeux Noël !" : "";
 };
-const totalOf = o => o.price + (typeof o.shipping === "number" ? o.shipping : 0);
-const rankKey = o => (o.stock === "out" ? 2e9 : 0) + (o._f === "stale" ? 1e9 : 0) + totalOf(o);          // en rupture : à la fin
-// « Le moins cher » ne retient pas un marchand en « Prudence » tant qu'un autre marchand en stock est proposé
-// Fraîcheur (lot Q) : même tableau que freshness() de verify.js (test de parité), calculé avec l'heure du navigateur
-const freshness = (o, at, now = Date.now()) => {
-  const t = new Date((o && o.at) || at || NaN).getTime();
-  if(!o || isNaN(t)) return o && o.verified ? "aging" : "unverified";
-  const age = now - t;
-  if(o.verified) return age <= 24 * 3600e3 ? "fresh" : age <= 72 * 3600e3 ? "aging" : "stale";
-  return age <= 48 * 3600e3 ? "unverified" : "stale";
-};
-const inStock = arr => { const ok = arr.filter(o => o.stock !== "out" && o._f !== "stale"), safe = ok.filter(o => !(o.trust && o.trust.l === "caution") && !o.anom); return safe.length ? safe : ok; };
-const cleanOffers = g => (Array.isArray(g.offers) ? g.offers : [])
-  .filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url))
-  .map(o => ({...o, _f: freshness(o, g.offers_at)}))
-  .sort((a,b) => rankKey(a) - rankKey(b));
-// Dernier prix connu quand toutes les offres en stock sont périmées : affiché en petit, jamais comme « le moins cher »
-const oldOf = g => cleanOffers(g).filter(o => o.stock !== "out" && o._f === "stale").sort((a,b) => totalOf(a) - totalOf(b))[0] || null;
-const bestOf = g => inStock(cleanOffers(g))[0] || null;
-// Sites mis en avant : ceux de la fiche d'abord, puis ceux de la liste commune. Seul l'ordre change, jamais « Le moins cher ».
-const keyOf = s => norm(s).replace(/[^a-z0-9]/g,"");
-const orderMode = () => display.mode;
-const favKeys = g => [...new Set((Array.isArray(g.pinned) ? g.pinned : []).concat(display.featured.map(f => f.key)))].filter(k => typeof k === "string");
-// « Fnac » désigne aussi « Fnac.com » : même nom, ou l'un commence par l'autre (4 lettres au moins)
-const favIdx = (fk, o) => { const k = keyOf(o.store); return fk.findIndex(f => f === k || (Math.min(f.length, k.length) >= 4 && (k.startsWith(f) || f.startsWith(k)))); };
-function orderedOffers(g, offs){
-  const fk = favKeys(g);
-  if(orderMode() !== "featured" || !fk.length) return offs;
-  const live = offs.filter(o => o.stock !== "out"), gone = offs.filter(o => o.stock === "out");
-  const favs = live.filter(o => favIdx(fk, o) >= 0).sort((a,b) => favIdx(fk, a) - favIdx(fk, b));
-  return [...favs, ...live.filter(o => favIdx(fk, o) < 0), ...gone];
-}
-const bestPrice = g => {
-  const all = cleanOffers(g);
-  if(all.length){ const b = inStock(all)[0]; return b ? totalOf(b) : null; }
-  return g.price != null && !isMarket(g.store, g.url) ? g.price : null;
-};
-const shipText = o => typeof o.shipping !== "number" ? "Livraison à vérifier" : (o.shipping === 0 ? "Livraison offerte" : "dont " + eur(o.shipping) + " de livraison");
-const D = (iso, opt) => { try{ return new Date(iso).toLocaleDateString("fr-FR", opt || {day:"numeric", month:"long"}); }catch(e){ return ""; } };
-const dayD = d => D(d + "T12:00:00");
-
-// État d'un prix : lu sur la page du marchand (« vérifié ») ou seulement donné par Google (« non vérifié »)
-function chkText(o, g){
-  if(o.stock === "out") return `<small class="chk out">Rupture de stock${o.verified && o.at ? " · vu le " + D(o.at) : ""}</small>`;
-  if(o.via === "manual" && !o.verified) return `<small class="chk">Prix saisi à la main${o.at ? " le " + D(o.at) : ""}, non vérifié</small>`;
-  if(o._f === "stale") return `<small class="chk old">Ancien prix (${D(o.at || g.offers_at)})</small>`;
-  if(o.verified && o._f === "aging") return `<small class="chk">Vérifié le ${o.at ? D(o.at) : "?"}, à reconfirmer</small>`;
-  if(o.verified) return `<small class="chk ok">${CHECK} Vérifié sur le site${o.at ? " le " + D(o.at) : ""}${o.stock === "pre" ? " · précommande" : ""}</small>`;
-  return `<small class="chk">Non vérifié · ${o.at ? "dernier contrôle le " + D(o.at) : (g.offers_at ? "prix Google du " + D(g.offers_at) : "prix Google")}</small>`;
+const personBtn = m => `<li><button type="button" class="person" data-go="liste/${m.id}"><i aria-hidden="true" style="--c:${COLORS[m.id % COLORS.length]}">${esc([...m.name][0].toUpperCase())}</i><b>${esc(m.name)}</b><span>${plural(m.count)}</span>${m.offered ? `<em>✓ tu offres ${m.offered}</em>` : ""}</button></li>`;
+// Conseil affiché une fois : mettre le site sur l'écran d'accueil
+const tip = () => store.get("tip") || matchMedia("(display-mode: standalone)").matches || navigator.standalone ? "" : `<section class="card"><p><b>Astuce :</b> mets le site sur l'écran d'accueil de ton téléphone. iPhone : bouton Partager puis « Sur l'écran d'accueil ». Android : menu ⋮ puis « Ajouter à l'écran d'accueil ».</p><button type="button" class="btn ghost" data-tip>J'ai compris</button></section>`;
+function homeView(){
+  const me = home.me;
+  const groups = home.groups.filter(g => g.members.length).map(g => `<h2>${home.groups.length > 1 ? esc(g.name) : "Les listes de la famille"}</h2><ul class="people">${g.members.map(personBtn).join("")}</ul>`).join("");
+  const offering = home.offering.length ? `<section class="card"><h2>Ce que j'offre</h2>${home.offering.map(o => `<div class="offer">
+      <div class="line">${picture(o.image, "thumb")}<div><p><b>${esc(o.title)}</b></p><p>pour ${esc(o.ownerName)}${o.price != null ? " · environ " + eur(o.price) : ""}</p>${o.details ? `<p class="muted">${esc(o.details)}</p>` : ""}</div></div>
+      ${o.removed ? `<p class="err">${esc(o.ownerName)} a retiré ce cadeau de sa liste.</p>` : o.changed ? `<p class="err">${esc(o.ownerName)} a modifié ce cadeau : vérifie avant d'acheter.</p>` : ""}
+      ${o.amount != null ? sharesHtml(o.shares, o.price) : `<label class="check"><input type="checkbox" data-bought="${o.id}"${o.bought ? " checked" : ""}> C'est acheté</label>`}
+      <div class="row">${webUrl(o.url) ? `<a class="btn ghost small" href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">Voir</a>` : ""}<button type="button" class="btn ghost small" data-release="${o.id}">${o.amount != null ? "Retirer ma participation" : "Je ne l'offre plus"}</button></div>
+    </div>`).join("")}</section>` : "";
+  return `${days() ? `<span class="days">${days()}</span>` : ""}
+  <h1>Bonjour ${esc(me.name)}</h1>
+  <button type="button" class="card mylist" data-go="liste/${me.id}"><span><h2>Ma liste</h2><span class="muted">${plural(me.count)}</span></span><span aria-hidden="true">→</span></button>
+  <button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau à ma liste</button>
+  ${me.count ? "" : `<p class="muted">Commence par ajouter ta première idée : les autres sauront quoi t'offrir.</p>`}
+  ${errHtml()}
+  ${groups || `<p class="muted">Les listes des autres apparaîtront ici.</p>`}
+  ${offering}
+  ${tip()}
+  ${me.admin ? `<button type="button" class="btn ghost" data-go="famille">Gérer la famille</button>` : ""}
+  <div class="foot">
+    <button type="button" class="link" data-size>Texte ${document.documentElement.dataset.size === "big" ? "normal" : "plus grand"}</button>
+    <button type="button" class="link" data-theme-toggle>Fond ${document.documentElement.dataset.theme === "light" ? "sombre" : "clair"}</button>
+    <button type="button" class="link" data-go="code">Changer mon code</button>
+    <button type="button" class="link" data-logout>Se déconnecter</button>
+  </div>`;
 }
 
-// Niveau de confiance du marchand, calculé côté serveur à la recherche : jamais une garantie
-function trustText(o){
-  if(o && o.anom) return `<small class="trust warn">Prudence : prix très inférieur aux relevés des autres marchands</small>`;
-  const t = o && o.trust; if(!t || typeof t !== "object") return "";
-  const r = (Array.isArray(t.r) ? t.r : []).filter(x => typeof x === "string").slice(0,3).map(x => esc(x.slice(0,120))).join(" · ");
-  if(t.l === "known") return `<small class="trust ok">Marchand connu</small>`;
-  if(t.l === "caution") return `<small class="trust warn">Prudence${r ? " : " + r : ""}</small>`;
-  if(t.l === "unknown") return `<small class="trust">Marchand non évalué : contrôle avant d'acheter</small>`;
-  return "";
+/* ---------- Une liste ---------- */
+function giftHtml(g, mine){
+  const url = webUrl(g.url), shares = mine ? [] : g.shares, my = shares.find(x => x.mine), taken = !mine && g.taken && !g.mine;
+  const tag = url ? "a" : "div", href = url ? ` href="${esc(url)}" target="_blank" rel="noopener noreferrer"` : "";
+  const chips = [g.size ? "Taille : " + g.size : "", g.color ? "Couleur : " + g.color : "", g.note].filter(Boolean);
+  let acts;
+  if(mine) acts = `<button type="button" class="btn ghost" data-go="modifier/${g.id}">Modifier</button>`;
+  else if(g.mine) acts = `<p class="state">✓ C'est toi qui l'offres</p><button type="button" class="btn ghost" data-release="${g.id}">Annuler</button>`;
+  else if(g.taken) acts = `<p class="state">${g.by ? "Pris par " + esc(g.by) : "Déjà pris"}</p>`;
+  else{
+    const form = confirming === "s" + g.id;
+    acts = (shares.length ? sharesHtml(shares, g.price) : form ? "" : `<button type="button" class="btn" data-take="${g.id}">Je l'offre</button>`)
+      + (form ? shareForm(g.id, my && my.amount)
+        : `<button type="button" class="btn${shares.length && !my ? "" : " ghost"}" data-confirm="s${g.id}">${my ? "Changer mon montant" : shares.length ? "Participer aussi" : "Participer à plusieurs"}</button>`)
+      + (my && !form ? `<button type="button" class="link" data-release="${g.id}">Retirer ma participation</button>` : "");
+  }
+  return `<li class="gift${taken ? " taken" : ""}"><${tag} class="top"${href}>
+      ${picture(g.image)}
+      <div class="txt">${g.top ? `<span class="star">★ Très envie</span>` : ""}<h3>${esc(g.title)}</h3>
+      ${chips.length ? `<ul class="chips">${chips.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
+      ${g.price != null ? `<p class="price">${eur(g.price)}${g.store ? `<small>${esc(g.store)}</small>` : ""}</p>` : ""}
+      ${url ? `<span class="see">Voir le produit ↗</span>` : ""}</div></${tag}>
+    <div class="acts">${acts}</div></li>`;
 }
-// Relevés par marchand (lot O) : plus bas relevé vérifié sur 30 jours, et baisse qui ne fait que revenir au niveau d'avant une hausse. Mêmes données pour tous.
-function obsText(o, g){
-  if(!o || !o.verified) return "";
-  const l = (Array.isArray(g.low30) ? g.low30 : []).find(x => x && x.mkey === keyOf(o.store) && +x.total > 0 && x.at);
-  const low = l && Math.abs(+l.total - totalOf(o)) > 0.005 ? `<small class="chk">Plus bas relevé ici sur 30 jours : ${eur(+l.total)} (le ${D(l.at, {day:"numeric", month:"2-digit"})})</small>` : "";
-  const rise = o.rise ? `<small class="chk">Baisse après une hausse récente : le prix était plus bas le ${D(o.rise, {day:"numeric", month:"2-digit"})}</small>` : "";
-  return low + rise;
-}
-const hostOfUrl = u => { try{ const h = new URL(u).hostname.replace(/^www\./,""); return /(^|\.)google\./.test(h) ? "" : h; }catch(e){ return ""; } };
-// Propriétaire : écarter un marchand sur toutes les fiches (liste noire)
-function blockBox(g, offs){
-  const pb = pendingBlock && pendingBlock.gid === g.id ? pendingBlock : null;
-  const body = pb
-    ? `<p class="status">Ne plus proposer « ${esc(pb.name)} », sur toutes les fiches ?</p><div class="confirm"><button class="btn small" data-blockyes>Oui, écarter</button><button class="btn ghost small" data-blockno>Non</button></div>`
-    : `<div class="chips">${offs.slice(0,5).map(o => `<button class="btn ghost small" data-block="${g.id}" data-name="${esc(o.store)}" data-host="${esc(hostOfUrl(o.url))}">${esc(o.store)}</button>`).join("")}</div>`;
-  return `<details class="blk"${dk("b" + g.id)}${pb && !openK.has("b" + g.id) ? " open" : ""}><summary>Écarter un marchand</summary>${body}</details>`;
-}
-function renderBlocked(){
-  const box = $("blockedBox"); if(!box) return;
-  box.hidden = role !== "owner" || !blocked.length;
-  $("blockedList").innerHTML = blocked.map(b => `<button class="btn ghost small" data-unblock="${esc(b.key)}">Réautoriser ${esc(b.label)}</button>`).join("");
-}
-
-/* ---------- Historique des prix (identique pour tous, sans lien avec les réservations) ---------- */
-function histInfo(g){
-  const list = (Array.isArray(g.history) ? g.history : []).filter(x => x && +x.p > 0 && x.d).map(x => ({d:x.d, p:+x.p, v:!!x.v}));
-  if(list.length < 2) return null;
-  const cur = list[list.length-1];
-  const min = list.reduce((m,x) => x.p < m.p ? x : m, list[0]);
-  let pi = -1; for(let i = list.length-2; i >= 0; i--){ if(list[i].p !== cur.p){ pi = i; break; } }
-  return {list, cur, min, first:list[0], prev: pi >= 0 ? list[pi] : null, dropDate: pi >= 0 ? list[pi+1].d : "", stable: list.every(x => x.p === cur.p)};
-}
-// Une baisse n'est annoncée que si les deux prix ont été lus sur le site du marchand (sinon c'est peut-être une simple correction)
-function dropOf(g){
-  const h = histInfo(g);
-  if(!h || !h.prev || !h.cur.v || !h.prev.v || h.prev.p - h.cur.p < 1) return null;
-  const age = (Date.now() - new Date(h.dropDate + "T12:00:00").getTime()) / 86400000;
-  return age <= 14 ? {by:h.prev.p - h.cur.p, from:h.prev.p, to:h.cur.p, when:h.dropDate} : null;
-}
-function sparkSvg(h){
-  const ps = h.list.map(x => x.p), lo = Math.min(...ps), hi = Math.max(...ps);
-  if(ps.length < 3 || lo === hi) return "";
-  const pts = ps.map((p,i) => (i/(ps.length-1)*100).toFixed(1) + "," + (26 - (p-lo)/(hi-lo)*24).toFixed(1)).join(" ");
-  return `<svg class="spark" viewBox="0 0 100 28" role="img" aria-label="Évolution du prix relevé"><polyline points="${pts}"/></svg>`;
-}
-function histHtml(g){
-  const h = histInfo(g); if(!h) return "";
-  let t;
-  if(h.stable) t = `Prix stable depuis le ${dayD(h.first.d)}`;
-  else if(h.cur.p <= h.min.p) t = `Le plus bas relevé ici depuis le ${dayD(h.first.d)}`;
-  else t = `Plus bas relevé : ${eur(h.min.p)} le ${dayD(h.min.d)}${h.min.v ? "" : " (non vérifié)"}`;
-  return `<div class="hist">${sparkSvg(h)}<span>${t}</span></div>`;
-}
-function renderDrops(){
-  const el = $("dropBar");
-  const rows = gifts
-    .map(g => ({g, d:dropOf(g)})).filter(x => x.d).sort((a,b) => b.d.by - a.d.by).slice(0,4);
-  el.hidden = !rows.length;
-  el.innerHTML = rows.length ? "<strong>Prix en baisse</strong><ul>" + rows.map(x => `<li>${esc(x.g.title)} : ${eur(x.d.from)} → ${eur(x.d.to)} (relevé le ${dayD(x.d.when)})</li>`).join("") + "</ul>" : "";
+function listView(){
+  const mine = list.mine, name = list.member.name;
+  return `${backBtn("", "Menu")}
+  <h1>${mine ? "Ma liste" : "La liste de " + esc(name)}</h1>
+  ${mine ? `<button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau</button><p class="muted">Tu ne vois pas qui a pris quoi : c'est la surprise.</p>` : ""}
+  ${errHtml()}
+  ${list.gifts.length ? `<ul class="gifts">${list.gifts.map(g => giftHtml(g, mine)).join("")}</ul>`
+    : `<p class="card">${mine ? "Ta liste est vide. Ajoute ta première idée !" : esc(name) + " n'a pas encore ajouté d'idées."}</p>`}`;
 }
 
-const extractCode = v => { const m = String(v||"").match(/[#&?]c=([^&\s]+)/); return m ? decodeURIComponent(m[1]) : String(v||"").trim(); };
-
-/* ---------- Texte plus grand ---------- */
-function applySize(big){
-  document.documentElement.dataset.size = big ? "big" : "";
-  $("sizeBtn").setAttribute("aria-pressed", String(big));
+/* ---------- Ajouter / modifier ---------- */
+function editView(){
+  if(draft.step === 1) return `${backBtn("", "Menu")}<h1>Nouveau cadeau</h1>
+    <form class="card" data-form="start">
+      <label>Qu'est-ce qui te ferait plaisir ?<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
+      <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.</p>
+      ${errHtml()}<button class="btn">${busy ? "Je regarde le lien…" : "Continuer"}</button>
+    </form>`;
+  const d = draft;
+  const field = (name, label, max, ph, extra = "") => `<label>${label}<input type="text" name="${name}" maxlength="${max}" placeholder="${ph}" value="${esc(d[name])}"${extra}></label>`;
+  return `${backBtn("liste/" + home.me.id, "Ma liste")}<h1>${d.id ? "Modifier" : "Nouveau cadeau"}</h1>
+    <form class="card" data-form="gift">
+      <p class="muted" data-hint${d.hint ? "" : " hidden"}>${esc(d.hint)}</p>
+      ${picture(d.image)}
+      ${field("title", "Nom", 120, "Ex. : pull en laine", " required")}
+      ${field("size", "Taille ou pointure", 80, "Ex. : M, 42, 8 ans")}
+      ${field("color", "Couleur", 80, "Ex. : vert foncé")}
+      <label>Autre info utile<textarea class="field" name="note" rows="3" maxlength="500" placeholder="Modèle, marque, version, où le trouver…">${esc(d.note)}</textarea></label>
+      ${field("price", "Prix à peu près (€)", 12, "Ex. : 25", ' inputmode="decimal"')}
+      <label>Lien du produit<input type="url" name="url" maxlength="2000" placeholder="https://…" value="${esc(d.url)}"></label>
+      <details data-k="photo"${opened.has("photo") ? " open" : ""}><summary>${imgUrl(d.image) ? "Changer la photo" : "Ajouter une photo"}</summary>
+        <label>Adresse d'une image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
+        <p class="muted">Sur le site du magasin, reste appuyé sur la photo, choisis « Copier l'adresse de l'image », puis colle-la ici.</p>
+        ${imgUrl(d.image) ? `<button type="button" class="link" data-nophoto>Retirer la photo</button>` : ""}</details>
+      <label class="check"><input type="checkbox" name="top"${d.top ? " checked" : ""}> ★ J'en ai très envie</label>
+      ${errHtml()}
+      <button class="btn">Enregistrer</button>
+      ${d.id ? (confirming === "gift" ? `<p>Retirer ce cadeau de ta liste ?</p><div class="row"><button type="button" class="btn danger" data-delyes="${d.id}">Oui, retirer</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
+        : `<button type="button" class="btn danger" data-confirm="gift">Retirer de ma liste</button>`) : ""}
+    </form>`;
 }
-applySize(store.get("size") === "big");
-$("sizeBtn").addEventListener("click", ()=>{ const big = document.documentElement.dataset.size !== "big"; store.set("size", big ? "big" : ""); applySize(big); });
-
-/* ---------- Thème : automatique (suit le téléphone), clair ou sombre, choix gardé sur l'appareil ---------- */
-const THEMES = [["dark", "sombre"], ["light", "clair"], ["auto", "automatique"]];
-function applyTheme(t){
-  if(!THEMES.some(x => x[0] === t)) t = "dark";   // sombre par défaut
-  if(t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
-  $("themeBtn").textContent = "Thème : " + THEMES.find(x => x[0] === t)[1];
+function readForm(){
+  const f = app.querySelector('form[data-form="gift"]'); if(!f || !draft) return;
+  for(const k of ["title","size","color","note","price","url","image"]) draft[k] = f.elements[k].value;
+  draft.top = f.elements.top.checked;
 }
-applyTheme(store.get("theme"));
-$("themeBtn").addEventListener("click", ()=>{
-  const cur = document.documentElement.dataset.theme || "auto", i = THEMES.findIndex(x => x[0] === cur), nx = THEMES[(i + 1) % THEMES.length][0];
-  store.set("theme", nx); applyTheme(nx);
-});
-
-/* ---------- Compte à rebours ---------- */
-(function(){
-  const now = new Date(), y = now.getFullYear();
-  const d = Math.ceil((new Date(y,11,25) - new Date(y,now.getMonth(),now.getDate()))/86400000);
-  if(d > 0){ $("daysN").textContent = d; $("days").hidden = false; if(d===1) $("days").lastChild.textContent = " jour avant Noël"; }
-})();
-
-/* ---------- Icône d'écran d'accueil : manifeste local contenant le lien de la liste ---------- */
-function setManifest(){
-  if(manifestSet) return;
-  try{
-    const base = location.href.split("#")[0];
-    const m = {name:"Liste de Noël", short_name:"Noël", lang:"fr", display:"standalone", background_color:"#0d1117", theme_color:"#0d1117",
-      start_url: code ? base + "#c=" + encodeURIComponent(code) : base, scope: base.replace(/[^/]*$/, ""),
-      icons:[{src:new URL("icon-192.png", base).href, sizes:"192x192", type:"image/png", purpose:"any"},
-             {src:new URL("icon-512.png", base).href, sizes:"512x512", type:"image/png", purpose:"any"}]};
-    const url = URL.createObjectURL(new Blob([JSON.stringify(m)], {type:"application/manifest+json"}));
-    let l = document.querySelector('link[rel="manifest"]');
-    if(!l){ l = document.createElement("link"); l.rel = "manifest"; document.head.appendChild(l); }
-    l.href = url; manifestSet = true;
-  }catch(e){}
+const cleanLink = u => u.trim().replace(/^http:/i, "https:");
+async function readLink(url){
+  try{ const i = await post("/functions/v1/noel-link", {token, url}); return i && !i.error ? i : null; }catch(e){ return null; }
+}
+const priceText = n => n != null ? String(n).replace(".", ",") : "";
+async function startGift(q){
+  const m = q.match(/https?:\/\/\S+/i);
+  const d = {step:2, id:null, title:"", size:"", color:"", note:"", price:"", url:"", image:"", store:"", top:false, hint:""};
+  if(!m){ d.title = q.slice(0,120); draft = d; return; }
+  d.url = d.readUrl = cleanLink(m[0]);
+  // Texte partagé par une appli : « Nom du produit https://… »
+  const around = q.replace(m[0], "").trim().slice(0,120);
+  const info = d.url.length <= 2000 ? await readLink(d.url) : null;
+  if(d.url.length > 2000){ d.url = ""; d.hint = "Ce lien est trop long : copie une adresse plus courte."; d.title = around; }
+  else if(info && info.title){ d.title = info.title.slice(0,120); d.image = imgUrl(info.image); d.price = priceText(info.price); d.store = info.store || ""; d.hint = "Vérifie les informations puis enregistre."; }
+  else { d.title = around; d.hint = "Ce site ne se laisse pas lire : écris le nom toi-même, et ajoute une photo si tu veux. Le lien est gardé."; }
+  draft = d;
+}
+// Lien collé ou changé dans le formulaire : on complète ce qui est vide, et la photo suit le lien.
+// L'écran n'est pas redessiné : le bouton touché juste après et le clavier restent en place.
+const giftForm = () => app.querySelector('form[data-form="gift"]');
+function showPhoto(){ const el = giftForm() && giftForm().querySelector(":scope > .img"); if(el) el.outerHTML = picture(draft.image); }
+function showHint(text){ draft.hint = text; const el = giftForm() && giftForm().querySelector("[data-hint]"); if(el){ el.textContent = text; el.hidden = !text; } }
+function linkChanged(){
+  readForm();
+  const d = draft, url = cleanLink(d.url);
+  if(!url.startsWith("https://") || url === d.readUrl) return;
+  d.url = d.readUrl = url; d.store = ""; showHint("Je regarde le lien…");
+  d.reading = readLink(url).then(info => {
+    if(draft !== d || d.readUrl !== url || !giftForm()) return;
+    readForm();
+    if(info && (info.title || info.image)){
+      if(imgUrl(info.image)) d.image = info.image;
+      if(!d.title.trim()) d.title = info.title.slice(0,120);
+      if(!d.price.trim()) d.price = priceText(info.price);
+      d.store = info.store || "";
+      for(const k of ["title","price","image"]) giftForm().elements.namedItem(k).value = d[k];
+      showPhoto(); showHint("Informations lues sur le lien : vérifie-les.");
+    }else showHint("Ce site ne se laisse pas lire. Le lien est gardé.");
+  });
 }
 
-function showSkeleton(){ $("list").innerHTML = '<li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>'; }
+/* ---------- Changer mon code ---------- */
+const pinInput = (name, label) => `<label>${label}<input class="pin" type="password" name="${name}" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="${name === "old" ? "current-password" : "new-password"}"></label>`;
+const codeView = () => `${backBtn("", "Menu")}<h1>Changer mon code</h1>
+  <form class="card" data-form="code">${pinInput("old", "Code actuel")}${pinInput("pin", "Nouveau code")}${pinInput("pin2", "Nouveau code, encore une fois")}
+    ${errHtml()}<button class="btn">Changer</button></form>`;
 
-function toLogin(message){
-  code = ""; role = "";
-  $("app").hidden = true; $("foot").hidden = true; $("login").hidden = false;
-  $("loginErr").textContent = message || "";
+/* ---------- Gérer la famille (administrateur) ---------- */
+const groupChecks = (selected, attrs) => admin.groups.map(g => `<label class="check"><input type="checkbox" ${attrs} value="${g.id}"${selected.includes(g.id) ? " checked" : ""}> ${esc(g.name)}</label>`).join("");
+const inviteText = i => `Bonjour ${i.name} ! Voici ton accès aux listes de Noël :\n${location.origin}/#inv=${i.token}\nTon identifiant : ${i.login}\nÀ la première ouverture, choisis ton code à 4 chiffres.`;
+function adminView(){
+  const members = admin.members.map(m => {
+    const k = "m" + m.id, status = m.active ? "compte activé" : m.reset === "pending" ? "choisit un nouveau code" : m.reset ? "réinitialisation expirée" : "pas encore activé";
+    return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${esc(m.name)} <span class="muted">&nbsp;· ${status}</span></summary>
+      <p class="muted">Identifiant : ${esc(m.login)}</p>
+      <div>${groupChecks(m.groups, `data-mgroup="${m.id}"`)}</div>
+      ${m.admin ? "" : !m.active && !m.reset ? `<button type="button" class="btn ghost" data-reinvite="${m.id}">Nouveau lien d'invitation</button>`
+        : confirming === "r" + m.id ? `<p>${esc(m.name)} devra choisir un nouveau code dans les 48 heures. Ses téléphones seront déconnectés.</p><div class="row"><button type="button" class="btn" data-reset="${m.id}">Oui, réinitialiser</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
+        : `<button type="button" class="btn ghost" data-confirm="r${m.id}">Réinitialiser le code</button>`}
+      ${m.admin ? "" : confirming === "d" + m.id ? `<p>Supprimer ${esc(m.name)}, sa liste et ce que ${esc(m.name)} a pris ? C'est définitif.</p><div class="row"><button type="button" class="btn danger" data-mdel="${m.id}">Oui, supprimer</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
+        : `<button type="button" class="link" data-confirm="d${m.id}">Supprimer ce compte</button>`}
+    </details>`; }).join("");
+  return `${backBtn("", "Menu")}<h1>La famille</h1>
+  ${errHtml()}
+  ${invite ? `<section class="card"><h2>Message pour ${esc(invite.name)}</h2><textarea readonly id="inviteText">${esc(inviteText(invite))}</textarea>
+      <button type="button" class="btn" data-share>${navigator.share ? "Envoyer le message" : "Copier le message"}</button>
+      <p class="muted">Le lien ne marche qu'une fois. Envoie-le seulement à ${esc(invite.name)}.</p></section>` : ""}
+  <form class="card" data-form="member"><h2>Ajouter une personne</h2>
+    <label>Prénom<input type="text" name="name" required maxlength="40" autocomplete="off"></label>
+    <label>Identifiant (vide = le prénom)<input type="text" name="login" maxlength="30" autocapitalize="none" autocomplete="off"></label>
+    ${groupChecks(admin.groups.length === 1 ? [admin.groups[0].id] : [], 'name="g"')}
+    <button class="btn">Créer et voir l'invitation</button></form>
+  <h2>Comptes</h2>${members}
+  <form class="card" data-form="group"><h2>Groupes</h2>
+    <p class="muted">Chacun voit les listes des personnes de ses groupes.</p>
+    ${admin.groups.map(g => confirming === "g" + g.id ? `<div class="row"><button type="button" class="btn danger" data-gdel="${g.id}">Oui, supprimer « ${esc(g.name)} »</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
+      : `<div class="row"><p class="state">${esc(g.name)}</p><button type="button" class="btn ghost small" data-confirm="g${g.id}">Supprimer</button></div>`).join("")}
+    <label>Nouveau groupe<input type="text" name="name" required maxlength="40" autocomplete="off"></label>
+    <button class="btn ghost">Créer le groupe</button></form>`;
 }
 
-// « public » (sans code) = lecture seule, « family » = avec code famille (peut réserver), « owner » = gestion
+/* ---------- Affichage ---------- */
+function paint(html){
+  if(html === lastHtml) return;
+  lastHtml = html; app.innerHTML = html;
+}
+function toLogin(note){ token = ""; store.del("session"); home = list = admin = draft = null; paint(loginView(note)); }
+function fail(e){
+  if(e.code === "session"){ toLogin(MSG.session); return; }
+  error = e.message; render();
+}
+let pre = null;   // écran avant connexion : {kind:"activate"|"setup", …}
+function render(){
+  if(pre) return paint(pre.kind === "setup" ? setupView() : activateView(pre));
+  if(!token) return paint(loginView());
+  const r = route();
+  if(!home) return paint(error ? errHtml() + `<button type="button" class="btn" data-retry>Réessayer</button>` : `<p class="muted">Chargement…</p>`);
+  if(r.startsWith("liste/") && list) return paint(listView());
+  if((r === "ajouter" || r.startsWith("modifier/")) && draft) return paint(editView());
+  if(r === "famille" && admin) return paint(adminView());
+  if(r === "code") return paint(codeView());
+  paint(homeView());
+}
+// Données de l'écran courant
 async function load(){
-  const d = code ? await rpc("noel_get", {p_code:code}) : await rpc("noel_public", {});
-  role = d.role === "owner" ? "owner" : (d.role === "family" ? "family" : "public");
-  if(role === "owner") store.set("is_owner", "1");
-  radar = null;
-  if(role === "owner"){ try{ radar = await rpc("noel_status", {p_code:code}); }catch(e){ radar = null; } }
-  gifts = d.gifts || []; if(pendingOrder) applyOrder(pendingOrder); blocked = Array.isArray(d.blocked) ? d.blocked.filter(b => b && b.key && b.label).slice(0,200) : [];
-  const dp = d.display && typeof d.display === "object" ? d.display : {};
-  display = {
-    featured: (Array.isArray(dp.featured) ? dp.featured : []).filter(f => f && typeof f.key === "string" && typeof f.label === "string").slice(0,10),
-    mode: dp.mode === "featured" ? "featured" : "price"
-  };
-  document.title = d.title;
-  $("title").textContent = d.title;
-  $("login").hidden = true; $("app").hidden = false; $("foot").hidden = false;
-  document.body.dataset.role = role;
-  $("ownerTop").hidden = role !== "owner";
-  $("settings").hidden = role !== "owner";
-  $("bulkWrap").hidden = role !== "owner";
-  $("logout").hidden = role !== "owner";
-  $("lead").textContent = role === "owner"
-    ? "Classe tes cadeaux : les préférés en premier."
-    : (role === "family"
-      ? "Le 1 est celui que je veux le plus. Touche un cadeau pour le voir au magasin, et « Je le prends » pour le réserver."
-      : "Le 1 est celui que je veux le plus. Touche un cadeau pour le voir au magasin.");
-  render();
-  renderSources();
-  renderBlocked();
-  renderFav();
-  setManifest();
+  const r = route();
+  const h = await api("noel_home");
+  let l = null, a = null;
+  if(r.startsWith("liste/") || r.startsWith("modifier/")) l = await api("noel_list", {p_member: r.startsWith("liste/") ? +r.split("/")[1] : h.me.id});
+  if(r === "famille" && h.me.admin) a = await api("noel_admin");
+  if(r !== route()) return;                 // l'écran a changé pendant le chargement
+  home = h; list = l; admin = a;
 }
-function renderSources(){
-  const el = $("srcCard"); if(!el) return;
-  if(role !== "owner" || !radar){ el.innerHTML = ""; return; }
-  const src = (Array.isArray(radar.sources) ? radar.sources : []).filter(s => s && SRC_LABEL[s.name] && (s.last_ok || s.last_error));
-  const al = sourceAlerts(radar.sources);
-  const bar = al.length ? `<div class="srcbar" role="alert">${al.map(a => `<p>${esc(a)}</p>`).join("")}</div>` : "";
-  const li = src.map(s => `<li><span>${esc(SRC_LABEL[s.name])}</span><span>${s.last_ok ? "dernière lecture " + ago(s.last_ok) : `<span class="bad">jamais lu</span>`}${s.name === "dealabs:tous" && s.gaps ? ` · <small>${+s.gaps} trou(s) détecté(s)</small>` : ""}</span></li>`).join("");
-  const sp = radar.serp && typeof radar.serp === "object" ? radar.serp : null, nc = Array.isArray(radar.candidates) ? radar.candidates.length : 0;
-  el.innerHTML = bar + `<details class="card"${dk("src")}><summary>État des sources</summary><div class="sub"><ul class="srcs">${li || "<li><small>Aucune source active (le radar est désactivé sur ce serveur).</small></li>"}</ul>
-    ${nc ? `<p class="fsrc">${nc} piste${nc > 1 ? "s" : ""} à confirmer, dans la fiche du cadeau concerné.</p>` : ""}
-    ${sp ? `<p class="fsrc">Google : ${+sp.auto || 0} recherche(s) automatique(s) et ${+sp.manual || 0} manuelle(s) ce mois-ci, sur 250.</p>` : ""}</div></details>`;
-}
-// Section « Surveillance » d'un cadeau : surnoms, références, pistes à confirmer
-function watchHtml(g){
-  const d = wdraft[g.id] || {}, val = (k, v) => esc(d[k] !== undefined ? d[k] : (v || ""));
-  const cands = (radar && Array.isArray(radar.candidates) ? radar.candidates : []).filter(c => c && c.gift_id === g.id);
-  const cl = cands.map(c => `<li><b>${c.price > 0 ? eur(+c.price) : "Prix inconnu"}</b>${c.merchant ? " chez " + esc(c.merchant) : ""}
-      <span class="fsrc">${esc(String(c.title || "").slice(0,120))}</span><span class="fsrc">${esc(SIG_SRC[c.source] || "Repéré")} ${ago(c.seen_at)}</span>
-      <div class="rowbtns"><button type="button" class="btn small" data-sigyes="${+c.id}">C'est ce cadeau</button><button type="button" class="btn ghost small" data-signo="${+c.id}">Non</button></div></li>`).join("");
-  const keepa = g.asin ? `<a class="btn ghost small" href="https://keepa.com/#!product/4-${esc(g.asin)}" target="_blank" rel="noopener noreferrer">Suivre sur Keepa</a>` : "";
-  return `<details class="watchbox"${dk("w" + g.id)}><summary><b>Surveillance${cands.length ? " (" + cands.length + " à confirmer)" : ""}</b></summary><div class="watch">
-    <label>Surnoms<input type="text" data-wd="aliases" data-wid="${g.id}" maxlength="400" autocomplete="off" value="${val("aliases", (g.aliases || []).join(", "))}"><small>Autres façons de nommer ce cadeau, séparées par des virgules (8 au plus). Elles servent à reconnaître les promotions.</small></label>
-    <label>Référence Amazon (ASIN)<input type="text" data-wd="asin" data-wid="${g.id}" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${val("asin", g.asin)}"></label>
-    <label>Référence constructeur<input type="text" data-wd="mpn" data-wid="${g.id}" maxlength="40" autocomplete="off" spellcheck="false" value="${val("mpn", g.mpn)}"></label>
-    <button type="button" class="btn small" data-wsave="${g.id}">Enregistrer</button>${keepa}
-    ${cands.length ? `<h4>À confirmer</h4><ul class="cands">${cl}</ul>` : ""}</div></details>`;
-}
-
-// Classement choisi par le propriétaire : « Mes préférés » (envie forte) puis « Autres idées », chacun dans l'ordre des rangs.
-// Identique pour tous, sans lien avec les réservations.
-let radar = null, wdraft = {};
-let selId = null, merchOpen = false, notice = "", orderHist = [], pendingOrder = null, saveSeq = 0, saving = Promise.resolve(), dragging = false, focusKey = "";
-const dirtyTop = new Set();
-function ordered(){
-  const k = g => g.rank == null ? 1e9 : g.rank;
-  return gifts.map((g,i) => ({g,i})).sort((a,b) => (b.g.top ? 1 : 0) - (a.g.top ? 1 : 0) || k(a.g) - k(b.g) || a.i - b.i).map(x => x.g);
-}
-// Suite des lignes affichées dans la gestion : les préférés, le séparateur, puis le reste
-function rowIds(){ const a = ordered(); return [...a.filter(g => g.top).map(g => g.id), "sep", ...a.filter(g => !g.top).map(g => g.id)]; }
-const toOrder = rows => ({ids: rows.filter(x => x !== "sep"), top: rows.slice(0, rows.indexOf("sep"))});
-function applyOrder(o){ gifts.forEach(g => { const i = o.ids.indexOf(g.id); if(i >= 0){ g.rank = i + 1; g.top = o.top.includes(g.id); } }); }
-function commitOrder(next, remember = true){
-  const before = toOrder(rowIds());
-  if(JSON.stringify(before) === JSON.stringify(next)){ render(); return; }
-  if(remember) orderHist = orderHist.concat([before]).slice(-20);
-  next.ids.forEach(id => { if(before.top.includes(id) !== next.top.includes(id)) dirtyTop.add(id); });
-  applyOrder(next); saveOrder(next); render();
-}
-// Enregistrements à la suite : seul le dernier état demandé est envoyé
-function saveOrder(o){
-  pendingOrder = o; const seq = ++saveSeq; saveMsg("Enregistrement…");
-  saving = saving.then(async () => {
-    if(seq !== saveSeq) return;
-    for(const id of [...dirtyTop]) await rpc("noel_set_top",{p_code:code, p_id:id, p_top:o.top.includes(id)});
-    await rpc("noel_set_rank",{p_code:code, p_ids:o.ids});
-    if(seq === saveSeq){ pendingOrder = null; dirtyTop.clear(); saveMsg("Classement enregistré."); }
-  }).catch(async e => {
-    if(seq !== saveSeq) return;
-    pendingOrder = null; dirtyTop.clear(); orderHist = []; saveText = "";
-    if(e.bad){ toLogin(e.message); return; }
-    try{ await load(); }catch(_){}
-    $("appErr").textContent = "Classement non enregistré. " + e.message; saveMsg("Classement non enregistré.");
-  });
-}
-let saveText = "";
-function saveMsg(t){ saveText = t; const el = $("saveState"); if(el) el.textContent = t; }
-function moveRow(id, step){
-  const r = rowIds(), i = r.indexOf(id), j = i + step;
-  if(i < 0 || j < 0 || j >= r.length) return;
-  r.splice(i,1); r.splice(j,0,id); commitOrder(toOrder(r));
-}
-function toggleTop(id){
-  const r = rowIds(), was = r.indexOf(id) < r.indexOf("sep");
-  r.splice(r.indexOf(id),1); r.splice(r.indexOf("sep") + (was ? 1 : 0), 0, id); commitOrder(toOrder(r));
-}
-// Glisser-déposer (souris et doigt). La ligne tenue reste en place dans la page : ce sont les autres qui passent devant ou derrière.
-function startDrag(e, handle){
-  if(dragging || (e.button != null && e.button > 0)) return;
-  const li = handle.closest("[data-row]"), ul = li && li.parentElement; if(!ul) return;
-  e.preventDefault(); dragging = true; li.firstElementChild.classList.add("drag"); document.body.classList.add("dragging");
-  const move = ev => {
-    if(ev.clientY < 70) window.scrollBy(0,-14); else if(ev.clientY > window.innerHeight - 70) window.scrollBy(0,14);
-    const items = [...ul.children], from = items.indexOf(li);
-    let to = from;
-    items.forEach((x,i) => { const b = x.getBoundingClientRect(), mid = b.top + b.height / 2; if(i < from && ev.clientY < mid) to = Math.min(to,i); if(i > from && ev.clientY > mid) to = Math.max(to,i); });
-    if(to < from) items.slice(to, from).reverse().forEach(x => ul.insertBefore(x, li.nextSibling));
-    else if(to > from) items.slice(from + 1, to + 1).forEach(x => ul.insertBefore(x, li));
-  };
-  const stop = ev => {
-    document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", stop); document.removeEventListener("pointercancel", stop);
-    dragging = false; document.body.classList.remove("dragging");
-    if(ev.type === "pointercancel"){ render(); return; }
-    commitOrder(toOrder([...ul.children].map(x => x.dataset.row === "sep" ? "sep" : +x.dataset.row)));
-  };
-  document.addEventListener("pointermove", move); document.addEventListener("pointerup", stop); document.addEventListener("pointercancel", stop);
-}
-
-const wide = window.matchMedia("(min-width:960px)");
-const imgOf = g => /^https:\/\//.test(g.image || "") ? `<img src="${esc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" draggable="false">` : "";
-// Date et état d'un prix, toujours affichés avec lui
-function metaText(g, o){
-  if(!o) return ["Non vérifié", g.offers_at ? "relevé le " + D(g.offers_at) : ""].filter(Boolean).join(" · ");
-  const at = o.at || g.offers_at;
-  const st = o.stock === "out" ? "Rupture de stock" : o._f === "stale" ? "Ancien prix (" + D(at) + ")" : o.verified && o._f === "aging" ? "Vérifié le " + D(o.at) + ", à reconfirmer" : o.verified ? "Vérifié" + (o.at ? " le " + D(o.at) : "") : o.via === "manual" ? "Saisi à la main, non vérifié" : "Non vérifié";
-  return [st, !o.verified && at ? "relevé le " + D(at) : "", typeof o.shipping === "number" ? "livraison comprise" : "hors livraison"].filter(Boolean).join(" · ");
-}
-// ---------- Pistes de prix (radar des promotions) : mêmes données pour tous les rôles, jamais liées aux réservations ----------
-const SIG_SRC = {dealabs:"Repéré sur Dealabs", keepa:"Repéré via Keepa", google:"Repéré via Google", idealo:"Repéré via idealo", mail:"Repéré par alerte e-mail"};
-// État des sources (lot K-complet) : alertes calculées à partir de noel_status (propriétaire seulement)
-const SRC_LABEL = {"dealabs:tous":"Dealabs (flux principal)", "dealabs:hot":"Dealabs (populaires)", keepa:"Keepa", mail:"Boîte d'alertes", google:"Google (balayage)", refresh:"Relecture des pages", selftest:"Test quotidien"};
-const SRC_EVERY = {"dealabs:hot":600, keepa:900, mail:300, refresh:600};   // secondes : alerte au-delà de 3 fois
-function sourceAlerts(sources, now = new Date()){
-  const out = [], list = Array.isArray(sources) ? sources : [], min = iso => Math.round((now.getTime() - new Date(iso).getTime()) / 60000);
-  const h = now.getHours(), day = h >= 8 || h < 1;                      // Dealabs est surveillé de 8 h à 1 h
-  for(const s of list){
-    if(!s || typeof s.name !== "string") continue;
-    const lab = SRC_LABEL[s.name] || s.name;
-    if(s.name === "dealabs:tous"){
-      if(day && s.last_ok && min(s.last_ok) > 15) out.push(lab + " : aucune lecture réussie depuis " + min(s.last_ok) + " min.");
-      else if(day && !s.last_ok && s.last_error) out.push(lab + " : aucune lecture réussie (" + String(s.last_error).slice(0,80) + ").");
-    } else if(s.name === "selftest"){
-      if(s.last_error_at && (!s.last_ok || new Date(s.last_error_at) > new Date(s.last_ok))) out.push(lab + " : échec (" + String(s.last_error || "").slice(0,80) + ").");
-    } else if(SRC_EVERY[s.name] && s.last_ok && min(s.last_ok) * 60 > 3 * SRC_EVERY[s.name]) out.push(lab + " : aucune lecture réussie depuis " + min(s.last_ok) + " min.");
-  }
-  return out;
-}
-const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? "à l'instant" : m < 60 ? "il y a " + m + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
-const dhm = iso => { const d = new Date(iso); return D(iso, {day:"2-digit", month:"2-digit"}) + " à " + d.getHours() + " h " + String(d.getMinutes()).padStart(2, "0"); };
-// Une piste n'est montrée que récente (72 h après sa publication, ou 24 h après sa vérification) : la page vieillit aussi toute seule
-function sigsOf(g){
-  const now = Date.now();
-  return (Array.isArray(g.signals) ? g.signals : []).filter(s => s && typeof s === "object" && !isNaN(new Date(s.seen_at)) && !isMarket(s.merchant, s.url))
-    .filter(s => now - new Date(s.seen_at).getTime() < 72 * 3600e3 || (s.verified_at && now - new Date(s.verified_at).getTime() < 24 * 3600e3))
-    .map(s => ({
-      title: String(s.title || "").slice(0, 200), merchant: String(s.merchant || "").slice(0, 80), price: +s.price > 0 ? +s.price : null, source: SIG_SRC[s.source] ? s.source : "dealabs",
-      url: /^https:\/\//.test(s.url || "") ? s.url : "", page: /^https:\/\/(www\.)?dealabs\.com\//.test(s.page_url || "") ? s.page_url : "",
-      conds: (Array.isArray(s.conditions) ? s.conditions : []).filter(c => c && typeof c.label === "string").map(c => ({type: String(c.type || ""), label: c.label.slice(0, 80)})),
-      verified: !!s.verified && !!s.verified_at, vat: s.verified_at, seen: s.seen_at,
-    }))
-    .sort((a, b) => (a.price == null) - (b.price == null) || a.price - b.price);
-}
-const sigConditional = s => s.conds.some(c => c.type !== "cagnotte");
-function sigLi(s){
-  const cond = sigConditional(s);
-  return `<li class="sig"><div class="sp">${s.price != null ? `<b>${eur(s.price)}</b>` : ""}<span>${s.merchant ? esc(s.merchant) : "Marchand à voir sur l'offre"}</span></div>
-    ${s.verified ? `<small class="ok">${CHECK} Vérifié sur le site le ${dhm(s.vat)}</small>` : `<small>Non vérifié</small>`}
-    ${s.conds.length ? `<div class="conds">${s.conds.map(c => `<span class="cnd${c.type === "cagnotte" ? " info" : ""}">${esc(c.label)}</span>`).join("")}</div>` : ""}
-    ${cond ? `<small class="warn">Prix sous conditions</small>` : ""}
-    <small>${SIG_SRC[s.source]} ${ago(s.seen)}</small>
-    ${s.url || s.page ? `<div class="sact">${s.url ? `<a class="main" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">Voir l'offre</a>` : ""}${s.page ? `<a href="${esc(s.page)}" target="_blank" rel="noopener noreferrer">Voir sur Dealabs</a>` : ""}</div>` : ""}</li>`;
-}
-function sigsHtml(g){
-  const l = sigsOf(g);
-  if(!l.length) return "";
-  return `<h3>Bons plans repérés</h3><ul class="sigs">${l.slice(0, 3).map(sigLi).join("")}</ul>` + (l.length > 3 ? `<details class="allp"${dk("s" + g.id)}><summary>Voir les ${l.length - 3} autres pistes</summary><ul class="sigs">${l.slice(3).map(sigLi).join("")}</ul></details>` : "");
-}
-function priceOf(g){
-  const offs = cleanOffers(g), bo = inStock(offs)[0] || null, best = bestPrice(g);
-  return {offs, bo: bo && bo.stock !== "out" ? bo : null, best, store: bo ? bo.store : (best != null ? g.store || "" : ""), old: best == null ? oldOf(g) : null};
-}
-
-function render(){ if(dragging) return; renderList(); refreshSheet(); restoreFocus(); }
-function restoreFocus(){
-  if(!focusKey) return;
-  let el = document.querySelector(`[data-key="${focusKey}"]`);
-  if(el && el.disabled) el = el.parentElement.querySelector("[data-key]:not([disabled])");
-  focusKey = ""; if(el) el.focus({preventScroll:true});
-}
-function renderList(){
-  const list = $("list");
-  const stamps = gifts.map(g=>g.checked_at || g.offers_at).filter(Boolean).sort();
-  const withPrice = gifts.some(g=>g.price != null || (g.offers && g.offers.length));
-  $("priceNoteBox").hidden = role !== "owner" || !withPrice;
-  $("priceNote").textContent = (stamps.length ? "Dernière lecture des prix le " + D(stamps[stamps.length-1]) + ". " : "")
-    + "« Vérifié » : le prix a été lu sur la page du marchand à la date indiquée. « Non vérifié » : prix donné par Google, que le site ne permet pas de lire. Marchands neufs uniquement, classement par prix et livraison, sans lien affilié. « Choix de Dorian » : site mis en avant par le propriétaire, sans effet sur les prix ; « Marchand connu » : site reconnu ; « Prudence » : un signal négatif est indiqué ; « non évalué » : aucune information, ce n'est pas une garantie. Les prix changent : contrôle sur le site du marchand avant d'acheter.";
-  if(role === "owner") renderDrops(); else $("dropBar").hidden = true;
-  $("listbar").hidden = role !== "owner" || !gifts.length;
-  $("gcount").textContent = gifts.length ? String(gifts.length) : "";
-  if(role !== "owner"){ list.innerHTML = famHtml(); return; }
-  if(!gifts.length){ list.innerHTML = `<li class="empty"><strong>Ta liste est vide</strong>Ajoute ta première idée avec le formulaire ci-dessus.</li>`; return; }
-  list.innerHTML = ownerHtml();
-}
-
-/* ---------- Gestion : liste à classer, actions du cadeau choisi (à droite sur ordinateur, en fenêtre sur téléphone) ---------- */
-function ownerHtml(){
-  const rows = rowIds(), sep = rows.indexOf("sep"), qt = tk(query);
-  const match = g => { const hay = norm([g.title, g.note, g.variant, g.category].join(" ")); return qt.every(t => hay.includes(t)); };
-  if(editing) selId = editing.id;
-  if(!gifts.some(g => g.id === selId)) selId = rows.find(x => x !== "sep");
-  const lis = rows.map((id,i) => {
-    if(id === "sep") return `<li class="sep" data-row="sep">Autres idées</li>`;
-    const g = gifts.find(x => x.id === id); if(qt.length && !match(g)) return "";
-    const {bo, best, store: st, offs, old} = priceOf(g), fav = i < sep, t = esc(g.title);
-    const todo = !bo || !bo.verified;
-    // Toujours un prix : à défaut d'un prix récent, le dernier prix connu avec sa date
-    const shown = best != null ? eur(best) + (st ? " · " + esc(st) : "") : old ? eur(totalOf(old)) + " · " + esc(old.store) : "";
-    const state = best == null ? (old ? "Dernier prix relevé le " + D(old.at || g.offers_at) + ", à confirmer" : offs.length ? "En rupture" : "Prix à saisir") : (bo && bo.verified ? "Vérifié" + (bo.at ? " le " + D(bo.at) : "") : metaText(g, bo).split(" · ").slice(0,2).join(" · "));
-    const lock = qt.length ? " disabled" : "";
-    return `<li data-row="${id}"><div class="row${wide.matches && id === selId ? " sel" : ""}">
-      <button type="button" class="grab" data-grab aria-hidden="true" tabindex="-1"${lock}>⠿</button>
-      <span class="rthumb">${imgOf(g) || PLACEHOLDER}</span>
-      <button type="button" class="rmain" data-sel="${id}" data-key="s${id}"><strong>${t}</strong><span>${shown}</span><small class="${todo ? "todo" : ""}">${state}</small></button>
-      <button type="button" class="sq" data-mv="-1" data-rid="${id}" data-key="u${id}" aria-label="Monter ${t}"${i === 0 || lock ? " disabled" : ""}>↑</button>
-      <button type="button" class="sq" data-mv="1" data-rid="${id}" data-key="d${id}" aria-label="Descendre ${t}"${i === rows.length - 1 || lock ? " disabled" : ""}>↓</button>
-      <button type="button" class="sq" data-top="${id}" data-key="t${id}" aria-pressed="${fav}" aria-label="Préféré : ${t}"${lock}>${fav ? "★" : "☆"}</button>
-    </div></li>`;
-  }).join("");
-  const sg = gifts.find(g => g.id === selId);
-  return `<li class="own"><div class="olist">
-      <div class="otools"><p>${qt.length ? "Efface la recherche pour classer." : "Glisse ⠿ ou utilise les flèches."}</p><button type="button" class="btn ghost small" data-undo data-key="undo"${orderHist.length ? "" : " disabled"}>Annuler</button></div>
-      <p class="status" id="saveState" aria-live="polite">${esc(saveText)}</p>
-      <h3>★ Mes préférés</h3><ul class="rows">${lis}</ul></div>
-    ${wide.matches && sg ? `<aside class="opanel" aria-label="Cadeau choisi">${panelHtml(sg)}</aside>` : ""}</li>`;
-}
-function panelHtml(g){
-  if(editing && editing.id === g.id) return `<ul class="gifts">${editLi(g)}</ul>`;
-  const {offs, bo, best, store: st} = priceOf(g), reading = refreshing.has(g.id);
-  const last = g.checked_at || g.offers_at;
-  const head = `<h2>${esc(g.title)}</h2><p class="fsrc">${[g.variant ? "Version : " + esc(g.variant) : "", g.note ? esc(g.note) : ""].filter(Boolean).join(" · ")}</p>
-    <p>${best != null ? `<b>${eur(best)}</b>${st ? " chez " + esc(st) : ""}` : "Aucun prix disponible"}</p>${best != null ? `<p class="fsrc">${metaText(g, bo)}</p>` : ""}`;
-  const msg = $("appErr").textContent || notice;
-  let confirm = "";
-  if(pendingDelete === g.id) confirm = `<p class="status">Retirer ce cadeau de la liste ?</p><div class="confirm"><button type="button" class="btn small" data-delyes="${g.id}">Oui, retirer</button><button type="button" class="btn ghost small" data-delno>Non</button></div>`;
-  const merch = !merchOpen ? "" : `<div class="merch">
-      ${offs.length ? `<ul class="offers">${orderedOffers(g, offs).map(o => offerLi(g, o, bo)).join("")}</ul>` : `<p class="status">Aucun marchand enregistré.</p>`}
-      <button type="button" class="btn ghost wide" data-edit="${g.id}">Ajouter ou corriger un prix</button>
-      ${pendingResearch === g.id
-        ? `<p class="status">Cela utilise 2 des environ 250 recherches gratuites du mois. Continuer ?</p><div class="confirm"><button type="button" class="btn small" data-researchyes="${g.id}">Oui, chercher</button><button type="button" class="btn ghost small" data-researchno>Non</button></div>`
-        : `<button type="button" class="btn ghost wide" data-research="${g.id}"${reading ? " disabled" : ""}>Chercher d'autres marchands</button>`}
-      ${offs.length ? blockBox(g, offs) : ""}</div>`;
-  return `${head}${msg ? `<p class="warn" role="status">${esc(msg)}</p>` : ""}
-    ${sigsHtml(g)}${histHtml(g)}
-    <button type="button" class="btn ghost wide" data-preview="${g.id}">Voir comme la famille</button>
-    <div class="menu">
-      <button type="button" data-edit="${g.id}"><b>Modifier la fiche</b><small>Nom, version, photo, lien, catégorie</small></button>
-      <button type="button" data-refresh="${g.id}"${reading ? " disabled" : ""}><b>${reading ? "Lecture en cours…" : "Actualiser les prix (gratuit)"}</b><small>${last ? "Dernière lecture le " + D(last, {day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Jamais relu"}</small></button>
-      <button type="button" data-merch aria-expanded="${merchOpen}"><b>Gérer les marchands</b><small>${offs.length} marchand${offs.length > 1 ? "s" : ""} · ajouter, chercher, écarter</small></button>
-      ${merch}
-    </div>
-    ${watchHtml(g)}
-    ${confirm || `<button type="button" class="danger" data-del="${g.id}">Retirer de la liste…</button>`}`;
-}
-function offerLi(g, o, bo){
-  const fk = favKeys(g);
-  return `<li class="${bo && o.url === bo.url && o.store === bo.store ? "best" : ""}${o.stock === "out" ? " out" : ""}"><a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.store)}${favIdx(fk, o) >= 0 ? '<span class="tag fav">Choix de Dorian</span>' : ""}<small>${shipText(o)}</small>${chkText(o, g)}${trustText(o)}${obsText(o, g)}</a><b>${eur(typeof o.shipping === "number" ? totalOf(o) : o.price)}</b></li>`;
-}
-
-async function run(fn){
-  if(busy) return; busy = true; $("appErr").textContent = "";
-  try{ await fn(); }catch(e){ $("appErr").textContent = e.message; if(e.bad){ busy = false; toLogin(e.message); return; } }
-  try{ await load(); }catch(e){ if(e.bad){ busy = false; toLogin(e.message); return; } if(!$("appErr").textContent) $("appErr").textContent = e.message; }
-  busy = false;
-}
-
-/* ---------- Connexion, prénom, filtres ---------- */
-$("login").addEventListener("submit", async e=>{
-  e.preventDefault(); $("loginErr").textContent = "";
-  const c = extractCode($("code").value); if(!c) return;
-  code = c;
-  try{
-    await load();
-    if(role !== "owner"){ code = ""; store.del("c"); await load(); $("loginErr").textContent = ""; return; }
-    store.set("c", code); $("code").value = "";
-    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
-  }catch(err){ code = ""; $("loginErr").textContent = err.bad ? (err.code === "throttled" ? err.message : "Code invalide. Vérifie-le et réessaie.") : err.message; }
-});
-$("logout").addEventListener("click", ()=>{ store.del("c"); code = ""; manifestSet = false; try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} showSkeleton(); load().catch(err=>{ $("appErr").textContent = err.message; }); });
-$("q").addEventListener("input", ()=>{ query = $("q").value; render(); });
-
-/* ---------- Ajout d'une idée ---------- */
-let meta = {image:"", price:null, store:"", offers:[], link:"", gtin:"", alts:[], excluded:[]};
-let searching = false;
-// Offre telle qu'elle est enregistrée : prix, livraison, état de vérification, date de lecture, stock
-const offerOut = o => ({store:String(o.store).slice(0,60), price:o.price, url:o.url, shipping: typeof o.shipping === "number" ? o.shipping : null,
-  verified: !!o.verified, at: o.at || null, stock: o.stock || "", via: o.via || "", rise: o.rise || null, anom: !!o.anom,
-  trust: o.trust && ["known","unknown","caution"].includes(o.trust.l) ? {l:o.trust.l, r:(Array.isArray(o.trust.r) ? o.trust.r : []).filter(x => typeof x === "string").slice(0,3).map(x => x.slice(0,120))} : null});
-const isLink = q => !/\s/.test(q) && (/^https?:\/\//i.test(q) || /^([a-z0-9-]+\.)+[a-z]{2,}(\/|$)/i.test(q));
-
-function dupOf(title){
-  const a = new Set(tk(title)); if(a.size < 2) return null;
-  for(const g of gifts){
-    const b = new Set(tk(g.title)); if(b.size < 2) continue;
-    const da = [...a].filter(t=>/\d/.test(t)), db = [...b].filter(t=>/\d/.test(t));
-    if(da.some(t=>!b.has(t)) || db.some(t=>!a.has(t))) continue;
-    let hit = 0; a.forEach(t=>{ if(b.has(t)) hit++; });
-    if(hit / Math.min(a.size, b.size) >= 0.8) return g;
-  }
-  return null;
-}
-function checkDup(){
-  const g = $("gTitle").value.trim() ? dupOf($("gTitle").value) : null;
-  const w = $("dupWarn");
-  if(g){ w.hidden = false; w.textContent = "Attention : « " + g.title + " » est déjà dans ta liste. Touche « Ajouter quand même » pour confirmer."; $("addBtn").textContent = "Ajouter quand même"; }
-  else { w.hidden = true; $("addBtn").textContent = "Ajouter à la liste"; dupAck = false; }
-  return g;
-}
-
-function showResult(){
-  $("result").hidden = false;
-  $("pvThumb").innerHTML = meta.image ? `<img src="${esc(meta.image)}" alt="" referrerpolicy="no-referrer">` : PLACEHOLDER;
-  $("pvTitle").textContent = $("gTitle").value;
-  const more = [];
-  const bo = inStock(meta.offers)[0];
-  if(bo){
-    more.push(`<b style="color:var(--ink)">À partir de ${eur(totalOf(bo))}</b> chez ${esc(bo.store)}${typeof bo.shipping === "number" ? " (livraison comprise)" : ""}`);
-    const nv = meta.offers.filter(o => o.verified).length;
-    more.push(`${meta.offers.length} marchand${meta.offers.length > 1 ? "s" : ""} comparé${meta.offers.length > 1 ? "s" : ""}, ${nv} vérifié${nv > 1 ? "s" : ""} sur leur site`);
-  } else if(meta.offers.length){
-    more.push("Tous les marchands trouvés sont en rupture de stock.");
-  } else if(meta.price != null){
-    more.push(`<b style="color:var(--ink)">${eur(meta.price)}</b>${meta.store ? " chez " + esc(meta.store) : ""}`);
-  } else {
-    more.push("Prix non trouvé : tu peux le saisir à la main.");
-  }
-  if(meta.excluded && meta.excluded.length){
-    const n = meta.excluded.length;
-    more.push(`${n} marchand${n > 1 ? "s" : ""} écarté${n > 1 ? "s" : ""} par sécurité : ${meta.excluded.map(x => esc(x.store) + (x.why ? " (" + esc(x.why) + ")" : "")).join(", ")}`);
-  }
-  $("pvMore").innerHTML = more.map(x=>`<span>${x}</span>`).join("");
-  renderAlts();
-  checkDup();
-}
-
-// Autres fiches produit proposées par Google : le propriétaire corrige le choix en un geste (1 recherche de plus)
-function renderAlts(){
-  const el = $("alts"), a = meta.alts || [];
-  el.hidden = !a.length;
-  if(!a.length){ el.innerHTML = ""; return; }
-  el.innerHTML = `<p>Ce n'est pas le bon produit ? Touche le bon. Cela relance une recherche.</p>` + a.map(x =>
-    `<button type="button" class="alt" data-token="${esc(x.token)}"><span class="thumb">${/^https:\/\//.test(x.image||"") ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : PLACEHOLDER}</span><span class="t">${esc(x.title)}</span><b>${x.price != null ? eur(x.price) : ""}</b></button>`).join("");
-}
-
-async function search(token){
-  const q = $("gQuery").value.trim(); const st = $("lookup");
-  if(!q || searching) return;
-  searching = true; $("searchBtn").disabled = true; dupAck = false;
-  meta = {image:"", price:null, store:"", offers:[], link: isLink(q) ? (/^https?:\/\//i.test(q) ? q : "https://" + q) : "", gtin:"", alts:[], excluded:[]};
-  st.hidden = false; st.textContent = "Recherche du produit et des prix, puis lecture des pages des marchands…";
-  try{
-    const d = await callSearch(q, typeof token === "string" ? token : undefined);
-    meta.image = d.image || ""; meta.price = d.price; meta.store = d.store || ""; meta.gtin = /^\d{8,14}$/.test(d.gtin || "") ? d.gtin : "";
-    meta.offers = (Array.isArray(d.offers) ? d.offers : []).filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url));
-    meta.excluded = (Array.isArray(d.excluded) ? d.excluded : []).filter(x => x && x.store).slice(0,6).map(x => ({store:String(x.store).slice(0,60), why:String(x.why||"").slice(0,120)}));
-    meta.alts = (Array.isArray(d.alternatives) ? d.alternatives : []).filter(a => a && a.token && a.token !== d.token).slice(0,3);
-    const bo = inStock(meta.offers)[0];
-    $("gTitle").value = d.title || (isLink(q) ? "" : q);
-    // Le prix enregistré est le total (livraison comprise quand elle est connue), comme l'historique
-    $("gPrice").value = bo ? String(totalOf(bo)).replace(".", ",") : (d.price != null ? String(d.price).replace(".", ",") : "");
-    const found = meta.image || d.price != null || meta.offers.length;
-    $("manual").open = !found || !$("gTitle").value;
-    st.textContent = found ? (d.reason ? d.reason + " Vérifie la fiche avant d'ajouter." : "Fiche remplie. Vérifie-la puis ajoute-la.")
-                           : ((d.reason || "Aucune information trouvée.") + " Remplis la fiche à la main.");
-  }catch(e){
-    $("gTitle").value = isLink(q) ? "" : q; $("gPrice").value = ""; $("manual").open = true;
-    st.textContent = "Recherche automatique impossible. Remplis la fiche à la main.";
-  }
-  searching = false; $("searchBtn").disabled = false;
-  showResult();
-}
-$("searchBtn").addEventListener("click", ()=>search());
-$("alts").addEventListener("click", e=>{ const b = e.target.closest("button[data-token]"); if(b) search(b.dataset.token); });
-$("gQuery").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); search(); } });
-$("gQuery").addEventListener("paste", ()=>setTimeout(()=>{ if(isLink($("gQuery").value.trim())) search(); }, 80));
-$("gTitle").addEventListener("input", ()=>{ $("pvTitle").textContent = $("gTitle").value; checkDup(); });
-
-$("addForm").addEventListener("submit", e=>{
-  e.preventDefault();
-  if($("result").hidden){ search(); return; }
-  const title = $("gTitle").value.trim();
-  if(!title){ $("manual").open = true; $("appErr").textContent = "Donne un nom au cadeau."; $("gTitle").focus(); return; }
-  if(checkDup() && !dupAck){ dupAck = true; $("dupWarn").scrollIntoView({block:"center", behavior:"smooth"}); return; }
-  const raw = $("gPrice").value.trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,"");
-  const price = raw === "" ? null : parseFloat(raw);
-  if(price !== null && !(price >= 0 && price < 100000)){ $("manual").open = true; $("appErr").textContent = "Le prix n'est pas valide."; $("gPrice").focus(); return; }
-  if(price === null){ $("manual").open = true; $("appErr").textContent = "Ajoute un prix : un cadeau sans prix n'est pas proposé à la famille."; $("gPrice").focus(); return; }
-  const offers = meta.offers.length ? meta.offers.map(offerOut) : null;
-  const bo = inStock(meta.offers)[0];
-  run(async()=>{
-    await rpc("noel_add",{p_code:code,p_title:title,p_url:meta.link,p_note:$("gNote").value,
-      p_image:meta.image||"", p_price:price, p_store:(bo ? bo.store : meta.store) || "", p_offers:offers, p_top:$("gTop").checked, p_gtin:meta.gtin || null});
-    $("gQuery").value = $("gTitle").value = $("gNote").value = $("gPrice").value = ""; $("gTop").checked = false;
-    meta = {image:"", price:null, store:"", offers:[], link:"", gtin:"", alts:[], excluded:[]}; dupAck = false;
-    $("lookup").hidden = true; $("result").hidden = true; $("alts").hidden = true; $("manual").open = false; $("dupWarn").hidden = true;
-    $("addBtn").textContent = "Ajouter à la liste";
-  });
-});
-
-/* ---------- Actualiser les prix ----------
-   « Actualiser » relit gratuitement les pages des marchands déjà connus (aucune recherche SerpAPI).
-   La relecture automatique tourne aussi toute seule côté serveur, de la même façon pour toutes les fiches.
-   « Autres marchands » relance une vraie recherche (2 recherches SerpAPI) et demande confirmation. */
-const FRESH_MS = 10 * 60 * 1000;
-const isFresh = g => g.checked_at && Date.now() - new Date(g.checked_at).getTime() < FRESH_MS;
-async function researchOne(g){
-  const d = await callSearch(g.title);
-  const offs = (Array.isArray(d.offers) ? d.offers : []).filter(o => o && /^https:\/\//.test(o.url||"") && +o.price > 0 && !isMarket(o.store, o.url));
-  const best = inStock(offs)[0];
-  if(!best) return false;
-  await rpc("noel_set_offers",{p_code:code,p_id:g.id,p_price:totalOf(best),p_store:best.store,p_offers:offs.map(offerOut)});
-  return true;
-}
-$("bulkBtn").addEventListener("click", ()=>{
-  const todo = gifts.filter(g => !isFresh(g)).slice(0,30);
-  const st = $("bulkStatus");
-  if(!todo.length){ st.hidden = false; st.textContent = "Tous les prix ont été relus il y a moins de 10 minutes."; return; }
-  run(async()=>{
-    st.hidden = false;
-    for(let i = 0; i < todo.length; i++){
-      st.textContent = "Lecture des sites des marchands : " + (i+1) + " sur " + todo.length + "…";
-      try{ await callRefresh(todo[i].id); }catch(e){ if(e.bad) throw e; }
-    }
-    st.textContent = "Prix relus sur les sites des marchands (gratuit).";
-  });
-});
-
-/* ---------- Invitation de la famille ---------- */
-const WORDS = "sapin etoile neige cadeau bougie renne traineau guirlande cannelle chocolat flocon veillee brioche mandarine houx gui lutin boule ruban clementine marron buche nougat chalet cheminee givre hiver lumiere reveillon bonhomme couronne cloche chant manteau echarpe moufle tricot pomme poire orange noix amande miel vanille gingembre sucre glace braise nuit minuit aurore".split(" ");
-function rnd(n){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
-function newCode(){ return [0,1,2,3].map(()=>WORDS[rnd(WORDS.length)]).join("-") + "-" + String(rnd(9000)+1000); }
-function shareText(){
-  const c = $("famCode").value.trim();
-  const link = c ? location.href.split("#")[0] + "#c=" + encodeURIComponent(extractCode(c)) : location.href.split("#")[0];
-  return "Coucou ! Voici ma liste de Noël : " + link +
-    "\nTu y trouves mes idées avec les prix relevés. Tu peux toucher « Je le prends » sur un cadeau pour le réserver en un clic (je ne vois jamais qui prend quoi !).";
-}
-function refreshShare(){ $("shareMsg").value = shareText(); $("copyBtn").disabled = !$("famCode").value.trim(); }
-$("famCode").value = store.get("fam");
-$("famCode").addEventListener("input", ()=>{ store.set("fam", $("famCode").value.trim()); refreshShare(); });
-$("copyBtn").addEventListener("click", async ()=>{
-  const t = $("shareMsg").value; if(!t) return;
-  try{ await navigator.clipboard.writeText(t); $("shareStatus").textContent = "Message copié. Colle-le dans ta conversation familiale."; }
-  catch(e){ $("shareMsg").focus(); $("shareMsg").select(); $("shareStatus").textContent = "Sélectionne le message ci-dessus et copie-le."; }
-});
-$("renewBtn").addEventListener("click", ()=>{ $("renewConfirm").hidden = false; $("shareStatus").textContent = "Les anciens liens famille cesseront de fonctionner. Continuer ?"; });
-$("renewNo").addEventListener("click", ()=>{ $("renewConfirm").hidden = true; $("shareStatus").textContent = ""; });
-$("renewYes").addEventListener("click", ()=>{
-  $("renewConfirm").hidden = true;
-  const c = newCode();
-  run(async()=>{
-    await rpc("noel_set_family_code",{p_code:code,p_new:c});
-    $("famCode").value = c; store.set("fam", c); refreshShare();
-    $("shareStatus").textContent = "Nouveau code enregistré. Copie le message et envoie-le à tes proches.";
-  });
-});
-refreshShare();
-
-/* ---------- Modifier une fiche (propriétaire) ---------- */
-const numTxt = n => n == null ? "" : String(n).replace(".", ",");
-const parseNum = t => { const r = String(t ?? "").trim().replace(/\s/g,"").replace(",", ".").replace(/[€e]/gi,""); return r === "" ? null : parseFloat(r); };
-function newDraft(g){
-  return {title:g.title || "", url:g.url || "", image:g.image || "", note:g.note || "", gtin:g.gtin || "", variant:g.variant || "", category:g.category || "", with:g.with || "",
-    idealo:(g.cmp && g.cmp.idealo) || "", denicheur:(g.cmp && g.cmp.denicheur) || "", dirty:false, pinned:[...(Array.isArray(g.pinned) ? g.pinned : [])],
-    offers: cleanOffers(g).map(o => ({o, store:o.store, price:numTxt(o.price), ship:typeof o.shipping === "number" ? numTxt(o.shipping) : "", url:o.url, out:o.stock === "out", open:false})),
-    add:{store:"", price:"", ship:"", url:""}};
-}
-function editLi(g){
-  const d = editing.d, err = editing.err ? `<p class="msg" role="alert">${esc(editing.err)}</p>` : "";
-  const rows = d.offers.map((r,i) => { const k = keyOf(r.store); return `<details class="erow" data-i="${i}"${r.open ? " open" : ""}><summary><strong>${esc(r.store)}</strong><span>${esc(r.price)} €</span></summary><div class="fields">
-      <div class="two"><label>Prix (€)<input type="text" inputmode="decimal" maxlength="9" data-ef="price" data-i="${i}" value="${esc(r.price)}"></label>
-      <label>Livraison (€)<input type="text" inputmode="decimal" maxlength="7" placeholder="à vérifier" data-ef="ship" data-i="${i}" value="${esc(r.ship)}"></label></div>
-      <label>Lien du produit<input type="url" maxlength="500" data-ef="url" data-i="${i}" value="${esc(r.url)}"></label>
-      <label class="check"><input type="checkbox" data-ef="out" data-i="${i}"${r.out ? " checked" : ""}> En rupture de stock</label>
-      <label class="check"><input type="checkbox" data-epin="${esc(k)}"${d.pinned.includes(k) ? " checked" : ""}> Mettre en avant sur cette fiche</label>
-      <button type="button" class="btn ghost small" data-edel="${i}">Retirer ce marchand</button></div></details>`; }).join("");
-  return `<li class="gift edit"><h4>Modifier la fiche</h4>
-    <label>Nom du cadeau<input type="text" maxlength="120" data-et="title" value="${esc(d.title)}"></label>
-    <label>Lien du produit<input type="url" maxlength="500" data-et="url" value="${esc(d.url)}"></label>
-    <label>Photo (adresse https)<input type="url" maxlength="1000" data-et="image" value="${esc(d.image)}"></label>
-    <label>Précision<input type="text" maxlength="500" data-et="note" value="${esc(d.note)}"></label>
-    <label>Code-barres (facultatif)<input type="text" inputmode="numeric" maxlength="14" data-et="gtin" value="${esc(d.gtin)}"></label>
-    <label>Version souhaitée (facultatif)<input type="text" maxlength="120" placeholder="Ex. noir, taille M, 256 Go" data-et="variant" value="${esc(d.variant)}"></label>
-    <label>Catégorie (facultatif)<input type="text" maxlength="30" list="catlist" placeholder="Ex. Tech, Maison, Sport" data-et="category" value="${esc(d.category)}"></label>
-    <datalist id="catlist">${[...new Set(["Tech","Maison","Cuisine","Sport","Jeux","Loisirs","Mode","Livres"].concat(gifts.map(x => x.category).filter(Boolean)))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
-    <label>Va avec un autre cadeau (facultatif)<select data-et="with"><option value="">Aucun</option>${gifts.filter(x => x.id !== editing.id).map(x => `<option value="${x.id}"${String(d.with) === String(x.id) ? " selected" : ""}>${esc(x.title)}</option>`).join("")}</select></label>
-    <label>Fiche idealo (facultatif)<input type="url" maxlength="500" placeholder="https://www.idealo.fr/prix/…" data-et="idealo" value="${esc(d.idealo)}"></label>
-    <label>Fiche Le Dénicheur (facultatif)<input type="url" maxlength="500" placeholder="https://ledenicheur.fr/product.php?p=…" data-et="denicheur" value="${esc(d.denicheur)}"></label>
-    <h4>Prix par marchand</h4>
-    <p class="status">Un prix modifié ou ajouté ici est marqué « saisi à la main, non vérifié » tant qu'une lecture de la page du marchand ne l'a pas confirmé. Les places de marché, comparateurs et marchands écartés sont refusés.</p>
-    ${rows || '<p class="status">Aucun marchand pour l\'instant.</p>'}
-    <div class="addrow"><strong>Ajouter un marchand</strong>
-      <label>Nom du marchand<input type="text" maxlength="60" data-ea="store" value="${esc(d.add.store)}"></label>
-      <div class="two"><label>Prix (€)<input type="text" inputmode="decimal" maxlength="9" data-ea="price" value="${esc(d.add.price)}"></label>
-      <label>Livraison (€)<input type="text" inputmode="decimal" maxlength="7" placeholder="à vérifier" data-ea="ship" value="${esc(d.add.ship)}"></label></div>
-      <label>Lien du produit chez ce marchand<input type="url" maxlength="500" placeholder="https://" data-ea="url" value="${esc(d.add.url)}"></label>
-      <button type="button" class="btn ghost small" data-eadd>Ajouter ce marchand</button></div>
-    ${err}
-    <div class="stick"><button type="button" class="btn" data-esave>Enregistrer</button><button type="button" class="btn ghost" data-ecancel>Annuler</button></div></li>`;
-}
-function buildOffers(d){
-  const now = new Date().toISOString(), out = [];
-  for(const r of d.offers){
-    const p = parseNum(r.price), sh = String(r.ship).trim() === "" ? null : parseNum(r.ship), u = String(r.url).trim();
-    if(!(p > 0 && p < 100000)) throw new Error("Le prix de « " + r.store + " » n'est pas valide.");
-    if(sh !== null && !(sh >= 0 && sh < 1000)) throw new Error("La livraison de « " + r.store + " » n'est pas valide.");
-    if(!/^https:\/\//i.test(u) || u.length > 500) throw new Error("Le lien de « " + r.store + " » doit commencer par https://.");
-    if(isMarket(r.store, u)) throw new Error("« " + r.store + " » est une place de marché ou un comparateur : il n'est pas proposé.");
-    const o = r.o, price = Math.round(p * 100) / 100, ship = sh === null ? null : Math.round(sh * 100) / 100;
-    const stock = r.out ? "out" : (o && o.stock !== "out" ? (o.stock || "") : "");
-    const changed = !o || price !== o.price || ship !== (typeof o.shipping === "number" ? o.shipping : null) || u !== o.url || (stock === "out") !== (o.stock === "out");
-    out.push(changed ? offerOut({...(o || {}), store:r.store, price, shipping:ship, url:u, stock, via:"manual", verified:false, at:now, trust:null}) : offerOut(o));
-  }
-  return out;
-}
-function handleEdit(t){
-  if(t.dataset.edit){
-    const g = gifts.find(x => x.id === +t.dataset.edit); if(!g) return true;
-    pendingDelete = pendingResearch = pendingBlock = null;
-    editing = {id:g.id, d:newDraft(g), err:""}; render();
-    const el = document.querySelector(".edit"); if(el) el.scrollIntoView({block:"start", behavior:"smooth"});
-    return true;
-  }
-  if(!editing) return false;
-  const d = editing.d;
-  if(t.hasAttribute("data-ecancel")){ editing = null; render(); return true; }
-  if(t.dataset.edel !== undefined){ d.offers.splice(+t.dataset.edel, 1); d.dirty = true; editing.err = ""; render(); return true; }
-  if(t.hasAttribute("data-eadd")){
-    const a = d.add, store = a.store.trim(), p = parseNum(a.price), sh = String(a.ship).trim() === "" ? null : parseNum(a.ship), u = a.url.trim();
-    let err = "";
-    if(!store) err = "Donne le nom du marchand.";
-    else if(!(p > 0 && p < 100000)) err = "Le prix n'est pas valide.";
-    else if(sh !== null && !(sh >= 0 && sh < 1000)) err = "La livraison n'est pas valide.";
-    else if(!/^https:\/\//i.test(u) || u.length > 500) err = "Le lien doit commencer par https://.";
-    else if(isMarket(store, u)) err = "Ce site est une place de marché ou un comparateur : il n'est pas proposé.";
-    else if(blocked.some(b => b.key === keyOf(store))) err = "Ce marchand est écarté. Réautorise-le d'abord.";
-    else if(d.offers.some(r => keyOf(r.store) === keyOf(store))) err = "Ce marchand est déjà dans la liste : modifie sa ligne.";
-    else if(d.offers.length >= 12) err = "12 marchands au plus par fiche.";
-    editing.err = err;
-    if(!err){ d.offers.push({o:null, store, price:numTxt(Math.round(p * 100) / 100), ship:sh === null ? "" : numTxt(sh), url:u, out:false, open:true}); d.add = {store:"", price:"", ship:"", url:""}; d.dirty = true; }
-    render(); return true;
-  }
-  if(t.hasAttribute("data-esave")){
-    const g = gifts.find(x => x.id === editing.id); if(!g){ editing = null; render(); return true; }
-    const title = d.title.trim();
-    if(!title){ editing.err = "Donne un nom au cadeau."; render(); return true; }
-    const idl = d.idealo.trim(), dnl = d.denicheur.trim();
-    if(idl && !/^https:\/\/(www\.)?idealo\.[a-z]{2,3}\//i.test(idl)){ editing.err = "Le lien idealo doit commencer par https://www.idealo.fr/."; render(); return true; }
-    if(dnl && !/^https:\/\/(www\.)?ledenicheur\.fr\//i.test(dnl)){ editing.err = "Le lien du Dénicheur doit commencer par https://ledenicheur.fr/."; render(); return true; }
-    let offers = null;
-    if(d.dirty){ try{ offers = buildOffers(d); }catch(err){ editing.err = err.message; render(); return true; } }
-    const id = editing.id, pins = d.pinned.filter(k => d.offers.some(r => keyOf(r.store) === k) || (g.pinned || []).includes(k)), pinsChanged = JSON.stringify(pins) !== JSON.stringify(g.pinned || []);
-    editing.err = "";
-    run(async()=>{
-      await rpc("noel_update_gift",{p_code:code,p_id:id,p_title:title,p_url:d.url.trim(),p_note:d.note,p_image:d.image.trim(),p_gtin:d.gtin.trim()});
-      await rpc("noel_set_extras",{p_code:code,p_id:id,p_variant:d.variant,p_category:d.category,p_idealo:idl,p_denicheur:dnl});
-      if(String(d.with || "") !== String(g.with || "")) await rpc("noel_set_with",{p_code:code,p_id:id,p_with:d.with ? +d.with : null});
-      if(offers) await rpc("noel_edit_offers",{p_code:code,p_id:id,p_offers:offers});
-      if(pinsChanged) await rpc("noel_set_pinned",{p_code:code,p_id:id,p_keys:pins});
-      editing = null;
-    });
-    return true;
-  }
-  return false;
-}
-const onEditInput = e=>{
-  const t = e.target; if(!editing || !t.dataset) return;
-  if(t.dataset.et){ editing.d[t.dataset.et] = t.value; return; }
-  if(t.dataset.ea){ editing.d.add[t.dataset.ea] = t.value; return; }
-  if(t.dataset.ef && t.type !== "checkbox"){ const r = editing.d.offers[+t.dataset.i]; if(r){ r[t.dataset.ef] = t.value; editing.d.dirty = true; } }
-};
-const onEditChange = e=>{
-  const t = e.target; if(!editing || !t.dataset) return;
-  if(t.dataset.et === "with"){ editing.d.with = t.value; return; }
-  if(t.dataset.ef === "out"){ const r = editing.d.offers[+t.dataset.i]; if(r){ r.out = t.checked; editing.d.dirty = true; } return; }
-  if(t.dataset.epin !== undefined){
-    const k = t.dataset.epin, p = editing.d.pinned;
-    if(t.checked){ if(p.length >= 3 && !p.includes(k)){ editing.err = "3 sites en avant au plus par fiche."; render(); return; } if(!p.includes(k)) p.push(k); }
-    else editing.d.pinned = p.filter(x => x !== k);
-  }
-};
-const onWatchInput = e=>{ const i = e.target; if(i && i.dataset && i.dataset.wd){ (wdraft[+i.dataset.wid] = wdraft[+i.dataset.wid] || {})[i.dataset.wd] = i.value; } };
-["list","sheet"].forEach(id => { $(id).addEventListener("input", onWatchInput); });
-["list","sheet"].forEach(id => { $(id).addEventListener("input", onEditInput); $(id).addEventListener("change", onEditChange); });
-// Liste de prix déroulante : son état est gardé quand la liste est redessinée
-const onToggle = e=>{
-  const d = e.target; if(!d || !d.classList) return;
-  if(d.classList.contains("erow") && editing){ const r = editing.d.offers[+d.dataset.i]; if(r) r.open = d.open; return; }
-  const k = d.dataset && d.dataset.k; if(!k) return;
-  if(d.open) openK.add(k); else openK.delete(k);
-};
-$("list").addEventListener("toggle", onToggle, true);
-$("sheet").addEventListener("toggle", onToggle, true);
-
-/* ---------- Sites en avant et ordre des prix ---------- */
-function renderFav(){
-  const box = $("dispBox"); if(!box) return;
-  box.hidden = role !== "owner";
-  $("favList").innerHTML = display.featured.length
-    ? display.featured.map(f => `<span class="chipx">${esc(f.label)}<button type="button" class="linkbtn" data-favdel="${esc(f.key)}" aria-label="Retirer ${esc(f.label)}">✕</button></span>`).join("")
-    : '<span class="status">Aucun site choisi.</span>';
-  $("favMode").value = display.mode;
-}
-const saveDisplay = (featured, mode) => run(()=>rpc("noel_set_display",{p_code:code, p_featured:featured.map(f => ({label:f.label})), p_mode:mode}));
-$("favAdd").addEventListener("click", ()=>{
-  const name = $("favName").value.trim();
-  if(!name) { $("favName").focus(); return; }
-  if(display.featured.length >= 10){ $("appErr").textContent = "10 sites au plus."; return; }
-  if(display.featured.some(f => f.key === keyOf(name))){ $("favName").value = ""; return; }
-  $("favName").value = "";
-  saveDisplay([...display.featured, {label:name}], display.mode);
-});
-$("favName").addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); $("favAdd").click(); } });
-$("favList").addEventListener("click", e=>{
-  const b = e.target.closest("button[data-favdel]"); if(!b) return;
-  saveDisplay(display.featured.filter(f => f.key !== b.dataset.favdel), display.mode);
-});
-$("favMode").addEventListener("change", ()=> saveDisplay(display.featured, $("favMode").value === "featured" ? "featured" : "price"));
-/* ---------- Vue famille : une liste numérotée, « Mes préférés » puis « Autres idées », dans l'ordre choisi par le propriétaire.
-   Volontairement minimale : photo, nom, prix, qui l'a pris. Aucun état de prix (vérifié, ancien…). ---------- */
-let me = store.get("nom"), asking = null, nameDraft = "", confirmName = "";            // asking : id du cadeau (ou "nom") dont la saisie du prénom est ouverte
-const anon = n => /^[0-9a-f]{16}$/.test(n || "");                    // anciennes réservations sans prénom (jeton de l'appareil)
-const isMine = g => !!g.claimed_by && (g.claimed_by === ftok || (!!me && same(g.claimed_by, me)));
-// Un seul magasin et un seul prix. Les ruptures relevées sont ignorées (souvent fausses) : on prend le moins cher des prix
-// récents, sinon le dernier connu, en évitant les offres « Prudence ».
-function simplePrice(g){
-  const all = cleanOffers(g).sort((a,b) => totalOf(a) - totalOf(b));
-  const safe = all.filter(o => !(o.trust && o.trust.l === "caution") && !o.anom), pool = safe.length ? safe : all;
-  const o = pool.find(x => x._f !== "stale") || pool[0];
-  if(o) return {price: totalOf(o), store: o.store, url: o.url};
-  return {price: g.price != null && !isMarket(g.store, g.url) ? g.price : null, store: g.store || "", url: safeUrl(g.url)};
-}
-// Profil = le prénom. S'il a déjà des cadeaux (pris sur un autre appareil), on demande confirmation avant de le reprendre.
-const knownName = n => gifts.map(g => g.claimed_by).find(c => c && !anon(c) && norm(c.trim()) === norm(n)) || "";
-const nameForm = () => confirmName ? `<div class="nameform" role="alert">
-  <p><b>« ${esc(confirmName)} » existe déjà.</b> C'est toi ?</p>
-  <div class="confirm"><button type="button" class="btn" data-yesme>Oui, c'est moi</button><button type="button" class="btn ghost" data-notme>Non</button></div>
-  <p class="fnote">Sinon, choisis un autre prénom (par exemple avec l'initiale du nom).</p></div>` : `<form class="nameform" data-nameform>
-  <label>Ton prénom<input type="text" id="nameInput" maxlength="40" autocomplete="given-name" value="${esc(nameDraft)}" required></label>
-  <div class="confirm"><button type="submit" class="btn">Valider</button><button type="button" class="btn ghost" data-nameno>Annuler</button></div></form>`;
-function famActions(g){
-  if(role !== "family") return "";
-  if(isMine(g)) return `<div class="fstate mine"><span>✓ Pris par toi</span><button type="button" class="btn ghost small" data-unclaim="${g.id}">Annuler</button></div>`;
-  if(g.claimed_by) return `<div class="fstate"><span>${anon(g.claimed_by) ? "Déjà pris" : "Pris par " + esc(g.claimed_by)}</span></div>`;
-  return asking === g.id ? nameForm() : `<button class="btn big" type="button" data-claim="${g.id}">Je le prends</button>`;
-}
-// « preview » : le propriétaire voit la carte sans aucun bouton de réservation
-function famCard(g, n){
-  const {price, store: st, url} = simplePrice(g), img = imgOf(g);
-  const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
-  const taken = role === "family" && g.claimed_by && !isMine(g);
-  const tag = url ? "a" : "div", link = url ? ` href="${esc(url)}" target="_blank" rel="noopener noreferrer"` : "";
-  return `<li class="fcard${taken ? " taken" : ""}"><${tag} class="ftop"${link}><div class="fimg${img ? "" : " ph"}"><span class="rank">${n}</span>${img || PLACEHOLDER}</div><div class="ftxt"><h3 class="fname">${esc(g.title)}</h3>${notes}
-    <div class="fpr">${price != null ? `<b>${eur(price)}</b>${st ? `<span>${esc(st)}</span>` : ""}` : `<span>Prix à voir</span>`}</div></div></${tag}>${famActions(g)}</li>`;
-}
-function mineHtml(){
-  if(role !== "family") return "";
-  const mine = ordered().filter(isMine);
-  const list = mine.length ? `<strong>Tu as pris :</strong><ul>${mine.map(g => { const p = simplePrice(g).price; return `<li>${esc(g.title)}${p != null ? " · " + eur(p) : ""}</li>`; }).join("")}</ul>`
-    : `<strong>Tu n'as encore rien pris.</strong>`;
-  const who = asking === "nom" ? nameForm() : `<button type="button" class="linkbtn" data-rename>${me ? "Tu es " + esc(me) + " · changer de prénom" : "Déjà venu ? Mettre mon prénom"}</button>`;
-  return `<li class="mine-box">${list}${who}</li>`;
-}
-function famHtml(){
-  if(!gifts.length) return `<li class="empty"><strong>La liste arrive bientôt</strong>Reviens un peu plus tard.</li>`;
-  const all = ordered(), pref = all.filter(g => g.top), rest = all.filter(g => !g.top);
-  const sec = (t, arr, cls) => arr.length ? `<li class="fsec ${cls}"><h2>${t}</h2><ol class="flist">${arr.map(g => famCard(g, all.indexOf(g) + 1)).join("")}</ol></li>` : "";
-  const hint = role === "public" ? `<li class="fhint">Pour prendre un cadeau, ouvre le lien d'invitation que Dorian t'a envoyé.</li>` : "";
-  return mineHtml() + (pref.length ? sec("★ Mes préférés", pref, "pref") + sec("Autres idées", rest, "") : sec("Mes idées", rest, "")) + hint;
-}
-function askName(what){ asking = what; confirmName = ""; nameDraft = what === "nom" ? me : ""; render(); const i = $("nameInput"); if(i) i.focus(); }
-// Prénom validé : mémorisé sur l'appareil, puis le cadeau demandé est pris s'il est toujours libre
-function setName(n){
-  const what = asking; asking = null; confirmName = ""; me = n; store.set("nom", n);
-  const g = gifts.find(x => x.id === what);
-  if(g && !g.claimed_by) claim(what); else render();
-}
-const claim = id => run(()=>rpc("noel_claim",{p_code:code, p_id:id, p_name:me}));
-
-/* ---------- Fenêtre : actions d'un cadeau (propriétaire sur téléphone) ou aperçu « comme la famille » ---------- */
-let sheetId = null, preview = false;
-function openSheet(id, asPreview){ sheetId = id; preview = !!asPreview; refreshSheet(true); }
-function closeSheet(){
-  if(role === "owner" && preview && !wide.matches){ preview = false; refreshSheet(true); return; }
-  if(role === "owner"){ editing = null; pendingDelete = pendingResearch = pendingBlock = null; }
-  sheetId = null; preview = false; render();
-}
-function refreshSheet(focus){
-  const bg = $("sheetBg"), box = $("sheet");
-  if(!bg) return;
-  if(sheetId != null){
-    const g = gifts.find(x => x.id === sheetId);
-    if(!g || (role === "owner" && !preview && wide.matches)) sheetId = null;
-    else {
-      const top = box.scrollTop, manage = role === "owner" && !preview;
-      box.className = "fsheet";
-      box.innerHTML = `<button class="back" type="button" data-close>← ${preview ? "Retour à la gestion" : "Retour à la liste"}</button>` + (manage ? `<div class="opanel">${panelHtml(g)}</div>` : `<ol class="flist">${famCard(g, ordered().indexOf(g) + 1)}</ol>`);
-      box.scrollTop = focus ? 0 : top;
-    }
-  }
-  const open = sheetId != null;
-  bg.hidden = !open; document.body.classList.toggle("nosc", open);
-  if(!open) box.innerHTML = "";
-  else if(focus) box.focus();
-}
-$("sheetBg").addEventListener("click", e=>{ if(e.target.id === "sheetBg") closeSheet(); });
-document.addEventListener("keydown", e=>{ if(e.key === "Escape" && sheetId != null) closeSheet(); });
-wide.addEventListener("change", ()=>{ if(role) render(); });
-
-/* ---------- Actions sur les cartes ---------- */
-const onListClick = e=>{
-  const t = e.target.closest("button"); if(!t || t.disabled) return;
-  if(t.hasAttribute("data-close")){ closeSheet(); return; }
-  if(t.hasAttribute("data-nameno")){ asking = null; confirmName = ""; render(); return; }
-  if(t.hasAttribute("data-yesme")){ setName(confirmName); return; }
-  if(t.hasAttribute("data-notme")){ confirmName = ""; nameDraft = ""; render(); const i = $("nameInput"); if(i) i.focus(); return; }
-  if(t.hasAttribute("data-rename")){ askName("nom"); return; }
-  if(t.dataset.preview){ openSheet(+t.dataset.preview, true); return; }
-  if(t.dataset.sel){
-    const id = +t.dataset.sel;
-    if(editing && editing.id !== id){ $("appErr").textContent = "Enregistre ou annule la modification en cours."; render(); return; }
-    if(selId !== id){ merchOpen = false; pendingDelete = pendingResearch = pendingBlock = null; notice = ""; $("appErr").textContent = ""; }
-    selId = id; focusKey = "s" + id;
-    if(wide.matches) render(); else { focusKey = ""; openSheet(id); }
+async function show(){
+  const r = route();
+  error = ""; confirming = ""; opened.clear();
+  const inv = r.match(/^inv=([a-f0-9]{32})$/);
+  if(inv){
+    try{ const i = await rpc("noel_invite_info", {p_invite:inv[1]}); pre = {kind:"activate", token:inv[1], name:i.name, login:i.login}; render(); }
+    catch(e){ pre = null; history.replaceState(null, "", location.pathname); if(token) return show(); error = e.message; render(); }
     return;
   }
-  if(t.dataset.mv){ focusKey = t.dataset.key; moveRow(+t.dataset.rid, +t.dataset.mv); return; }
-  if(t.hasAttribute("data-undo")){ const o = orderHist.pop(); if(o){ focusKey = "undo"; commitOrder(o, false); } return; }
-  if(t.hasAttribute("data-merch")){ merchOpen = !merchOpen; render(); return; }
-  if(t.dataset.sigyes || t.dataset.signo){ const sid = +(t.dataset.sigyes || t.dataset.signo), acc = !!t.dataset.sigyes; run(()=>rpc("noel_signal_decide",{p_code:code,p_id:sid,p_accept:acc})); return; }
-  if(t.dataset.wsave){
-    const wid = +t.dataset.wsave, g0 = gifts.find(x => x.id === wid), d = wdraft[wid] || {}; if(!g0) return;
-    const al = (d.aliases !== undefined ? d.aliases : (g0.aliases || []).join(", ")).split(/[,;]/).map(x => x.trim()).filter(Boolean);
-    run(async()=>{
-      await rpc("noel_set_aliases",{p_code:code,p_id:wid,p_aliases:al});
-      await rpc("noel_set_asin",{p_code:code,p_id:wid,p_asin:d.asin !== undefined ? d.asin : (g0.asin || "")});
-      await rpc("noel_set_mpn",{p_code:code,p_id:wid,p_mpn:d.mpn !== undefined ? d.mpn : (g0.mpn || "")});
-      delete wdraft[wid]; notice = "Surveillance enregistrée.";
-    }); return;
-  }
-  if(handleEdit(t)) return;
-  const id = +(t.dataset.del || t.dataset.delyes || t.dataset.top || t.dataset.refresh || t.dataset.research || t.dataset.researchyes || t.dataset.block || t.dataset.claim || t.dataset.unclaim || 0);
-  const g = gifts.find(x=>x.id===id);
-  if(t.dataset.block){ pendingBlock = {gid:id, name:t.dataset.name || "", host:t.dataset.host || ""}; render(); return; }
-  if(t.hasAttribute("data-blockno")){ pendingBlock = null; render(); return; }
-  if(t.hasAttribute("data-blockyes")){ const pb = pendingBlock; pendingBlock = null; if(pb && pb.name) run(()=>rpc("noel_block_merchant",{p_code:code,p_name:pb.name,p_host:pb.host})); else render(); return; }
-  if(t.dataset.del){ pendingDelete = id; pendingResearch = null; render(); return; }
-  if(t.hasAttribute("data-delno")){ pendingDelete = null; render(); return; }
-  if(t.dataset.delyes){ pendingDelete = null; orderHist = []; run(()=>rpc("noel_remove",{p_code:code,p_id:id})); return; }
-  if(t.dataset.top){ focusKey = t.dataset.key; toggleTop(id); return; }
-  if(t.dataset.refresh){ if(!g) return;
-    if(isFresh(g)){ notice = "« " + g.title + " » a été relu il y a moins de 10 minutes."; render(); return; }
-    notice = ""; refreshing.add(id); render();
-    run(async()=>{ try{ await callRefresh(id); } finally { refreshing.delete(id); } }); return; }
-  if(t.dataset.research){ pendingResearch = id; pendingDelete = null; render(); return; }
-  if(t.hasAttribute("data-researchno")){ pendingResearch = null; render(); return; }
-  if(t.dataset.researchyes){ if(!g) return; pendingResearch = null; refreshing.add(id); render();
-    run(async()=>{ try{ if(!(await researchOne(g))) throw new Error("Aucun marchand fiable trouvé pour « " + g.title + " »."); } finally { refreshing.delete(id); } }); return; }
-  if(t.dataset.claim){ if(me) claim(id); else askName(id); return; }
-  if(t.dataset.unclaim){ if(g) run(()=>rpc("noel_unclaim",{p_code:code, p_id:id, p_name:g.claimed_by})); return; }
-};
-$("list").addEventListener("click", onListClick);
-$("list").addEventListener("input", e=>{ if(e.target.id === "nameInput") nameDraft = e.target.value; });
-$("list").addEventListener("submit", async e=>{
-  if(!e.target.hasAttribute("data-nameform")) return;
-  e.preventDefault();
-  const n = nameDraft.trim().slice(0,40); if(!n) return;
-  try{ await load(); }catch(err){ $("appErr").textContent = err.message; return; }   // liste à jour avant de comparer
-  const known = knownName(n);
-  if(known && !(me && norm(known) === norm(me))){ confirmName = known; render(); return; }
-  setName(known || n);
-});
-$("sheet").addEventListener("click", onListClick);
-$("list").addEventListener("pointerdown", e=>{ const h = e.target.closest("[data-grab]"); if(h && !h.disabled) startDrag(e, h); });
-
-$("blockedList").addEventListener("click", e=>{
-  const b = e.target.closest("button[data-unblock]"); if(!b) return;
-  run(()=>rpc("noel_unblock_merchant",{p_code:code,p_key:b.dataset.unblock}));
-});
-
-document.addEventListener("error", e=>{
-  const i = e.target; if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.classList.contains("thumb")){ i.parentElement.innerHTML = PLACEHOLDER; }
-  else if(i && i.tagName==="IMG" && i.parentElement && i.parentElement.matches(".fimg,.photo,.rthumb")){ i.parentElement.classList.add("ph"); i.outerHTML = PLACEHOLDER; }
-}, true);
-
-/* ---------- Démarrage :
-   - Propriétaire : passe par /gestion.html (#gestion) ou garde son code propriétaire dans localStorage.
-   - Famille : ouvre le lien #c=<code_famille>. Le code est mémorisé à vie sur son appareil.
-   - Public : sans code, lecture seule pure (aucun état "pris" visible).
-   - Sécurité propriétaire : un appareil qui s'est connecté en propriétaire (is_owner) n'enregistre JAMAIS de code famille.
----------- */
-(function start(){
-  let c = "", gestion = false;
-  const isOwnerDevice = store.get("is_owner") === "1";
+  if(r === "installation"){ pre = {kind:"setup"}; render(); return; }
+  pre = null;
+  if(!token){ render(); return; }
+  if(r !== "famille") invite = null;
+  if(r === "ajouter") draft = {step:1};
+  else if(!r.startsWith("modifier/")) draft = null;
   try{
-    gestion = /[#&]gestion\b/.test(location.hash);
-    if(/[#&]quitter\b/.test(location.hash)){
-      store.del("c"); store.del("is_owner");
-      try{ sessionStorage.removeItem("c"); }catch(e){}
-      try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+    await load();
+    if(r.startsWith("modifier/")){
+      const g = list && list.gifts.find(x => x.id === +r.split("/")[1]);
+      if(!g) return go("");
+      draft = {step:2, id:g.id, title:g.title, size:g.size || "", color:g.color || "", note:g.note || "", price:priceText(g.price), url:g.url || "", readUrl:g.url || "", image:g.image || "", store:g.store || "", top:g.top, hint:""};
     }
-    const m = location.hash.match(/[#&]c=([^&]+)/);
-    if(m){
-      const parsed = decodeURIComponent(m[1]);
-      // Si cet appareil est marqué propriétaire et qu'on clique sur un lien sans mode gestion, on ne l'enregistre pas en famille
-      if(!isOwnerDevice || gestion){
-        c = parsed;
-        store.set("c", c);
-      }
-    }
-  }catch(e){}
-  if(!c) c = store.get("c") || store.sget("c");
-  if(!c && gestion){ $("login").hidden = false; return; }
-  code = c; $("app").hidden = false; showSkeleton();
-  load().then(()=>{
-    // Si un appareil propriétaire s'est retrouvé avec un code non-owner, on le retire
-    if(isOwnerDevice && role !== "owner"){
-      code = ""; store.del("c"); return load();
-    }
-  }).catch(err=>{
-    if(code && !err.bad) $("foot").hidden = false;
-    if(err.bad && code){
-      code = ""; store.del("c");
-      if(gestion){ toLogin("Ce code n'est plus valide. Saisis ton code propriétaire."); return; }
-      return load().catch(e2=>{ $("appErr").textContent = e2.message; });
-    }
-    if(err.bad) toLogin(err.message); else $("appErr").textContent = err.message;
-  });
-})();
+    render(); window.scrollTo(0,0);
+  }catch(e){
+    if(e.code === "denied") return go("");
+    fail(e);
+  }
+}
+// Exécute une action puis recharge l'écran
+async function run(fn){
+  if(busy) return;
+  busy = true; error = "";
+  try{ await fn(); confirming = ""; if(token && !pre) await load(); render(); }
+  catch(e){
+    if(e.code === "taken" || e.code === "shared"){ confirming = ""; await load().catch(()=>{}); }
+    fail(e);
+  }finally{ busy = false; }
+}
+async function signedIn(t){
+  token = t; store.set("session", t); store.del("c"); store.del("is_owner");
+  // Réservations faites sur cet appareil avant les comptes
+  for(const k of ["nom", "ftok"]){
+    const v = store.get(k);
+    if(v) try{ await api("noel_adopt", {p_old:v}); store.del(k); }catch(e){}
+  }
+  pre = null; home = null;
+  history.replaceState(null, "", location.pathname);
+  await show();
+}
 
-// Mise à jour discrète pour voir les choix des autres
+app.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f = e.target, kind = f.dataset.form, v = n => f.elements.namedItem(n).value.trim();
+  if(busy) return;
+  if(kind === "login") return run(async()=>{
+    store.set("login", v("login"));
+    try{
+      const d = await rpc("noel_login", {p_login:v("login"), p_pin:v("pin")});
+      if(d.reset){ pre = {kind:"activate", reset:true, name:d.name, login:d.login}; return; }
+      await signedIn(d.token);
+    }
+    catch(err){ if(err.code === "denied") err.message = "Identifiant ou code incorrect."; throw err; }
+  });
+  if(kind === "activate"){
+    if(v("pin") !== v("pin2")){ error = "Les deux codes sont différents."; render(); return; }
+    return run(async()=>{
+      const d = pre.reset ? await rpc("noel_reset_choose", {p_login:pre.login, p_pin:v("pin")}) : await rpc("noel_activate", {p_invite:pre.token, p_pin:v("pin")});
+      store.set("login", pre.login); await signedIn(d.token);
+    });
+  }
+  if(kind === "setup") return run(async()=>{
+    try{ const d = await rpc("noel_setup", {p_owner_code:f.elements.code.value, p_name:v("name"), p_login:v("login")}); location.hash = "inv=" + d.invite; }
+    catch(err){ if(err.code === "denied") err.message = "Code incorrect."; throw err; }
+  });
+  if(kind === "start"){
+    const q = v("q"); if(!q) return;
+    busy = true; const b = f.querySelector("button"); b.disabled = true; b.textContent = "Je regarde le lien…";
+    try{ await startGift(q); }finally{ busy = false; }
+    if(route() === "ajouter"){ lastHtml = ""; render(); }
+    return;
+  }
+  if(kind === "code"){
+    if(v("pin") !== v("pin2")){ error = "Les deux nouveaux codes sont différents."; render(); return; }
+    return run(async()=>{ await api("noel_change_pin", {p_old:v("old"), p_new:v("pin")}); location.hash = ""; });
+  }
+  if(kind === "share"){
+    const amount = amountOf(v("amount"));
+    if(!(amount >= 1 && amount < 100000)){ error = "Écris un montant en chiffres, par exemple 20."; render(); return; }
+    return run(()=>api("noel_share", {p_gift:+f.dataset.id, p_amount:amount}));
+  }
+  if(kind === "gift"){
+    const current = draft;
+    if(current.saving) return;
+    current.saving = true;                       // un seul enregistrement, même touché deux fois
+    await current.reading;                       // lien encore en cours de lecture
+    current.saving = false;
+    if(draft !== current || !giftForm()) return;
+    readForm();
+    const d = draft, price = amountOf(d.price), url = cleanLink(d.url), image = d.image.trim();
+    if(price !== null && !(price > 0 && price < 100000)){ error = "Écris le prix avec des chiffres, par exemple 25."; render(); return; }
+    if(image && !imgUrl(image)){ error = "L'adresse de la photo doit commencer par https://"; render(); return; }
+    return run(async()=>{
+      await api("noel_gift_save", {p_id:d.id, p_title:d.title.trim(), p_url:url, p_size:d.size.trim(), p_color:d.color.trim(), p_note:d.note.trim(),
+        p_image:image, p_price:price, p_store:url ? d.store : "", p_top:d.top});
+      draft = null; location.hash = "liste/" + home.me.id;
+    });
+  }
+  if(kind === "member") return run(async()=>{
+    const name = v("name"), groups = [...f.querySelectorAll('input[name="g"]:checked')].map(i => +i.value);
+    const d = await api("noel_admin_member_add", {p_name:name, p_login:v("login") || name, p_groups:groups});
+    f.reset();
+    invite = {name, login:d.login, token:d.invite};
+    window.scrollTo(0,0);
+  });
+  if(kind === "group") return run(async()=>{ await api("noel_admin_group_add", {p_name:v("name")}); f.reset(); });
+});
+
+app.addEventListener("click", async e=>{
+  const t = e.target.closest("button"); if(!t || t.disabled) return;
+  const d = t.dataset;
+  if("go" in d) return go(d.go);
+  if("retry" in d) return show();
+  if("size" in d){ const h = document.documentElement; h.dataset.size = h.dataset.size === "big" ? "" : "big"; store.set("size", h.dataset.size); return render(); }
+  if("themeToggle" in d){ const h = document.documentElement; h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light"; store.set("theme", h.dataset.theme); return render(); }
+  if("logout" in d){ try{ await api("noel_logout"); }catch(err){} history.replaceState(null, "", location.pathname); return toLogin(); }
+  if("confirm" in d){ readForm(); confirming = d.confirm; error = ""; return render(); }
+  if("tip" in d){ store.set("tip", "1"); return render(); }
+  if("nophoto" in d){ readForm(); draft.image = ""; opened.delete("photo"); return render(); }
+  if("reset" in d) return run(()=>api("noel_admin_reset", {p_member:+d.reset}));
+  if("take" in d) return run(()=>api("noel_take", {p_gift:+d.take}));
+  if("release" in d) return run(()=>api("noel_release", {p_gift:+d.release}));
+  if("delyes" in d) return run(async()=>{ await api("noel_gift_delete", {p_id:+d.delyes}); draft = null; location.hash = "liste/" + home.me.id; });
+  if("reinvite" in d) return run(async()=>{
+    const m = admin.members.find(x => x.id === +d.reinvite);
+    const r = await api("noel_admin_invite", {p_member:m.id});
+    invite = {name:m.name, login:m.login, token:r.invite}; window.scrollTo(0,0);
+  });
+  if("mdel" in d) return run(async()=>{ await api("noel_admin_member_remove", {p_member:+d.mdel}); invite = null; });
+  if("gdel" in d) return run(()=>api("noel_admin_group_remove", {p_group:+d.gdel}));
+  if("share" in d){
+    const text = inviteText(invite);
+    if(navigator.share){ try{ await navigator.share({text}); }catch(err){} return; }
+    try{ await navigator.clipboard.writeText(text); t.textContent = "Copié ✓"; }catch(err){ document.getElementById("inviteText").select(); }
+  }
+});
+
+app.addEventListener("toggle", e=>{
+  const k = e.target.dataset && e.target.dataset.k; if(!k || !e.target.isConnected) return;
+  e.target.open ? opened.add(k) : opened.delete(k);
+}, true);
+app.addEventListener("change", e=>{
+  const i = e.target;
+  if(i.closest('form[data-form="gift"]')){
+    if(i.name === "url") linkChanged();
+    if(i.name === "image"){ readForm(); showPhoto(); }
+    return;
+  }
+  if(i.dataset.bought) return run(()=>api("noel_bought", {p_gift:+i.dataset.bought, p_bought:i.checked}));
+  if(i.dataset.mgroup){
+    const id = +i.dataset.mgroup, groups = [...app.querySelectorAll(`input[data-mgroup="${id}"]:checked`)].map(x => +x.value);
+    return run(()=>api("noel_admin_member_groups", {p_member:id, p_groups:groups}));
+  }
+});
+// Photo disparue du site du magasin : on la retire de l'écran
+app.addEventListener("error", e=>{ if(e.target.tagName === "IMG" && e.target.parentElement) e.target.parentElement.innerHTML = GIFT; }, true);
+
+// Mise à jour discrète du menu et des listes (jamais pendant une saisie)
 function tick(){
-  // pas de mise à jour pendant une saisie : elle l'effacerait
-  if(editing || dragging || pendingOrder || asking !== null) return;
-  const a = document.activeElement;
-  if(a && a.tagName === "INPUT" && a.closest && a.closest("#list, #sheet")) return;
-  if(!busy && !document.hidden && !$("app").hidden) load().catch(e=>{ if(e.bad && code) toLogin(e.message); });
+  const r = route();
+  if(!token || pre || busy || confirming || document.hidden || !(r === "" || r.startsWith("liste/"))) return;
+  load().then(()=>{ if(confirming || r !== route()) return; error = ""; render(); }).catch(e=>{ if(e.code === "session") fail(e); });
 }
 setInterval(tick, 20000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
+window.addEventListener("hashchange", show);
+
+(function start(){
+  if(store.get("theme") === "light") document.documentElement.dataset.theme = "light";
+  if(store.get("size") === "big") document.documentElement.dataset.size = "big";
+  // Ancien lien famille (#c=…) ou ancienne page de gestion : ils ne donnent plus accès à rien
+  if(/^(c=|gestion|quitter)/.test(route())){
+    history.replaceState(null, "", location.pathname);
+    if(!token){ paint(loginView("Le site a changé : chacun a maintenant son identifiant et son code. Demande ton lien d'invitation.")); return; }
+  }
+  show();
+})();
 </script>
 </body>
 </html>

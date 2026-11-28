@@ -1,9 +1,8 @@
-// Serveur unique : page (site/), fonctions noel-preview / noel-refresh et relais vers PostgREST.
-// Public (port PORT, 8000) : GET fichiers de site/, POST /rest/v1/rpc/noel_*, POST /functions/v1/noel-{preview,refresh}.
+// Serveur unique : page (site/), fonction noel-link et relais vers PostgREST.
+// Public (port PORT, 8000) : GET fichiers de site/, POST /rest/v1/rpc/noel_*, POST /functions/v1/noel-link.
 // Interne (127.0.0.1:INTERNAL_PORT, 8001, non publié) : relais complet /rest/v1/* utilisé par les fonctions (SUPABASE_URL).
-import { handler as preview } from "../supabase/functions/noel-preview/index.ts";
-import { handler as refresh } from "../supabase/functions/noel-refresh/index.ts";
-import { startJobs } from "./jobs.ts";
+import { handler as link } from "../supabase/functions/noel-link/index.ts";
+// Recherche, relecture et radar des prix : retirés le 29 novembre. Leur code reste dans supabase/functions/ et server/jobs.ts.
 
 const PORT = Number(Deno.env.get("PORT") ?? 8000);
 const INTERNAL_PORT = Number(Deno.env.get("INTERNAL_PORT") ?? 8001);
@@ -127,8 +126,9 @@ Deno.serve({ port: PORT }, async (req, info) => {
     if (req.method === "POST" && /^\/rest\/v1\/rpc\/noel_(?!job_lease$|radar_purge$|serp_bump$)[a-z_]+$/.test(p) && !u.search) return relay(req, info, true);
     return text("Interdit", 403);
   }
-  if (p === "/functions/v1/noel-preview") return preview(req);
-  if (p === "/functions/v1/noel-refresh") return refresh(req);
+  if (p === "/functions/v1/noel-link") return link(req);
+  // La tâche planifiée Coolify « price-refresh » appelle encore cette adresse : on répond sans rien faire.
+  if (p === "/functions/v1/noel-refresh") return text("désactivé", 200);
   if (p.startsWith("/functions/")) return text("Introuvable", 404);
 
   if (req.method !== "GET" && req.method !== "HEAD") return text("Méthode non autorisée", 405);
@@ -142,6 +142,3 @@ Deno.serve({ port: INTERNAL_PORT, hostname: "127.0.0.1" }, (req, info) => {
   if (!new URL(req.url).pathname.startsWith("/rest/v1/")) return text("Introuvable", 404);
   return relay(req, info, false);
 });
-
-// --- Tâches périodiques du radar (production seulement : JOBS_ENABLED=1) ---------------------------------
-startJobs();

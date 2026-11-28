@@ -1,5 +1,27 @@
 # Liste de Noël famille : consignes pour l'IA
 
+## ÉTAT ACTUEL (29 novembre 2026) : comptes, une liste par personne. REMPLACE tout ce qui suit et le contredit
+Demande de Dorian : TRÈS simple, pour créer sa liste comme pour choisir sur celles des autres. Les sections plus bas (codes famille / propriétaire,
+vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES : leur code est gardé en stock mais plus rien n'est affiché ni lancé.
+- Compte = identifiant créé par l'administrateur (Dorian) + code à 4 chiffres choisi à la première ouverture d'un lien d'invitation à usage unique (`#inv=`).
+  Session par jeton (`localStorage` `session`). Blocage après 5 codes faux (15 min, puis 1 h, puis 24 h). Chacun peut changer son code (`#code`).
+  Code oublié : l'administrateur réinitialise (`noel_admin_reset`), la personne a 48 h pour entrer son identifiant, code vide, et en choisir un nouveau
+  (pendant ce délai, quiconque connaît l'identifiant pourrait le faire à sa place). L'administrateur oublie le sien : `#installation` avec l'ancien code propriétaire.
+- Plusieurs groupes (gérés par l'administrateur seul) : on voit les listes des personnes qui partagent un groupe. Chacun une seule liste, la sienne.
+- Sur la liste d'un autre : « Je l'offre » ou « Participer à plusieurs » avec un montant (`noel_shares`, exclusif avec la prise seule), « Pris par X »
+  (nom visible même d'un autre groupe), « Ce que j'offre » sur le menu, avec une alerte si le cadeau a été modifié (`changed_at`) ou retiré.
+- Précisions par cadeau seulement : taille, couleur, autre info. Photo lue sur le lien, ou adresse d'image collée. PAS d'envoi de photo depuis le téléphone,
+  pas de profil « tailles et goûts », pas d'idée cachée (refusés par Dorian).
+- Règle 1 inchangée : sur SA liste, aucune donnée de réservation ni de participation (ni champ, ni compteur, ni ordre, ni réponse différente). Retirer un cadeau le garde en base (`removed_at`) :
+  celui qui l'avait pris voit « a retiré ce cadeau ». Limite assumée : l'administrateur peut entrer dans un compte réinitialisé ou en créer un faux.
+- Aucune recherche ni actualisation de prix : prix indicatif saisi ou lu une seule fois sur la page du lien collé (`supabase/functions/noel-link`, sans SerpAPI).
+  `server/main.ts` ne lance plus `startJobs` et ne sert plus `noel-preview` ; `noel-refresh` répond « désactivé » (tâche Coolify `price-refresh` à supprimer par Dorian).
+- Base : migration `supabase/migrations/2026-11-29-noel-comptes.sql` (à la fin de `schema.sql`). Toutes les fonctions à code sont fermées à l'API publique.
+  Première ouverture après migration : `https://<site>/#installation` avec l'ancien code propriétaire (une seule fois).
+- NON FAIT : migration jamais exécutée sur un vrai PostgreSQL (dev d'abord, après `pg_dump -Fc`) ; extension de navigateur pas adaptée (elle ne marchera plus) ;
+  ancienne page gardée dans `archive/index-v1-prix.html`.
+- Si une nouvelle table est ajoutée : RLS, aucune policy, `revoke all` ; nouvelle fonction : `revoke` de `public` puis `grant` explicite si publique.
+
 Site d'une seule page, servi par un petit serveur Deno avec une base PostgreSQL, le tout sur le VPS de Dorian (`https://noel.dorianlab.fr`, Coolify). Supabase n'est plus utilisé en production depuis la bascule (novembre 2026).
 Depuis le 17 novembre, la réservation est RÉACTIVÉE en version ultra-simplifiée (1 clic, anonyme, sans prénom) :
 - Famille : ouvre le lien `#c=<code_famille>` qui est mémorisé à vie sur son appareil (`localStorage`). Chaque appareil génère un jeton aléatoire unique (`ftok`). Un bouton « Je le prends » réserve le cadeau en 1 clic via `noel_claim(code, id, ftok)` sans demander de prénom. Sur son propre appareil, un bouton « Annuler » (`noel_unclaim`) permet de se rétracter. Pour les autres membres de la famille, le cadeau est marqué « Déjà pris ».
