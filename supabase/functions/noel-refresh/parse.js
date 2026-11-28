@@ -69,6 +69,15 @@ function firstImage(v) {
   return null;
 }
 
+// Groupe de déclinaisons (Decathlon…) : la fiche « ProductGroup » n'a pas de photo, ses « Product » en ont.
+// D'abord la déclinaison dont les données citent la référence qui termine le lien, sinon la première qui a une photo.
+function variantImage(products, finalUrl) {
+  const withImage = products.filter(p => firstImage(p.image));
+  const ref = (String(finalUrl).split(/[?#]/)[0].match(/\d{5,}(?=\/?$)/) || [])[0];
+  const hit = (ref && withImage.find(p => JSON.stringify(p).includes(ref))) || withImage[0];
+  return hit ? firstImage(hit.image) : null;
+}
+
 // Pages sans og:image (Amazon…) : <link rel="image_src">, sinon la photo principale d'Amazon (id="landingImage").
 function pageImage(html) {
   const attr = (tag, name) => decode((tag.match(new RegExp("\\s" + name + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')", "i")) || []).slice(1).find(Boolean) || "");
@@ -89,7 +98,7 @@ export function extract(html, finalUrl) {
   const prod = ld.products[0] || {};
   let title = meta["og:title"] || meta["twitter:title"] || prod.name || "";
   if (!title) { const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i); if (t) title = decode(t[1]); }
-  let image = meta["og:image:secure_url"] || meta["og:image"] || meta["twitter:image"] || firstImage(prod.image) || pageImage(html) || "";
+  let image = meta["og:image:secure_url"] || meta["og:image"] || meta["twitter:image"] || firstImage(prod.image) || variantImage(ld.products, finalUrl) || pageImage(html) || "";
   try { image = image ? new URL(decode(image), finalUrl).toString() : ""; } catch (e) { image = ""; }
   if (!image.startsWith("https://")) image = "";
 

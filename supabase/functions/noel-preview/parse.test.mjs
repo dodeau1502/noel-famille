@@ -48,3 +48,15 @@ assert.equal(r.prices > 1, true); assert.deepEqual(r.variants, [{ price: 40, sto
 r = extract(shop([{ "@type": "Offer", price: "40", priceCurrency: "EUR" }, { "@type": "Offer", price: "55", priceCurrency: "EUR" }]), "https://g.fr/products/drap?variant=9");
 assert.equal(r.prices > 1, true);
 console.log("variants OK");
+
+// Groupe de déclinaisons : la photo est sur la déclinaison du lien (cas Decathlon, 28 novembre)
+{
+  const ld = (o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`;
+  const page = ld({ "@type": "ProductGroup", name: "Veste" })
+    + ld({ "@type": "Product", sku: "1111111", image: "https://img.test/vert.jpg" })
+    + ld({ "@type": "Product", sku: "8667206", image: "https://img.test/marron.jpg" });
+  const img = (u) => extract(page, u).image;
+  if (img("https://www.decathlon.fr/p/veste/335543/c115c387m8667206") !== "https://img.test/marron.jpg") throw new Error("déclinaison du lien");
+  if (img("https://www.decathlon.fr/p/veste") !== "https://img.test/vert.jpg") throw new Error("première déclinaison");
+  console.log("photo de déclinaison OK");
+}
