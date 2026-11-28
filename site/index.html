@@ -1507,7 +1507,7 @@ $("favList").addEventListener("click", e=>{
 $("favMode").addEventListener("change", ()=> saveDisplay(display.featured, $("favMode").value === "featured" ? "featured" : "price"));
 /* ---------- Vue famille : une liste numérotée, « Mes préférés » puis « Autres idées », dans l'ordre choisi par le propriétaire.
    Volontairement minimale : photo, nom, prix, qui l'a pris. Aucun état de prix (vérifié, ancien…). ---------- */
-let me = store.get("nom"), asking = null, nameDraft = "";            // asking : id du cadeau (ou "nom") dont la saisie du prénom est ouverte
+let me = store.get("nom"), asking = null, nameDraft = "", confirmName = "";            // asking : id du cadeau (ou "nom") dont la saisie du prénom est ouverte
 const anon = n => /^[0-9a-f]{16}$/.test(n || "");                    // anciennes réservations sans prénom (jeton de l'appareil)
 const isMine = g => !!g.claimed_by && (g.claimed_by === ftok || (!!me && same(g.claimed_by, me)));
 // Un seul magasin et un seul prix. Les ruptures relevées sont ignorées (souvent fausses) : on prend le moins cher des prix
@@ -1519,7 +1519,12 @@ function simplePrice(g){
   if(o) return {price: totalOf(o), store: o.store, url: o.url};
   return {price: g.price != null && !isMarket(g.store, g.url) ? g.price : null, store: g.store || "", url: safeUrl(g.url)};
 }
-const nameForm = () => `<form class="nameform" data-nameform>
+// Profil = le prénom. S'il a déjà des cadeaux (pris sur un autre appareil), on demande confirmation avant de le reprendre.
+const knownName = n => gifts.map(g => g.claimed_by).find(c => c && !anon(c) && norm(c.trim()) === norm(n)) || "";
+const nameForm = () => confirmName ? `<div class="nameform" role="alert">
+  <p><b>« ${esc(confirmName)} » existe déjà.</b> C'est toi ?</p>
+  <div class="confirm"><button type="button" class="btn" data-yesme>Oui, c'est moi</button><button type="button" class="btn ghost" data-notme>Non</button></div>
+  <p class="fnote">Sinon, choisis un autre prénom (par exemple avec l'initiale du nom).</p></div>` : `<form class="nameform" data-nameform>
   <label>Ton prénom<input type="text" id="nameInput" maxlength="40" autocomplete="given-name" value="${esc(nameDraft)}" required></label>
   <div class="confirm"><button type="submit" class="btn">Valider</button><button type="button" class="btn ghost" data-nameno>Annuler</button></div></form>`;
 function famActions(g){
@@ -1542,7 +1547,7 @@ function mineHtml(){
   const mine = ordered().filter(isMine);
   const list = mine.length ? `<strong>Tu as pris :</strong><ul>${mine.map(g => { const p = simplePrice(g).price; return `<li>${esc(g.title)}${p != null ? " · " + eur(p) : ""}</li>`; }).join("")}</ul>`
     : `<strong>Tu n'as encore rien pris.</strong>`;
-  const who = asking === "nom" ? nameForm() : me ? `<button type="button" class="linkbtn" data-rename>Tu es ${esc(me)} · changer de prénom</button>` : "";
+  const who = asking === "nom" ? nameForm() : `<button type="button" class="linkbtn" data-rename>${me ? "Tu es " + esc(me) + " · changer de prénom" : "Déjà venu ? Mettre mon prénom"}</button>`;
   return `<li class="mine-box">${list}${who}</li>`;
 }
 function famHtml(){
@@ -1552,7 +1557,13 @@ function famHtml(){
   const hint = role === "public" ? `<li class="fhint">Pour prendre un cadeau, ouvre le lien d'invitation que Dorian t'a envoyé.</li>` : "";
   return mineHtml() + (pref.length ? sec("★ Mes préférés", pref, "pref") + sec("Autres idées", rest, "") : sec("Mes idées", rest, "")) + hint;
 }
-function askName(what){ asking = what; nameDraft = what === "nom" ? me : ""; render(); const i = $("nameInput"); if(i) i.focus(); }
+function askName(what){ asking = what; confirmName = ""; nameDraft = what === "nom" ? me : ""; render(); const i = $("nameInput"); if(i) i.focus(); }
+// Prénom validé : mémorisé sur l'appareil, puis le cadeau demandé est pris s'il est toujours libre
+function setName(n){
+  const what = asking; asking = null; confirmName = ""; me = n; store.set("nom", n);
+  const g = gifts.find(x => x.id === what);
+  if(g && !g.claimed_by) claim(what); else render();
+}
 const claim = id => run(()=>rpc("noel_claim",{p_code:code, p_id:id, p_name:me}));
 
 /* ---------- Fenêtre : actions d'un cadeau (propriétaire sur téléphone) ou aperçu « comme la famille » ---------- */
@@ -1589,7 +1600,9 @@ wide.addEventListener("change", ()=>{ if(role) render(); });
 const onListClick = e=>{
   const t = e.target.closest("button"); if(!t || t.disabled) return;
   if(t.hasAttribute("data-close")){ closeSheet(); return; }
-  if(t.hasAttribute("data-nameno")){ asking = null; render(); return; }
+  if(t.hasAttribute("data-nameno")){ asking = null; confirmName = ""; render(); return; }
+  if(t.hasAttribute("data-yesme")){ setName(confirmName); return; }
+  if(t.hasAttribute("data-notme")){ confirmName = ""; nameDraft = ""; render(); const i = $("nameInput"); if(i) i.focus(); return; }
   if(t.hasAttribute("data-rename")){ askName("nom"); return; }
   if(t.dataset.preview){ openSheet(+t.dataset.preview, true); return; }
   if(t.dataset.sel){
@@ -1637,12 +1650,14 @@ const onListClick = e=>{
 };
 $("list").addEventListener("click", onListClick);
 $("list").addEventListener("input", e=>{ if(e.target.id === "nameInput") nameDraft = e.target.value; });
-$("list").addEventListener("submit", e=>{
+$("list").addEventListener("submit", async e=>{
   if(!e.target.hasAttribute("data-nameform")) return;
   e.preventDefault();
   const n = nameDraft.trim().slice(0,40); if(!n) return;
-  const what = asking; asking = null; me = n; store.set("nom", n);
-  if(typeof what === "number") claim(what); else render();
+  try{ await load(); }catch(err){ $("appErr").textContent = err.message; return; }   // liste à jour avant de comparer
+  const known = knownName(n);
+  if(known && !(me && norm(known) === norm(me))){ confirmName = known; render(); return; }
+  setName(known || n);
 });
 $("sheet").addEventListener("click", onListClick);
 $("list").addEventListener("pointerdown", e=>{ const h = e.target.closest("[data-grab]"); if(h && !h.disabled) startDrag(e, h); });
