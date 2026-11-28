@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#0b1612">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Noël">
@@ -17,22 +17,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d1117; --surface:#161c26; --ink:#f2f4f8; --muted:#9aa3b2; --line:#2a3342;
-    --main:#b8a8ff; --main-ink:#17102f; --soft:#251f3f; --err:#ff8c9b; color-scheme:dark;
+    /* Noël : sapin (action principale), rouge et or en décor ; le rouge --err reste réservé aux erreurs et suppressions */
+    --bg:#0b1612; --surface:#13241d; --ink:#f6f3ea; --muted:#a4b6ab; --line:#2a4537;
+    --main:#74d6a0; --main-ink:#06210f; --soft:#1a372a; --err:#ff8c9b; --gold:#f2c765; --red:#c93443; --snow:#ffffff1c; color-scheme:dark;
     --f-display:"Bebas Neue","Oswald","Impact","Arial Narrow",sans-serif;
     --f-body:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;
   }
   :root[data-theme="light"]{
-    --bg:#eef1f5; --surface:#fff; --ink:#111; --muted:#565d69; --line:#dfe3ea;
-    --main:#4b3a8f; --main-ink:#fff; --soft:#ece9f7; --err:#a31d2f; color-scheme:light;
+    --bg:#f8f4ec; --surface:#fff; --ink:#15231b; --muted:#56645b; --line:#e7ddcb;
+    --main:#1d6b45; --main-ink:#fff; --soft:#e6f0e7; --err:#a31d2f; --gold:#8a5d00; --red:#b4232f; --snow:#1d6b4517; color-scheme:light;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
   html[data-size="big"]{font-size:118%}
   body{margin:0; background:var(--bg); color:var(--ink); font:1.0625rem/1.5 var(--f-body);
-    padding:max(16px,env(safe-area-inset-top,0px)) 16px max(48px,env(safe-area-inset-bottom,0px))}
+    padding:max(16px,env(safe-area-inset-top,0px)) 16px max(48px,env(safe-area-inset-bottom,0px));
+    background-image:radial-gradient(circle at 20px 30px,var(--snow) 2.5px,transparent 3px),radial-gradient(circle at 110px 100px,var(--snow) 1.5px,transparent 2px),radial-gradient(circle at 70px 170px,var(--snow) 2px,transparent 2.5px);
+    background-size:170px 210px}
   main{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
   h1,h2,h3,p{margin:0}
+  h2::before{content:"❄ "; color:var(--gold)}
+  /* Guirlande en haut de chaque écran (immobile) */
+  main::before{content:""; flex:none; height:24px; margin-bottom:-6px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='24'%3E%3Cpath d='M0 3Q15 11 30 5T60 5T90 5T120 3' fill='none' stroke='%235f8f72' stroke-width='1.5'/%3E%3Cg fill='%238a8f8c'%3E%3Cpath d='M13 7h4v4h-4zM43 7h4v4h-4zM73 7h4v4h-4zM103 7h4v4h-4z'/%3E%3C/g%3E%3Cellipse cx='15' cy='16' rx='4' ry='6' fill='%23e0454f'/%3E%3Cellipse cx='45' cy='16' rx='4' ry='6' fill='%23eeb52f'/%3E%3Cellipse cx='75' cy='16' rx='4' ry='6' fill='%2336a86b'/%3E%3Cellipse cx='105' cy='16' rx='4' ry='6' fill='%234d9be0'/%3E%3C/svg%3E") repeat-x center top}
   h1{font:400 clamp(2rem,9vw,2.6rem)/1.05 var(--f-display); text-wrap:balance; overflow-wrap:anywhere}
   h2{font:400 1.45rem/1.2 var(--f-display)}
   h3{font:400 1.35rem/1.2 var(--f-display); overflow-wrap:anywhere}
@@ -57,7 +63,8 @@
   .row > .btn.small{flex:0 0 auto}
   .link{background:none; border:0; padding:10px 4px; min-height:44px; color:var(--main); font-weight:600; text-decoration:underline; cursor:pointer}
   .back{align-self:flex-start}
-  .days{align-self:flex-start; background:var(--soft); color:var(--main); border-radius:999px; padding:5px 14px; font-weight:700; font-size:.92rem}
+  .days::before{content:"🎄 "}
+  .days{align-self:flex-start; background:var(--red); color:#fff; border-radius:999px; padding:5px 14px; font-weight:700; font-size:.92rem}
 
   .people{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px}
   .person{display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; height:100%; min-height:128px; padding:14px 8px; background:var(--surface); border:1px solid var(--line); border-radius:18px; cursor:pointer}
@@ -86,14 +93,17 @@
   .picks button[aria-pressed="true"]{border-color:var(--main); box-shadow:0 0 0 2px var(--main)}
   .picks img{width:100%; height:100%; object-fit:contain; display:block}
   .gift .txt{display:flex; flex-direction:column; gap:6px; padding:14px 16px}
-  .gift .price{font:400 1.6rem/1.2 var(--f-display)}
+  .gift .price{font:400 1.6rem/1.2 var(--f-display); color:var(--gold)}
   .gift .price small{font:400 .95rem var(--f-body); color:var(--muted); margin-left:8px}
   .gift .see{color:var(--main); font-weight:600; font-size:.95rem}
   .gift .acts{display:flex; flex-direction:column; gap:8px; padding:0 16px 16px; margin-top:auto}
   .gift.taken .img,.gift.taken .txt{opacity:.5}
+  /* Pris par moi : cadre et bandeau verts pleins, bien distincts du gris des autres */
+  .gift.byme{border:3px solid var(--main); background:var(--soft)}
+  .gift .ribbon{background:var(--main); color:var(--main-ink); font-weight:800; text-align:center; padding:9px 12px}
   .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none}
   .chips li{background:var(--soft); border-radius:10px; padding:4px 10px; font-size:.95rem; overflow-wrap:anywhere}
-  .star{color:var(--main); font-weight:700; font-size:.9rem}
+  .star{color:var(--gold); font-weight:700; font-size:.9rem}
   .state{font-weight:700; background:var(--soft); border-radius:12px; padding:12px 14px; text-align:center}
   [data-progress]:empty{display:none}
   .prog{background:var(--soft); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:10px}
@@ -129,7 +139,9 @@
   .offer:first-of-type{border-top:0; padding-top:0}
   /* Barre du bas : toujours les mêmes places */
   main:has(.tabs){padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
-  .tabs{position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; justify-content:center; background:var(--surface); border-top:1px solid var(--line); padding:6px 4px max(6px,env(safe-area-inset-bottom,0px))}
+  .tabs{position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; justify-content:center; background:var(--surface); padding:9px 4px max(6px,env(safe-area-inset-bottom,0px))}
+  /* Liseré sucre d'orge */
+  .tabs::before{content:""; position:absolute; left:0; right:0; top:0; height:3px; background:repeating-linear-gradient(-45deg,var(--red) 0 8px,#f6f3ea 8px 16px)}
   .tabs button{position:relative; flex:1 1 0; max-width:128px; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:2px; background:none; border:0; border-radius:12px; color:var(--muted); font-size:.74rem; font-weight:700; cursor:pointer; white-space:nowrap}
   .tabs button[aria-current]{color:var(--main); background:var(--soft)}
   .tabs svg{width:26px; height:26px}
@@ -141,7 +153,7 @@
   .toast:empty{display:none}
   #app.busy button, #app.busy label{cursor:progress}
   #app.busy .btn{opacity:.6}
-  .sum{background:var(--soft); border-color:var(--main)}
+  .sum{background:var(--soft); border-color:var(--gold)}
   .sum b{font:400 2rem/1.1 var(--f-display)}
   .offer.done .line{opacity:.6}
   /* Sur téléphone : photo à gauche, pour voir plusieurs cadeaux d'un coup */
@@ -155,6 +167,18 @@
   }
   textarea{width:100%; min-height:120px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:inherit; font:inherit; font-size:.95rem}
 .steps{padding-left:1.4em;margin:0 0 14px}.mview{margin-top:14px;padding-top:12px;border-top:1px solid var(--line, #2a3342)}.peers{padding-left:1.6em}.steps li{margin:8px 0}
+
+  /* Sapins et cadeaux, discrets : en bas de page sur petit écran, de chaque côté quand l'écran est large */
+  :root{--sapin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 150'%3E%3Cpath d='M54 116h12v20H54z' fill='%238a5a35'/%3E%3Cpath d='M60 14L88 56H32z' fill='%233f9468'/%3E%3Cpath d='M60 36L98 90H22z' fill='%2334825b'/%3E%3Cpath d='M60 62L108 122H12z' fill='%232a704e'/%3E%3Cpath d='M60 2l3.4 7 7.6 1-5.5 5.4 1.4 7.6-6.9-3.7-6.9 3.7 1.4-7.6-5.5-5.4 7.6-1z' fill='%23eeb52f'/%3E%3Cg fill='%23d9505a'%3E%3Ccircle cx='50' cy='50' r='4'/%3E%3Ccircle cx='76' cy='82' r='4'/%3E%3Ccircle cx='34' cy='110' r='4'/%3E%3C/g%3E%3Cg fill='%23eeb52f'%3E%3Ccircle cx='68' cy='47' r='3.5'/%3E%3Ccircle cx='44' cy='80' r='3.5'/%3E%3Ccircle cx='76' cy='111' r='3.5'/%3E%3C/g%3E%3Crect x='8' y='126' width='30' height='22' rx='2' fill='%23c0434d'/%3E%3Cpath d='M21.0 126h4v22h-4z' fill='%23f2d27a'/%3E%3Cpath d='M23.0 126q-9-9-7-1zM23.0 126q9-9 7-1z' fill='%23f2d27a' stroke='%23f2d27a' stroke-width='1.5' stroke-linejoin='round'/%3E%3Crect x='40' y='134' width='20' height='14' rx='2' fill='%23d9a62e'/%3E%3Cpath d='M48.0 134h4v14h-4z' fill='%23fff4d6'/%3E%3Cpath d='M50.0 134q-9-9-7-1zM50.0 134q9-9 7-1z' fill='%23fff4d6' stroke='%23fff4d6' stroke-width='1.5' stroke-linejoin='round'/%3E%3Crect x='82' y='129' width='26' height='19' rx='2' fill='%234a84b8'/%3E%3Cpath d='M93.0 129h4v19h-4z' fill='%23f6f3ea'/%3E%3Cpath d='M95.0 129q-9-9-7-1zM95.0 129q9-9 7-1z' fill='%23f6f3ea' stroke='%23f6f3ea' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E"); --sapin2:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 150'%3E%3Cpath d='M54 116h12v20H54z' fill='%238a5a35'/%3E%3Cpath d='M60 14L88 56H32z' fill='%233f9468'/%3E%3Cpath d='M60 36L98 90H22z' fill='%2334825b'/%3E%3Cpath d='M60 62L108 122H12z' fill='%232a704e'/%3E%3Cpath d='M60 2l3.4 7 7.6 1-5.5 5.4 1.4 7.6-6.9-3.7-6.9 3.7 1.4-7.6-5.5-5.4 7.6-1z' fill='%23eeb52f'/%3E%3Cg fill='%23d9505a'%3E%3Ccircle cx='50' cy='50' r='4'/%3E%3Ccircle cx='76' cy='82' r='4'/%3E%3Ccircle cx='34' cy='110' r='4'/%3E%3C/g%3E%3Cg fill='%23eeb52f'%3E%3Ccircle cx='68' cy='47' r='3.5'/%3E%3Ccircle cx='44' cy='80' r='3.5'/%3E%3Ccircle cx='76' cy='111' r='3.5'/%3E%3C/g%3E%3Crect x='18' y='132' width='22' height='16' rx='2' fill='%234a84b8'/%3E%3Cpath d='M27.0 132h4v16h-4z' fill='%23f6f3ea'/%3E%3Cpath d='M29.0 132q-9-9-7-1zM29.0 132q9-9 7-1z' fill='%23f6f3ea' stroke='%23f6f3ea' stroke-width='1.5' stroke-linejoin='round'/%3E%3Crect x='70' y='124' width='28' height='24' rx='2' fill='%23d9a62e'/%3E%3Cpath d='M82.0 124h4v24h-4z' fill='%23c0434d'/%3E%3Cpath d='M84.0 124q-9-9-7-1zM84.0 124q9-9 7-1z' fill='%23c0434d' stroke='%23c0434d' stroke-width='1.5' stroke-linejoin='round'/%3E%3Crect x='100' y='134' width='22' height='14' rx='2' fill='%23c0434d'/%3E%3Cpath d='M109.0 134h4v14h-4z' fill='%23f2d27a'/%3E%3Cpath d='M111.0 134q-9-9-7-1zM111.0 134q9-9 7-1z' fill='%23f2d27a' stroke='%23f2d27a' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  main{min-height:calc(100vh - 64px); min-height:calc(100dvh - 64px)}
+  main::after{content:""; flex:none; height:96px; margin-top:auto; opacity:.7; pointer-events:none;
+    background:var(--sapin) left bottom/auto 96px no-repeat, var(--sapin2) right bottom/auto 72px no-repeat}
+  @media (min-width:1060px){
+    main::after{content:none}
+    body::before,body::after{content:""; position:fixed; bottom:84px; width:min(220px,calc((100vw - 880px)/2 - 16px)); aspect-ratio:130/150; opacity:.75; pointer-events:none; background:var(--sapin) center bottom/contain no-repeat}
+    body::before{left:max(8px,calc((100vw - 880px)/4 - 110px))}
+    body::after{right:max(8px,calc((100vw - 880px)/4 - 110px)); background-image:var(--sapin2)}
+  }
 </style>
 </head>
 <body>
@@ -217,7 +241,7 @@ const plural = n => n === 0 ? "liste vide" : n + (n > 1 ? " cadeaux" : " cadeau"
 const errHtml = () => error ? `<p class="err" role="alert">${esc(error)}</p>` : "";
 const GIFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
 const picture = (u, cls = "") => `<div class="img ${cls}">${imgUrl(u) ? `<img src="${esc(u)}" alt="" loading="lazy">` : GIFT}</div>`;
-const COLORS = ["#b8a8ff","#ffb4a2","#9fe0c0","#ffd98a","#a8d4ff","#f4b0dc","#cfe58c","#8fdde7"];
+const COLORS = ["#f2a9a9","#9fdcb4","#f6d58a","#a9d3f0","#e9bcd9","#cbe092","#f6c1a0","#a8dfe0"];
 // Photo de profil, sinon l'initiale sur une pastille de couleur
 function avatar(id, name, cls = ""){
   const photo = /^[a-f0-9]{24}$/.test(faces[id] || "") ? faces[id] : "", letter = esc([...String(name || "?")][0].toUpperCase());
@@ -250,7 +274,7 @@ const go = h => { if(route() === h) show(); else location.hash = h; };
 
 /* ---------- Écrans sans connexion ---------- */
 function loginView(note){
-  return `<h1>Listes de Noël</h1>
+  return `<h1>🎄 Listes de Noël</h1>
   <form class="card" data-form="login">
     ${note ? `<p>${esc(note)}</p>` : ""}
     <label>Ton identifiant<input type="text" name="login" autocomplete="username" autocapitalize="none" required maxlength="40" value="${esc(store.get("login"))}"></label>
@@ -372,7 +396,7 @@ function giftHtml(g, mine){
   const chips = [g.size ? "Taille : " + g.size : "", g.color ? "Couleur : " + g.color : "", g.note].filter(Boolean);
   let acts;
   if(mine) acts = `<button type="button" class="btn ghost" data-go="modifier/${g.id}">Modifier</button>`;
-  else if(g.mine) acts = `<p class="state">✓ C'est toi qui l'offres</p><button type="button" class="btn ghost" data-release="${g.id}">Annuler</button>`;
+  else if(g.mine) acts = `<button type="button" class="btn ghost" data-release="${g.id}">Annuler</button>`;
   else if(g.taken) acts = `<p class="state">${g.by ? "Pris par " + esc(g.by) : "Déjà pris"}</p>`;
   else{
     const form = confirming === "s" + g.id;
@@ -381,7 +405,8 @@ function giftHtml(g, mine){
         : `<button type="button" class="btn${shares.length && !my ? "" : " ghost"}" data-confirm="s${g.id}">${my ? "Changer mon montant" : shares.length ? "Participer aussi" : "Participer à plusieurs"}</button>`)
       + (my && !form ? `<button type="button" class="link" data-release="${g.id}">Retirer ma participation</button>` : "");
   }
-  return `<li class="gift${taken ? " taken" : ""}"><${tag} class="top"${href}>
+  const byMe = !mine && g.mine;
+  return `<li class="gift${taken ? " taken" : byMe ? " byme" : ""}">${byMe ? `<p class="ribbon">✓ C'est toi qui l'offres</p>` : ""}<${tag} class="top"${href}>
       ${picture(g.image)}
       <div class="txt">${g.top ? `<span class="star">★ Très envie</span>` : ""}<h3>${esc(g.title)}</h3>
       ${chips.length ? `<ul class="chips">${chips.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
@@ -391,12 +416,15 @@ function giftHtml(g, mine){
 }
 function listView(){
   const mine = list.mine, name = list.member.name;
+  // Liste d'un autre : les cadeaux pris passent à la fin de leur groupe (« Très envie », puis le reste).
+  // Jamais sur sa propre liste : l'ordre y trahirait la surprise.
+  const gifts = mine ? list.gifts : [...list.gifts].sort((a, b) => !!b.top - !!a.top || !!a.taken - !!b.taken);
   return `${mine ? "" : backBtn("", "Les listes")}
   <div class="head">${avatar(list.member.id, name)}<div><h1>${mine ? "Ma liste" : "La liste de " + esc(name)}</h1>${list.gifts.length ? `<span class="muted">${plural(list.gifts.length)}</span>` : ""}</div></div>
   ${mine ? `<button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau</button><p class="muted">Tu ne vois pas qui a pris quoi : c'est la surprise.</p>` : ""}
   ${!mine && home.me.admin ? `<button type="button" class="btn ghost" data-go="ajouter/${list.member.id}">+ Ajouter un cadeau pour ${esc(name)}</button>` : ""}
   ${errHtml()}
-  ${list.gifts.length ? `<ul class="gifts">${list.gifts.map(g => giftHtml(g, mine)).join("")}</ul>`
+  ${list.gifts.length ? `<ul class="gifts">${gifts.map(g => giftHtml(g, mine)).join("")}</ul>`
     : `<p class="card">${mine ? "Ta liste est vide. Ajoute ta première idée !" : esc(name) + " n'a pas encore ajouté d'idées."}</p>`}
   ${trash.length ? `<details class="card" data-k="trash"${opened.has("trash") ? " open" : ""}><summary>Corbeille (${trash.length})</summary>
     <p class="muted">Les cadeaux retirés sont gardés ici.</p>
@@ -1027,7 +1055,7 @@ app.addEventListener("click", async e=>{
     return;
   }
   if("size" in d){ const h = document.documentElement; h.dataset.size = h.dataset.size === "big" ? "" : "big"; store.set("size", h.dataset.size); return render(); }
-  if("themeToggle" in d){ const h = document.documentElement; h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light"; store.set("theme", h.dataset.theme); return render(); }
+  if("themeToggle" in d){ const h = document.documentElement; h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light"; store.set("theme", h.dataset.theme); barColor(); return render(); }
   if("logout" in d){ try{ await api("noel_logout"); }catch(err){} history.replaceState(null, "", location.pathname); return toLogin(); }
   if("danger" in d){ danger = {key:d.danger, step:d.danger ? 1 : 0}; return render(); }
   if("next" in d){ danger.step++; return render(); }
@@ -1132,8 +1160,12 @@ setInterval(tick, 20000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
 window.addEventListener("hashchange", show);
 
+// Couleur de la barre du navigateur : celle du fond choisi
+function barColor(){ document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); }
+
 (function start(){
   if(store.get("theme") === "light") document.documentElement.dataset.theme = "light";
+  barColor();
   if(store.get("size") === "big") document.documentElement.dataset.size = "big";
   // Ancien lien famille (#c=…) ou ancienne page de gestion : ils ne donnent plus accès à rien
   if(/^(c=|gestion|quitter)/.test(route())){

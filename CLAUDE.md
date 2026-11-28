@@ -48,6 +48,12 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   `noel_photo_add(token, base64)` (40 par heure et par membre), jamais effacées (déclencheur), servies par `server/main.ts` à `/photo/<id>.jpg`
   (`noel_photo_get`, clé de service seulement, refusée par le relais public). L'adresse enregistrée est absolue (`https://<site>/photo/…`)
   car `noel_gift_save` exige `https://`. Un changement de domaine casserait ces adresses.
+- Habillage de Noël (28 novembre, demande de Dorian : festif mais DISCRET ; une version chargée, bandeau rouge et boules, a été refusée « trop ») :
+  vert sapin = action principale, rouge et or en décor, guirlande immobile en haut, flocons discrets, liseré sucre d'orge sur la barre du bas, sapins avec
+  cadeaux au pied (en bas de page sur petit écran, sur les côtés dès 1060 px). `--err` reste réservé aux erreurs et suppressions. Remplace la section « Style » (violet).
+- Ordre sur la liste d'un autre (28 novembre, demande de Dorian) : dans chaque groupe (« Très envie », puis le reste), les cadeaux pris (`taken`, par soi aussi)
+  passent à la fin ; tri dans la page (`listView`). Jamais sur sa propre liste (règle 1).
+- Cadeau pris par moi (`.gift.byme`) : cadre vert et bandeau plein « C'est toi qui l'offres » en haut de la carte ; pris par un autre : grisé.
 - Règle 1 inchangée : sur SA liste, aucune donnée de réservation ni de participation (ni champ, ni compteur, ni ordre, ni réponse différente). Retirer un cadeau le garde en base (`removed_at`) :
   celui qui l'avait pris voit « a retiré ce cadeau ». Limite assumée : l'administrateur peut entrer dans un compte réinitialisé ou en créer un faux.
 - NE JAMAIS PERDRE UNE LISTE (exigence de Dorian, migration `2026-12-01`) : jamais de `delete` sur `noel_gifts` ni `noel_members` (des déclencheurs le refusent) ;
