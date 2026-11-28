@@ -4,6 +4,7 @@ import { assertPublic, readMerchant } from "../noel-preview/net.ts";
 import { nameFromUrl } from "./guess.js";
 import { allowed as aiAllowed, gemini } from "../noel-capture/index.ts";
 import { lookupRequest, parseLookup } from "../noel-capture/gemini.js";
+import { pageMaterial, pageRequest, parsePage } from "./page.js";
 
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
@@ -61,10 +62,26 @@ export async function handler(req: Request): Promise<Response> {
   let title = i?.title || i?.name || "", image = i?.image && /^https:\/\//i.test(i.image) ? i.image : "", price: number | null = i?.price ?? null;
   let store = i?.store || "";
   if (!store) { try { store = new URL(page.url || link).hostname.replace(/^www\./, ""); } catch (_) {} }
-  // Page illisible (mur anti-robots : Hollister, Amazon, Fnac…) ou incomplète : recherche Google par Gemini (si la clé est posée).
+  let color = "", size = "", details = "";
+  // Gemini (si la clé est posée) : une unité des limites par lien, même s'il y a deux appels
+  const ai = !!Deno.env.get("GEMINI_API_KEY") && aiAllowed(id);
+  // 1. Page lue par notre serveur : Gemini la lit et remplit toute la fiche (couleur, taille, précisions, bon prix, bonne photo)
+  if (ai && page.html && i) {
+    try {
+      const m = pageMaterial(page.html, page.url);
+      const g = parsePage(await gemini(pageRequest(m), 15_000, true), m);
+      if (g) {
+        title = g.title || title;
+        price = g.price ?? price;
+        image = g.image || image;
+        ({ color, size, details } = g);
+      }
+    } catch (_) { /* Gemini indisponible : on garde la lecture simple */ }
+  }
+  // 2. Page illisible (mur anti-robots : Hollister, Amazon, Fnac…) ou incomplète : recherche Google par Gemini.
   // On ne contourne jamais le mur : ni faux navigateur, ni lecture de la page par un tiers ; seulement l'index de Google.
   let searched = false;
-  if ((!title || price == null || !image) && Deno.env.get("GEMINI_API_KEY") && aiAllowed(id)) {
+  if (ai && (!title || price == null || !image)) {
     try {
       const g = parseLookup(await gemini(lookupRequest(page.url || link, title || nameFromUrl(link)), 25_000, true));
       if (g) {
@@ -75,6 +92,6 @@ export async function handler(req: Request): Promise<Response> {
     } catch (_) { /* Gemini indisponible : on garde ce qu'on a */ }
   }
   // Toujours rien : nom deviné d'après l'adresse, signalé par `guessed`
-  if (!title) return json({ title: nameFromUrl(page.url || link) || nameFromUrl(link), image, price, store, guessed: true, searched });
-  return json({ title, image, price, store, searched });
+  if (!title) return json({ title: nameFromUrl(page.url || link) || nameFromUrl(link), image, price, store, color, size, details, guessed: true, searched });
+  return json({ title, image, price, store, color, size, details, searched });
 }

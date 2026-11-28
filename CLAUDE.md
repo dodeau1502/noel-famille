@@ -62,6 +62,10 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   Mêmes compteurs que les captures (20 par heure et par membre, `CAPTURE_DAY_MAX` par jour). REFUSÉ (Dorian ne l'a pas validé) : l'outil « URL context »
   de Gemini, qui ferait lire par Google une page qui nous bloque. Photo toujours absente : bouton « 📷 Pas de photo ? Ajoute une capture de la page »
   dans le formulaire (complète seulement les champs vides ; remplace un nom deviné non retouché). Test : `deno test --allow-env --allow-read supabase/functions/noel-link/index.test.ts`.
+- Lien lisible lu par Gemini (28 novembre, `noel-link/page.js`, tests `page.test.mjs` et `index.test.ts`) : quand NOTRE serveur a pu lire la page et que
+  `GEMINI_API_KEY` est posée, son contenu (données structurées, options cochées, texte, photos) part à Gemini (sans outil, sortie JSON) qui remplit nom,
+  prix client ordinaire (gardé seulement s'il est écrit dans la page), couleur, taille, précisions et photo (choisie par numéro). Une unité des limites de
+  captures par lien. Page bloquée : recherche de repli comme avant. NON essayé avec la vraie API ni sur de vrais liens avant la mise en ligne.
 - Favori « 🎁 Ma liste de Noël » (`#favori`, lien depuis le menu et le formulaire d'ajout) : favori JavaScript qui s'exécute sur la page du magasin DÉJÀ affichée
   à la personne (tous navigateurs, ordinateur et téléphone), lit nom, photo, prix, options (`site/favori.txt` = copie EXACTE de `extension/extract.js`,
   test `supabase/functions/favori.test.mjs` ; puis `sendToList` de `index.html`, qui ajoute un prix lu à l'écran si les données structurées n'en ont pas)

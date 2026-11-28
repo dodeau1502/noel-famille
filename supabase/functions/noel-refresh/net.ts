@@ -43,7 +43,7 @@ export function cleanUrl(raw: string): string {
 
 const BLOCKED = /just a moment|access denied|attention required|robot|captcha|maintenance|accès refusé|acces refuse|forbidden|are you a human|client challenge|checking your browser|verify you are human|un instant/i;
 
-export type Page = { url: string; status: number; info: ReturnType<typeof extract> | null };
+export type Page = { url: string; status: number; info: ReturnType<typeof extract> | null; html?: string };
 
 // Boutique Shopify : interface officielle d'abord (pas de page HTML à lire). L'adresse du profil est publiée par ce site (site/ucp-agent.json).
 // null : pas une boutique Shopify, ou produit introuvable par cette voie -> lecture de la page. Un 429 ou un 403 est respecté : pas de repli.
@@ -104,7 +104,7 @@ export async function readMerchant(raw: string, timeoutMs = 8000): Promise<Page>
     const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "";
     const info = extract(html, final);
     if (BLOCKED.test(title) && info.price == null) return { url: final, status, info: null };
-    return { url: final, status, info };
+    return { url: final, status, info, html };
   } catch (_) {
     return { url: cleanUrl(url.toString()), status, info: null };
   }

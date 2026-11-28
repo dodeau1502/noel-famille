@@ -389,6 +389,7 @@ async function startGift(q){
   if(d.url.length > 2000){ d.url = ""; d.hint = "Ce lien est trop long : copie une adresse plus courte."; d.title = around; }
   else if(info && info.title){
     d.title = (info.guessed && around ? around : info.title).slice(0,120); d.image = imgUrl(info.image); d.price = priceText(info.price); d.store = info.store || "";
+    d.size = info.size || ""; d.color = info.color || ""; d.note = info.details || "";
     if(info.guessed && !around) d.guessedTitle = d.title;   // nom deviné d'après l'adresse : une capture pourra le remplacer
     d.hint = linkHint(info, d);
   }
@@ -425,7 +426,8 @@ function linkChanged(){
       if(!d.title.trim()) d.title = info.title.slice(0,120);
       if(!d.price.trim()) d.price = priceText(info.price);
       d.store = info.store || "";
-      for(const k of ["title","price","image"]) giftForm().elements.namedItem(k).value = d[k];
+      for(const [k, v] of [["size", info.size], ["color", info.color], ["note", info.details]]) if(v && !d[k].trim()) d[k] = v;
+      for(const k of ["title","price","image","size","color","note"]) giftForm().elements.namedItem(k).value = d[k];
       showPhoto(); showHint(linkHint(info, d));
     }else showHint("Ce site ne se laisse pas lire. Le lien est gardé.");
   });

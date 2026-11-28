@@ -50,10 +50,18 @@ Deno.test("adresse d'image qui n'est pas une image : écartée", async () => {
   const d = await run(fake(WALL, found, true, "text/html") as typeof fetch);
   assertEquals(d.image, ""); assertEquals(d.price, 19.95);
 });
-Deno.test("page lisible et complète : pas de recherche", async () => {
+Deno.test("page lisible et complète : lue par Gemini, sans recherche", async () => {
   Deno.env.set("GEMINI_API_KEY", "k"); geminiCalls = 0;
   const page = `<html><head><title>Caraco</title><meta property="og:image" content="https://img.hollisterco.com/a.jpg">
     <script type="application/ld+json">{"@type":"Product","name":"Caraco","image":"https://img.hollisterco.com/a.jpg","offers":{"@type":"Offer","price":"19.95","priceCurrency":"EUR"}}</script></head></html>`;
   const d = await run(fake(page, found) as typeof fetch);
-  assertEquals(d.price, 19.95); assertEquals(d.searched, false); assertEquals(geminiCalls, 0);
+  assertEquals(d.price, 19.95); assertEquals(d.searched, false); assertEquals(geminiCalls, 1);
+});
+Deno.test("page lisible : couleur, taille et précisions remontées ; un prix absent de la page est refusé", async () => {
+  Deno.env.set("GEMINI_API_KEY", "k");
+  const page = `<html><head><title>Caraco | Boutique</title><meta property="og:image" content="https://img.hollisterco.com/a.jpg">
+    <script type="application/ld+json">{"@type":"Product","name":"Caraco","offers":{"@type":"Offer","price":"19.95","priceCurrency":"EUR"}}</script></head><body><h1>Caraco</h1></body></html>`;
+  const d = await run(fake(page, { is_product: true, title: "Caraco en dentelle", price: 12.34, color: "Noir", size: "S", details: "Coton", image: 0 }) as typeof fetch);
+  assertEquals([d.title, d.price, d.color, d.size, d.details], ["Caraco en dentelle", 19.95, "Noir", "S", "Coton"]);
+  assertEquals(d.image, "https://img.hollisterco.com/a.jpg");
 });
