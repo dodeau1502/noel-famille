@@ -24,7 +24,7 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   `GEMINI_API_KEY` (secret, posé par Dorian dans Coolify, projet Google AVEC facturation : en gratuit, Google peut utiliser les captures et la recherche
   Google n'existe pas) ; vide = la page dit « pas encore activée ». Coût estimé : bien moins d'un centime par capture, recherche Google gratuite jusqu'à
   5 000 par mois (tarifs relevés le 2 décembre). NON essayé avec la vraie API Gemini (pas de clé) : tests avec réponses simulées seulement.
-- Photos envoyées (`noel_photos`, migration `2026-12-02-noel-photos.sql`, NON appliquée) : JPEG ≤ 300 Ko dans la base (donc dans les sauvegardes),
+- Photos envoyées (`noel_photos`, migration `2026-12-02-noel-photos.sql`, APPLIQUÉE en production le 28 novembre, pas sur `noel-dev-db`) : JPEG ≤ 300 Ko dans la base (donc dans les sauvegardes),
   `noel_photo_add(token, base64)` (40 par heure et par membre), jamais effacées (déclencheur), servies par `server/main.ts` à `/photo/<id>.jpg`
   (`noel_photo_get`, clé de service seulement, refusée par le relais public). L'adresse enregistrée est absolue (`https://<site>/photo/…`)
   car `noel_gift_save` exige `https://`. Un changement de domaine casserait ces adresses.
@@ -61,6 +61,8 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   NON essayé : installation et usage sur un vrai iPhone / Android (Chrome Android : taper le nom du favori dans la barre d'adresse).
   Sur écran tactile (`PHONE`, `pointer: coarse`), le favori n'est proposé nulle part (trop compliqué à installer) : téléphone = lien collé ou capture d'écran.
   La page `#favori` reste joignable et le dit. Le bouton capture n'apparaît que si `GET /functions/v1/noel-capture` répond `{"on":true}` (clé Gemini posée).
+- EN PRODUCTION le 28 novembre (commits `ac6f347`, `4583ece`) : favori, nom deviné, capture d'écran, recherche de repli, photos. Capture et recherche
+  COUPÉES tant que `GEMINI_API_KEY` n'est pas posée par Dorian (la page cache alors le bouton capture).
 - NON FAIT : essai à l'écran sur un vrai téléphone ; extension de navigateur pas adaptée (elle ne marchera plus) ;
   ancienne page gardée dans `archive/index-v1-prix.html`.
 - Si une nouvelle table est ajoutée : RLS, aucune policy, `revoke all` ; nouvelle fonction : `revoke` de `public` puis `grant` explicite si publique.
