@@ -18,7 +18,9 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   `server/main.ts` ne lance plus `startJobs` et ne sert plus `noel-preview` ; `noel-refresh` répond « désactivé » (tâche Coolify `price-refresh` à supprimer par Dorian).
 - Base : migration `supabase/migrations/2026-11-29-noel-comptes.sql` (à la fin de `schema.sql`). Toutes les fonctions à code sont fermées à l'API publique.
   Première ouverture après migration : `https://<site>/#installation` avec l'ancien code propriétaire (une seule fois).
-- NON FAIT : migration jamais exécutée sur un vrai PostgreSQL (dev d'abord, après `pg_dump -Fc`) ; extension de navigateur pas adaptée (elle ne marchera plus) ;
+- Installé sur `noel.dev` le 28 novembre (branche `dev`), essayé sur PostgreSQL 17 avec `supabase/tests/comptes.sql` (copie jetable `noel_essai` seulement).
+- PAS en production : avant, vérifier quelles migrations manquent sur `noel-db` (le dev avait celles du 24 au 28 en retard), `pg_dump -Fc`, accord de Dorian.
+- NON FAIT : essai à l'écran sur un vrai téléphone ; extension de navigateur pas adaptée (elle ne marchera plus) ;
   ancienne page gardée dans `archive/index-v1-prix.html`.
 - Si une nouvelle table est ajoutée : RLS, aucune policy, `revoke all` ; nouvelle fonction : `revoke` de `public` puis `grant` explicite si publique.
 
