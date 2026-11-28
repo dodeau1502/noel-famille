@@ -17,6 +17,16 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   Sur sa propre liste il ne voit rien, comme tout le monde.
 - Sur la liste d'un autre : « Je l'offre » ou « Participer à plusieurs » avec un montant (`noel_shares`, exclusif avec la prise seule), « Pris par X »
   (nom visible même d'un autre groupe), « Ce que j'offre » sur le menu, avec une alerte si le cadeau a été modifié (`changed_at`) ou retiré.
+- Profil et interface (28 novembre, demande de Dorian ; migration `2026-12-04-noel-profil`, EN PRODUCTION le 28 novembre, pas sur `noel-dev-db`) : chacun change son
+  prénom affiché (jamais son identifiant ; un prénom porté par un autre compte actif est refusé) et met une photo de profil (carré 400 px dans
+  `noel_photos`, colonne `noel_members.photo`, `noel_profile_save`, `noel_faces` = mon identifiant + photos des personnes que je vois ; servie à
+  `/photo/<id>.jpg`, adresse non devinable mais sans connexion). Interface : barre en bas (Listes, Ma liste, Ajouter, J'offre, Profil), cachée pendant
+  une saisie ; écran « Ce que j'offre » (`#offre`, total à peu près, par personne) ; réglages et « Gérer la famille » dans `#profil` ; messages de
+  confirmation ; sur téléphone, photo du cadeau à gauche (112 px). Essais : `supabase/tests/profil.sql` (copie jetable). Mise en ligne : migration AVANT
+  la page (sinon le profil ne s'enregistre pas).
+- Photo par recherche d'images (28 novembre) : quand un lien ne donne aucune photo et que `SERPAPI_KEY` est posée, `noel-link` cherche des images
+  (SerpAPI `google_images`, `noel-link/photos.js`, test `photos.test.mjs`) : la première est mise, jusqu'à 6 proposées. 15 recherches par membre et par heure.
+  Images seulement, aucun prix. NON essayé avec la vraie API.
 - Précisions par cadeau seulement : taille, couleur, autre info. Photo lue sur le lien, adresse d'image collée, ou photo envoyée depuis le téléphone
   (AUTORISÉ par Dorian le 2 décembre, voir « Capture d'écran » plus bas). Pas de profil « tailles et goûts », pas d'idée cachée (refusés par Dorian).
 - Capture d'écran → cadeau (2 décembre, demande de Dorian, choix de Gemini par Dorian) : bouton « 📷 Choisir une capture d'écran » au premier écran d'ajout.
@@ -66,6 +76,10 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   `GEMINI_API_KEY` est posée, son contenu (données structurées, options cochées, texte, photos) part à Gemini (sans outil, sortie JSON) qui remplit nom,
   prix client ordinaire (gardé seulement s'il est écrit dans la page), couleur, taille, précisions et photo (choisie par numéro). Une unité des limites de
   captures par lien. Page bloquée : recherche de repli comme avant. NON essayé avec la vraie API ni sur de vrais liens avant la mise en ligne.
+- Photo automatique (28 novembre, demande de Dorian, qui revient sur son refus de SerpAPI POUR LES IMAGES seulement) : si un lien n'a donné aucune photo et que
+  `SERPAPI_KEY` est posée (offre gratuite, ~250 par mois, par Dorian dans Coolify), `noel-link` cherche des images (`google_images`, `noel-link/photos.js`) d'après
+  le nom : jusqu'à 6, vérifiées par notre serveur, la première est mise, les autres proposées sous la photo (`picksHtml`). 15 recherches par membre et par heure.
+  Aucune autre recherche SerpAPI (ni prix). Pas de promesse de 100 % : rien trouvé = pas de photo. NON essayé avec la vraie API.
 - Favori « 🎁 Ma liste de Noël » (`#favori`, lien depuis le menu et le formulaire d'ajout) : favori JavaScript qui s'exécute sur la page du magasin DÉJÀ affichée
   à la personne (tous navigateurs, ordinateur et téléphone), lit nom, photo, prix, options (`site/favori.txt` = copie EXACTE de `extension/extract.js`,
   test `supabase/functions/favori.test.mjs` ; puis `sendToList` de `index.html`, qui ajoute un prix lu à l'écran si les données structurées n'en ont pas)

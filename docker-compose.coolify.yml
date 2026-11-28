@@ -11,6 +11,7 @@ services:
       - SUPABASE_URL=http://127.0.0.1:8001
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:?}
+      # Clé SerpAPI (offre gratuite) : recherche d'images quand un lien n'a pas de photo. Vide = pas de recherche.
       - SERPAPI_KEY=${SERPAPI_KEY:-}
       # Capture d'écran → cadeau (2 décembre). Clé Gemini posée par Dorian dans Coolify (vide = fonction coupée), projet AVEC facturation
       # (en accès gratuit, Google peut utiliser les captures, et la recherche Google n'y est pas disponible).

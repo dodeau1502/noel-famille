@@ -1,10 +1,12 @@
 // Lit la page d'un lien collé par un membre connecté, pour préremplir son cadeau (nom, photo, prix, magasin).
-// Une seule page lue, aucune recherche de prix, aucun accès SerpAPI. Protection contre les adresses internes : net.ts.
+// Une seule page lue, aucune recherche de prix. SerpAPI (images seulement) quand aucune photo n'a été trouvée, si SERPAPI_KEY est posée.
+// Protection contre les adresses internes : net.ts.
 import { assertPublic, readMerchant } from "../noel-preview/net.ts";
 import { nameFromUrl } from "./guess.js";
 import { allowed as aiAllowed, gemini } from "../noel-capture/index.ts";
 import { lookupRequest, parseLookup } from "../noel-capture/gemini.js";
 import { pageMaterial, pageRequest, parsePage } from "./page.js";
+import { candidates, imageQuery, searchUrl } from "./photos.js";
 
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
@@ -46,6 +48,26 @@ async function isImage(u: string): Promise<boolean> {
     }
   } catch (_) {}
   return false;
+}
+
+// Recherches d'images : 15 par membre et par heure (en mémoire). Le quota gratuit de SerpAPI s'arrête de lui-même.
+const searches = new Map<number, number[]>();
+// Jusqu'à 6 photos, toutes vérifiées comme images publiques ; la première sera mise d'office
+async function findPhotos(id: number, query: string, link: string, now = Date.now()): Promise<string[]> {
+  const key = Deno.env.get("SERPAPI_KEY");
+  const recent = (searches.get(id) ?? []).filter((t) => now - t < 3600_000);
+  if (!key || !query || recent.length >= 15) return [];
+  searches.set(id, [...recent, now]);
+  try {
+    const r = await fetch(searchUrl(query, key), { signal: AbortSignal.timeout(12_000) });
+    if (!r.ok) { console.error(`noel-link : recherche d'images ${r.status}`); await r.body?.cancel(); return []; }   // jamais l'adresse : elle contient la clé
+    const urls: string[] = candidates(await r.json(), link);
+    const ok = await Promise.all(urls.map(isImage));
+    return urls.filter((_, n) => ok[n]).slice(0, 6);
+  } catch (_) {
+    console.error("noel-link : recherche d'images injoignable");
+    return [];
+  }
 }
 
 export async function handler(req: Request): Promise<Response> {
@@ -91,7 +113,11 @@ export async function handler(req: Request): Promise<Response> {
       }
     } catch (_) { /* Gemini indisponible : on garde ce qu'on a */ }
   }
+  // 3. Toujours pas de photo : recherche d'images d'après le nom
+  const images = image ? [] : await findPhotos(id, imageQuery(title || nameFromUrl(page.url || link) || nameFromUrl(link), color, page.url || link), page.url || link);
+  const photoSearched = !image && images.length > 0;
+  if (photoSearched) image = images[0];
   // Toujours rien : nom deviné d'après l'adresse, signalé par `guessed`
-  if (!title) return json({ title: nameFromUrl(page.url || link) || nameFromUrl(link), image, price, store, color, size, details, guessed: true, searched });
-  return json({ title, image, price, store, color, size, details, searched });
+  if (!title) return json({ title: nameFromUrl(page.url || link) || nameFromUrl(link), image, price, store, color, size, details, guessed: true, searched, images, photoSearched });
+  return json({ title, image, price, store, color, size, details, searched, images, photoSearched });
 }

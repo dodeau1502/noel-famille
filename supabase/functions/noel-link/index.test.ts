@@ -65,3 +65,20 @@ Deno.test("page lisible : couleur, taille et précisions remontées ; un prix ab
   assertEquals([d.title, d.price, d.color, d.size, d.details], ["Caraco en dentelle", 19.95, "Noir", "S", "Coton"]);
   assertEquals(d.image, "https://img.hollisterco.com/a.jpg");
 });
+Deno.test("aucune photo : recherche d'images, la première est mise et les autres proposées", async () => {
+  Deno.env.delete("GEMINI_API_KEY"); Deno.env.set("SERPAPI_KEY", "s");
+  const base = fake(WALL, found);
+  const d = await run(((u: string | URL | Request, init?: RequestInit) => {
+    const url = String(u instanceof Request ? u.url : u);
+    if (url.startsWith("https://serpapi.com/")) return Promise.resolve(Response.json({ images_results: [
+      { original: "https://img.hollisterco.com/1.jpg", link: LINK }, { original: "https://img.hollisterco.com/2.jpg", link: LINK }, { original: "https://ailleurs.test/ko.jpg" }] }));
+    return base(u, init);
+  }) as typeof fetch);
+  assertEquals(d.image, "https://img.hollisterco.com/1.jpg"); assertEquals(d.images.length, 2); assertEquals(d.photoSearched, true);
+});
+Deno.test("recherche d'images en panne : le reste de la fiche est rendu", async () => {
+  Deno.env.set("SERPAPI_KEY", "s");
+  const d = await run(fake(WALL, found) as typeof fetch);
+  assertEquals(d.image, ""); assertEquals(d.images, []); assertEquals(d.title, "Lace trim layering cami");
+  Deno.env.delete("SERPAPI_KEY");
+});

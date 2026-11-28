@@ -61,10 +61,16 @@
 
   .people{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px}
   .person{display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; height:100%; min-height:128px; padding:14px 8px; background:var(--surface); border:1px solid var(--line); border-radius:18px; cursor:pointer}
-  .person i{display:grid; place-items:center; width:58px; height:58px; border-radius:50%; background:var(--c); color:#14101f; font:400 1.9rem/1 var(--f-display); font-style:normal}
   .person b{overflow-wrap:anywhere}
   .person span{color:var(--muted); font-size:.85rem}
   .person em{font-style:normal; font-weight:700; font-size:.82rem; color:var(--main)}
+  .ava{display:inline-grid; place-items:center; flex:none; width:64px; height:64px; border-radius:50%; overflow:hidden; background:var(--c); color:#14101f; font:400 2rem/1 var(--f-display); font-style:normal}
+  .ava img{width:100%; height:100%; object-fit:cover; display:block}
+  .ava.s{width:44px; height:44px; font-size:1.4rem}
+  .ava.xl{width:128px; height:128px; font-size:4rem; align-self:center}
+  .head{display:flex; align-items:center; gap:14px}
+  .head > div{min-width:0; display:flex; flex-direction:column; gap:4px}
+  .head > button{background:none; border:0; padding:0; border-radius:50%; cursor:pointer; flex:none}
   .mylist{flex-direction:row; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; width:100%; background:var(--soft); border-color:var(--main)}
 
   .gifts{list-style:none; margin:0; padding:0; display:grid; gap:14px}
@@ -74,6 +80,11 @@
   .img{display:grid; place-items:center; aspect-ratio:4/3; background:var(--soft); color:var(--main); overflow:hidden}
   .img img{width:100%; height:100%; min-height:0; object-fit:contain; background:#fff; padding:10px; display:block}
   .img svg{width:64px; height:64px}
+  .btn[hidden]{display:none}
+  .picks{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:8px}
+  .picks button{min-width:0; overflow:hidden; padding:3px; border:2px solid transparent; border-radius:12px; background:#fff; aspect-ratio:1; cursor:pointer}
+  .picks button[aria-pressed="true"]{border-color:var(--main); box-shadow:0 0 0 2px var(--main)}
+  .picks img{width:100%; height:100%; object-fit:contain; display:block}
   .gift .txt{display:flex; flex-direction:column; gap:6px; padding:14px 16px}
   .gift .price{font:400 1.6rem/1.2 var(--f-display)}
   .gift .price small{font:400 .95rem var(--f-body); color:var(--muted); margin-left:8px}
@@ -116,13 +127,39 @@
 
   .offer{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--line); padding-top:10px}
   .offer:first-of-type{border-top:0; padding-top:0}
-  .foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; padding-top:8px}
+  /* Barre du bas : toujours les mêmes places */
+  main:has(.tabs){padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .tabs{position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; justify-content:center; background:var(--surface); border-top:1px solid var(--line); padding:6px 4px max(6px,env(safe-area-inset-bottom,0px))}
+  .tabs button{position:relative; flex:1 1 0; max-width:128px; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:2px; background:none; border:0; border-radius:12px; color:var(--muted); font-size:.74rem; font-weight:700; cursor:pointer; white-space:nowrap}
+  .tabs button[aria-current]{color:var(--main); background:var(--soft)}
+  .tabs svg{width:26px; height:26px}
+  .tabs .ava{width:26px; height:26px; font-size:1rem}
+  .tabs .plus{display:grid; place-items:center; width:42px; height:30px; border-radius:10px; background:var(--main); color:var(--main-ink)}
+  .tabs .plus svg{width:22px; height:22px}
+  .tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:20px; padding:0 5px; border-radius:99px; background:var(--main); color:var(--main-ink); font-size:.72rem; line-height:20px}
+  .toast{position:fixed; left:16px; right:16px; bottom:calc(92px + env(safe-area-inset-bottom,0px)); z-index:6; max-width:480px; margin:0 auto; padding:12px 16px; border-radius:14px; background:var(--ink); color:var(--bg); font-weight:700; text-align:center; pointer-events:none}
+  .toast:empty{display:none}
+  #app.busy button, #app.busy label{cursor:progress}
+  #app.busy .btn{opacity:.6}
+  .sum{background:var(--soft); border-color:var(--main)}
+  .sum b{font:400 2rem/1.1 var(--f-display)}
+  .offer.done .line{opacity:.6}
+  /* Sur téléphone : photo à gauche, pour voir plusieurs cadeaux d'un coup */
+  @media (max-width:759px){
+    .gift .top{display:flex; align-items:flex-start; gap:12px; padding:12px}
+    .gift .top > .img{width:112px; height:112px; aspect-ratio:auto; flex:none; border-radius:14px}
+    .gift .top > .img img{padding:4px}
+    .gift .top > .txt{padding:0; min-width:0; flex:1}
+    .gift .acts{padding:0 12px 12px}
+    .gift .chips li{font-size:.88rem; padding:2px 8px}
+  }
   textarea{width:100%; min-height:120px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:inherit; font:inherit; font-size:.95rem}
 .steps{padding-left:1.4em;margin:0 0 14px}.mview{margin-top:14px;padding-top:12px;border-top:1px solid var(--line, #2a3342)}.peers{padding-left:1.6em}.steps li{margin:8px 0}
 </style>
 </head>
 <body>
 <main id="app" aria-live="polite"><p class="muted">Chargement…</p></main>
+<div class="toast" id="toast" role="status"></div>
 <noscript><p>Cette page a besoin de JavaScript.</p></noscript>
 <script>
 const SUPABASE_KEY = "__SUPABASE_ANON_KEY__"; // remplacé par le serveur au service de la page (clé publique par conception)
@@ -136,6 +173,8 @@ const store = {
 };
 let token = store.get("session");
 let home = null, list = null, admin = null, trash = [];   // dernières réponses du serveur
+let faces = {}, myLogin = "";                       // photos de profil visibles, et mon identifiant
+let pname = null;                                  // prénom en cours de saisie sur le profil
 let draft = null;                                  // cadeau en cours d'ajout ou de modification
 let invite = null;                                 // lien d'activation affiché à l'administrateur
 let confirming = "", error = "", busy = false, lastHtml = "";
@@ -149,7 +188,8 @@ const MSG = {
   taken:"Quelqu'un vient de prendre ce cadeau.", exists:"Ce nom ou cet identifiant existe déjà.",
   invalid:"Vérifie les champs puis réessaie.", full:"La liste est pleine (100 cadeaux).",
   session:"Reconnecte-toi.", pin:"Écris ton code à 4 chiffres.", oldpin:"L'ancien code n'est pas le bon.",
-  shared:"Des personnes participent déjà à ce cadeau : tu peux participer aussi."
+  shared:"Des personnes participent déjà à ce cadeau : tu peux participer aussi.",
+  nametaken:"Quelqu'un porte déjà ce prénom : ajoute une initiale, par exemple."
 };
 async function post(path, body){
   let r;
@@ -178,6 +218,23 @@ const errHtml = () => error ? `<p class="err" role="alert">${esc(error)}</p>` : 
 const GIFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>';
 const picture = (u, cls = "") => `<div class="img ${cls}">${imgUrl(u) ? `<img src="${esc(u)}" alt="" loading="lazy">` : GIFT}</div>`;
 const COLORS = ["#b8a8ff","#ffb4a2","#9fe0c0","#ffd98a","#a8d4ff","#f4b0dc","#cfe58c","#8fdde7"];
+// Photo de profil, sinon l'initiale sur une pastille de couleur
+function avatar(id, name, cls = ""){
+  const photo = /^[a-f0-9]{24}$/.test(faces[id] || "") ? faces[id] : "", letter = esc([...String(name || "?")][0].toUpperCase());
+  return `<i class="ava ${cls}" aria-hidden="true" style="--c:${COLORS[id % COLORS.length]}" data-letter="${letter}">${photo ? `<img src="/photo/${photo}.jpg" alt="">` : letter}</i>`;
+}
+const icon = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICONS = {
+  home: icon('<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>'),
+  list: icon('<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),
+  plus: icon('<path d="M12 5v14M5 12h14"/>'),
+  gift: icon('<path d="M3 8h18v4H3zM12 8v13M5 12v9h14v-9M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>')
+};
+let toastTimer = null;
+function toast(text){
+  const el = document.getElementById("toast");
+  el.textContent = text; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ el.textContent = ""; }, 3000);
+}
 const amountOf = v => { const raw = String(v).replace(/[€\s]/g, "").replace(",", "."); return raw === "" ? null : Number(raw); };
 const total = shares => shares.reduce((n, x) => n + Number(x.amount), 0);
 const sharesHtml = (shares, price) => `<div class="shares"><b>${eur(total(shares))} réunis${price != null ? " sur environ " + eur(price) : ""}</b>
@@ -187,7 +244,7 @@ const shareForm = (id, current) => `<form class="card" data-form="share" data-id
   <div class="row"><button class="btn">Valider</button><button type="button" class="btn ghost" data-confirm="">Annuler</button></div></form>`;
 const backBtn = (to, label) => `<button type="button" class="link back" data-go="${to}">← ${label}</button>`;
 
-/* ---------- Adresses : "" menu, #liste/3, #ajouter, #modifier/12, #famille, #inv=…, #installation ---------- */
+/* ---------- Adresses : "" accueil, #liste/3, #offre, #profil, #ajouter, #modifier/12, #famille, #inv=…, #installation ---------- */
 const route = () => location.hash.replace(/^#\/?/, "");
 const go = h => { if(route() === h) show(); else location.hash = h; };
 
@@ -224,41 +281,87 @@ const setupView = () => `<h1>Installation</h1>
     <button class="btn">Continuer</button>
   </form>`;
 
-/* ---------- Menu ---------- */
+/* ---------- Accueil ---------- */
 const days = () => {
   const now = new Date(), d = new Date(now.getFullYear(), 11, 25), n = Math.round((d - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
   return n > 1 ? `Noël dans ${n} jours` : n === 1 ? "Noël est demain" : n === 0 ? "Joyeux Noël !" : "";
 };
-const personBtn = m => `<li><button type="button" class="person" data-go="liste/${m.id}"><i aria-hidden="true" style="--c:${COLORS[m.id % COLORS.length]}">${esc([...m.name][0].toUpperCase())}</i><b>${esc(m.name)}</b><span>${plural(m.count)}</span>${m.offered ? `<em>✓ tu offres ${m.offered}</em>` : ""}</button></li>`;
-// Conseil affiché une fois : mettre le site sur l'écran d'accueil
-const tip = () => store.get("tip") || matchMedia("(display-mode: standalone)").matches || navigator.standalone ? "" : `<section class="card"><p><b>Astuce :</b> mets le site sur l'écran d'accueil de ton téléphone. iPhone : bouton Partager puis « Sur l'écran d'accueil ». Android : menu ⋮ puis « Ajouter à l'écran d'accueil ».</p><button type="button" class="btn ghost" data-tip>J'ai compris</button></section>`;
+const personBtn = m => `<li><button type="button" class="person" data-go="liste/${m.id}">${avatar(m.id, m.name)}<b>${esc(m.name)}</b><span>${plural(m.count)}</span>${m.offered ? `<em>✓ tu offres ${m.offered}</em>` : ""}</button></li>`;
+// Un seul conseil à la fois : d'abord la photo de profil, puis l'écran d'accueil du téléphone
+function tip(){
+  const me = home.me;
+  if(!faces[me.id] && !store.get("tipPhoto")) return `<section class="card"><p><b>Ajoute ta photo</b> pour que la famille te reconnaisse.</p><div class="row"><button type="button" class="btn" data-go="profil">Mettre ma photo</button><button type="button" class="btn ghost" data-tip="tipPhoto">Plus tard</button></div></section>`;
+  if(store.get("tip") || matchMedia("(display-mode: standalone)").matches || navigator.standalone) return "";
+  return `<section class="card"><p><b>Astuce :</b> mets le site sur l'écran d'accueil de ton téléphone. iPhone : bouton Partager puis « Sur l'écran d'accueil ». Android : menu ⋮ puis « Ajouter à l'écran d'accueil ».</p><button type="button" class="btn ghost" data-tip="tip">J'ai compris</button></section>`;
+}
 function homeView(){
   const me = home.me;
   const groups = home.groups.filter(g => g.members.length).map(g => `<h2>${home.groups.length > 1 ? esc(g.name) : "Les listes de la famille"}</h2><ul class="people">${g.members.map(personBtn).join("")}</ul>`).join("");
-  const offering = home.offering.length ? `<section class="card"><h2>Ce que j'offre</h2>${home.offering.map(o => `<div class="offer">
-      <div class="line">${picture(o.image, "thumb")}<div><p><b>${esc(o.title)}</b></p><p>pour ${esc(o.ownerName)}${o.price != null ? " · environ " + eur(o.price) : ""}</p>${o.details ? `<p class="muted">${esc(o.details)}</p>` : ""}</div></div>
+  return `<div class="head"><button type="button" data-go="profil" aria-label="Mon profil">${avatar(me.id, me.name)}</button>
+    <div><h1>Bonjour ${esc(me.name)}</h1>${days() ? `<span class="days">${days()}</span>` : ""}</div></div>
+  ${errHtml()}
+  ${me.hasList === false ? `<p class="muted">Ici, tu choisis ce que tu offres sur les listes des autres.</p>`
+    : me.count ? "" : `<section class="card sum"><p><b>Ta liste est vide.</b> Ajoute ta première idée : les autres sauront quoi t'offrir.</p><button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau</button></section>`}
+  ${groups || `<p class="muted">Les listes des autres apparaîtront ici.</p>`}
+  ${tip()}`;
+}
+
+/* ---------- Ce que j'offre ---------- */
+function offerView(){
+  const all = home.offering, live = all.filter(o => !o.removed);
+  const mine = o => o.amount != null ? Number(o.amount) : o.price != null ? Number(o.price) : null;
+  const sum = live.reduce((n, o) => n + (mine(o) || 0), 0), unknown = live.filter(o => mine(o) == null).length;
+  const solo = live.filter(o => o.amount == null), bought = solo.filter(o => o.bought).length;
+  const card = o => `<div class="offer${o.bought ? " done" : ""}">
+      <div class="line">${picture(o.image, "thumb")}<div><p><b>${esc(o.title)}</b></p>${o.price != null ? `<p>environ ${eur(o.price)}</p>` : ""}${o.details ? `<p class="muted">${esc(o.details)}</p>` : ""}</div></div>
       ${o.removed ? `<p class="err">Ce cadeau a été retiré de la liste de ${esc(o.ownerName)}.</p>` : o.changed ? `<p class="err">Ce cadeau a été modifié : vérifie avant d'acheter.</p>` : ""}
       ${o.amount != null ? sharesHtml(o.shares, o.price) : `<label class="check"><input type="checkbox" data-bought="${o.id}"${o.bought ? " checked" : ""}> C'est acheté</label>`}
-      <div class="row">${webUrl(o.url) ? `<a class="btn ghost small" href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">Voir</a>` : ""}<button type="button" class="btn ghost small" data-release="${o.id}">${o.amount != null ? "Retirer ma participation" : "Je ne l'offre plus"}</button></div>
-    </div>`).join("")}</section>` : "";
-  return `${days() ? `<span class="days">${days()}</span>` : ""}
-  <h1>Bonjour ${esc(me.name)}</h1>
-  ${me.hasList === false ? `<p class="muted">Ici, tu choisis ce que tu offres sur les listes des autres.</p>` : `
-  <button type="button" class="card mylist" data-go="liste/${me.id}"><span><h2>Ma liste</h2><span class="muted">${plural(me.count)}</span></span><span aria-hidden="true">→</span></button>
-  <button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau à ma liste</button>
-  ${PHONE ? "" : `<button type="button" class="link" data-go="favori">🎁 Ajouter en un geste depuis le site d'un magasin</button>`}
-  ${me.count ? "" : `<p class="muted">Commence par ajouter ta première idée : les autres sauront quoi t'offrir.</p>`}`}
+      <div class="row">${webUrl(o.url) ? `<a class="btn ghost small" href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">Voir le produit</a>` : ""}<button type="button" class="btn ghost small" data-release="${o.id}">${o.amount != null ? "Retirer ma participation" : "Je ne l'offre plus"}</button></div>
+    </div>`;
+  const people = [...new Set(all.map(o => o.ownerName))];
+  return `<h1>Ce que j'offre</h1>
   ${errHtml()}
-  ${groups || `<p class="muted">Les listes des autres apparaîtront ici.</p>`}
-  ${offering}
-  ${tip()}
-  ${me.admin ? `<button type="button" class="btn ghost" data-go="famille">Gérer la famille</button>` : ""}
-  <div class="foot">
-    <button type="button" class="link" data-size>Texte ${document.documentElement.dataset.size === "big" ? "normal" : "plus grand"}</button>
-    <button type="button" class="link" data-theme-toggle>Fond ${document.documentElement.dataset.theme === "light" ? "sombre" : "clair"}</button>
-    <button type="button" class="link" data-go="code">Changer mon code</button>
+  ${live.length ? `<section class="card sum"><p><b>${eur(sum)}</b></p><p>${live.length > 1 ? live.length + " cadeaux" : "1 cadeau"}${solo.length ? ` · ${bought} sur ${solo.length} acheté${bought > 1 ? "s" : ""}` : ""}</p>
+    <p class="muted">Total à peu près, d'après les prix des listes et tes participations.${unknown ? ` Sans compter ${unknown > 1 ? unknown + " cadeaux" : "1 cadeau"} sans prix.` : ""}</p></section>` : ""}
+  ${all.length ? people.map(n => `<section class="card"><h2>Pour ${esc(n)}</h2>${all.filter(o => o.ownerName === n).map(card).join("")}</section>`).join("")
+    : `<section class="card"><p>Rien pour l'instant. Ouvre la liste de quelqu'un et touche « Je l'offre ».</p><button type="button" class="btn" data-go="">Voir les listes</button></section>`}`;
+}
+
+/* ---------- Mon profil ---------- */
+function profileView(){
+  const me = home.me, has = !!faces[me.id];
+  return `<h1>Mon profil</h1>
+  ${errHtml()}
+  <section class="card">${avatar(me.id, me.name, "xl")}
+    <label class="btn">📷 ${has ? "Changer ma photo" : "Mettre une photo"}<input type="file" accept="image/*" data-face hidden></label>
+    ${has ? `<button type="button" class="link" data-noface>Retirer ma photo</button>` : ""}</section>
+  <form class="card" data-form="profile">
+    <label>Mon prénom (vu par la famille)<input type="text" name="name" required maxlength="40" autocomplete="given-name" value="${esc(pname ?? me.name)}"></label>
+    <button class="btn">Enregistrer le prénom</button>
+    ${myLogin ? `<p class="muted">Ton identifiant pour te connecter reste <b>${esc(myLogin)}</b>.</p>` : ""}
+  </form>
+  <section class="card"><h2>Réglages</h2>
+    <button type="button" class="btn ghost" data-size>Texte ${document.documentElement.dataset.size === "big" ? "normal" : "plus grand"}</button>
+    <button type="button" class="btn ghost" data-theme-toggle>Fond ${document.documentElement.dataset.theme === "light" ? "sombre" : "clair"}</button>
+    <button type="button" class="btn ghost" data-go="code">Changer mon code</button>
+    ${me.admin ? `<button type="button" class="btn ghost" data-go="famille">Gérer la famille</button>` : ""}
     <button type="button" class="link" data-logout>Se déconnecter</button>
-  </div>`;
+  </section>`;
+}
+
+/* ---------- Barre du bas ---------- */
+function tabsHtml(){
+  const r = route(), me = home.me, own = "liste/" + me.id;
+  if(r.startsWith("ajouter") || r.startsWith("modifier/")) return "";   // pendant une saisie : pas de sortie par mégarde
+  const here = r === "offre" ? "offre" : r === own ? own : ["profil","code","famille"].includes(r) ? "profil" : "";
+  const tab = (to, label, pic, extra = "") => `<button type="button" data-go="${to}"${here === to ? ' aria-current="page"' : ""}>${pic}<span>${label}</span>${extra}</button>`;
+  const n = home.offering.filter(o => !o.removed).length;
+  return `<nav class="tabs" aria-label="Menu">
+    ${tab("", "Listes", ICONS.home)}
+    ${me.hasList === false ? "" : tab(own, "Ma liste", ICONS.list) + tab("ajouter", "Ajouter", `<span class="plus">${ICONS.plus}</span>`)}
+    ${tab("offre", "J'offre", ICONS.gift, n ? `<span class="badge">${n}</span>` : "")}
+    ${tab("profil", "Profil", avatar(me.id, me.name))}
+  </nav>`;
 }
 
 /* ---------- Une liste ---------- */
@@ -288,8 +391,8 @@ function giftHtml(g, mine){
 }
 function listView(){
   const mine = list.mine, name = list.member.name;
-  return `${backBtn("", "Menu")}
-  <h1>${mine ? "Ma liste" : "La liste de " + esc(name)}</h1>
+  return `${mine ? "" : backBtn("", "Les listes")}
+  <div class="head">${avatar(list.member.id, name)}<div><h1>${mine ? "Ma liste" : "La liste de " + esc(name)}</h1>${list.gifts.length ? `<span class="muted">${plural(list.gifts.length)}</span>` : ""}</div></div>
   ${mine ? `<button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau</button><p class="muted">Tu ne vois pas qui a pris quoi : c'est la surprise.</p>` : ""}
   ${!mine && home.me.admin ? `<button type="button" class="btn ghost" data-go="ajouter/${list.member.id}">+ Ajouter un cadeau pour ${esc(name)}</button>` : ""}
   ${errHtml()}
@@ -331,7 +434,7 @@ function progStop(){
 const other = () => draft.owner && draft.owner !== home.me.id ? draft.ownerName : "";
 const listBack = () => "liste/" + (draft.owner || home.me.id);
 function editView(){
-  if(draft.step === 1) return `${other() ? backBtn(listBack(), "Sa liste") : backBtn("", "Menu")}<h1>Nouveau cadeau${other() ? " pour " + esc(other()) : ""}</h1>
+  if(draft.step === 1) return `${other() ? backBtn(listBack(), "Sa liste") : backBtn("", "Accueil")}<h1>Nouveau cadeau${other() ? " pour " + esc(other()) : ""}</h1>
     <form class="card" data-form="start">
       <label>${other() ? "Quelle est l'idée ?" : "Qu'est-ce qui te ferait plaisir ?"}<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
       <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.${PHONE ? "" : ` Encore plus simple : <button type="button" class="link" data-go="favori">le favori « Ma liste de Noël »</button>.`}</p>
@@ -347,6 +450,7 @@ function editView(){
       <p class="muted" data-hint${d.hint ? "" : " hidden"}>${esc(d.hint)}</p>
       <div data-progress="link"></div>
       ${picture(d.image)}
+      <div data-picks>${picksHtml(d)}</div>
       ${captureOn ? `<label class="btn ghost" data-capbox${imgUrl(d.image) ? " hidden" : ""}>📷 Pas de photo ? Ajoute une capture de la page<input type="file" accept="image/*" data-capture2 hidden></label>
       <p class="muted" data-capmsg hidden></p><div data-progress="capture"></div>` : ""}
       ${field("title", "Nom", 120, "Ex. : pull en laine", " required")}
@@ -389,18 +493,26 @@ async function startGift(q){
   if(d.url.length > 2000){ d.url = ""; d.hint = "Ce lien est trop long : copie une adresse plus courte."; d.title = around; }
   else if(info && info.title){
     d.title = (info.guessed && around ? around : info.title).slice(0,120); d.image = imgUrl(info.image); d.price = priceText(info.price); d.store = info.store || "";
-    d.size = info.size || ""; d.color = info.color || ""; d.note = info.details || "";
+    d.size = info.size || ""; d.color = info.color || ""; d.note = info.details || ""; d.images = info.images || [];
     if(info.guessed && !around) d.guessedTitle = d.title;   // nom deviné d'après l'adresse : une capture pourra le remplacer
     d.hint = linkHint(info, d);
   }
   else { d.title = around; d.hint = "Ce site ne se laisse pas lire : écris le nom toi-même, et ajoute une photo si tu veux. Le lien est gardé."; }
   draft = d;
 }
+// Photos proposées par la recherche d'images : la première est déjà mise, un appui en choisit une autre
+function picksHtml(d){
+  const list = (d.images || []).filter(imgUrl);
+  return list.length > 1 ? `<p class="muted">Pas la bonne photo ? Touche la bonne :</p><div class="picks">${list.map((u, i) =>
+    `<button type="button" data-pick="${esc(u)}" aria-label="Photo ${i + 1}" aria-pressed="${u === d.image}"><img src="${esc(u)}" alt=""></button>`).join("")}</div>` : "";
+}
+function showPicks(){ const el = giftForm() && giftForm().querySelector("[data-picks]"); if(el) el.innerHTML = picksHtml(draft); }
 // Message sous le formulaire selon ce que la lecture du lien a donné
 function linkHint(info, d){
   const parts = [info.guessed ? "Ce site bloque la lecture automatique : le nom vient de l'adresse, corrige-le si besoin."
     : info.searched ? "Informations complétées par une recherche Google : vérifie-les, surtout le prix." : "Vérifie les informations puis enregistre."];
   if(!d.price) parts.push("Ajoute le prix si tu le connais.");
+  if(info.photoSearched) parts.push("Photo trouvée par une recherche d'images : vérifie-la.");
   if(!imgUrl(d.image)) parts.push(captureOn ? "Pas de photo : ajoute une capture de la page (bouton juste en dessous)." : "Tu peux ajouter une photo plus bas.");
   return parts.join(" ");
 }
@@ -416,7 +528,7 @@ function linkChanged(){
   readForm();
   const d = draft, url = cleanLink(d.url);
   if(!url.startsWith("https://") || url === d.readUrl) return;
-  d.url = d.readUrl = url; d.store = ""; showHint(""); progStart("link");
+  d.url = d.readUrl = url; d.store = ""; d.images = []; showPicks(); showHint(""); progStart("link");
   d.reading = readLink(url).then(info => {
     if(draft !== d || d.readUrl !== url || !giftForm()) return;
     progStop();
@@ -425,10 +537,10 @@ function linkChanged(){
       if(imgUrl(info.image)) d.image = info.image;
       if(!d.title.trim()) d.title = info.title.slice(0,120);
       if(!d.price.trim()) d.price = priceText(info.price);
-      d.store = info.store || "";
+      d.store = info.store || ""; d.images = info.images || [];
       for(const [k, v] of [["size", info.size], ["color", info.color], ["note", info.details]]) if(v && !d[k].trim()) d[k] = v;
       for(const k of ["title","price","image","size","color","note"]) giftForm().elements.namedItem(k).value = d[k];
-      showPhoto(); showHint(linkHint(info, d));
+      showPhoto(); showPicks(); showHint(linkHint(info, d));
     }else showHint("Ce site ne se laisse pas lire. Le lien est gardé.");
   });
 }
@@ -470,7 +582,7 @@ async function loadFav(){
   const body = src.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("//")).join("\n");
   favLink = "javascript:" + encodeURIComponent("(function(){" + body + "\n(" + sendToList.toString() + ")(" + JSON.stringify(location.origin) + ");})()");
 }
-const favoriView = () => `${backBtn("", "Menu")}<h1>Ajouter depuis un magasin</h1>
+const favoriView = () => `${backBtn("", "Accueil")}<h1>Ajouter depuis un magasin</h1>
   ${PHONE ? `<section class="card"><p><b>Sur téléphone, le plus simple :</b> touche « + Ajouter un cadeau », puis colle le lien du produit ou choisis une capture d'écran. Le favori ci-dessous est surtout pratique sur ordinateur.</p></section>` : ""}
   <section class="card"><p>Mets le bouton <b>« 🎁 Ma liste de Noël »</b> dans les favoris de ton navigateur. Ensuite, sur la page d'un produit, touche-le : ta liste s'ouvre avec le nom, la photo et le prix déjà remplis. Tu vérifies, puis tu enregistres.</p>
     <p class="muted">Ça marche aussi avec les sites qui bloquent la lecture automatique (Amazon, Fnac, Hollister…), puisque c'est ton navigateur qui lit la page que tu regardes.</p></section>
@@ -532,6 +644,15 @@ async function shrink(file, max, quality, box){
   if(img.close) img.close();
   return c.toDataURL("image/jpeg", quality).split(",")[1];
 }
+// Photo de profil : carré pris au centre
+async function squareFace(file){
+  let img;
+  try{ img = await createImageBitmap(file); }catch(e){ throw new Error("Cette image n'a pas pu être lue : choisis une photo (JPEG ou PNG)."); }
+  const {width:w, height:h} = img, side = Math.min(w, h);
+  if(img.close) img.close();
+  const x = (w - side) / 2 / w * 1000, y = (h - side) / 2 / h * 1000;
+  return shrink(file, 400, 0.82, [y, x, 1000 - y, 1000 - x]);
+}
 // Photo enregistrée dans la base (noel_photo_add) → adresse https de la photo sur ce site
 async function sendPhoto(file, box){
   let b = await shrink(file, 1000, 0.82, box);
@@ -563,7 +684,7 @@ async function readCapture(file){
 
 /* ---------- Changer mon code ---------- */
 const pinInput = (name, label) => `<label>${label}<input class="pin" type="password" name="${name}" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="${name === "old" ? "current-password" : "new-password"}"></label>`;
-const codeView = () => `${backBtn("", "Menu")}<h1>Changer mon code</h1>
+const codeView = () => `${backBtn("profil", "Profil")}<h1>Changer mon code</h1>
   <form class="card" data-form="code">${pinInput("old", "Code actuel")}${pinInput("pin", "Nouveau code")}${pinInput("pin2", "Nouveau code, encore une fois")}
     ${errHtml()}<button class="btn">Changer</button></form>`;
 
@@ -632,7 +753,7 @@ function adminView(){
   const members = admin.members.map(m => {
     const k = "m" + m.id, status = m.active ? "compte activé" : m.reset === "pending" ? "choisit un nouveau code" : m.reset ? "réinitialisation expirée" : "pas encore activé";
     const vw = viewOf(m.id);
-    return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${esc(m.name)} <span class="muted">&nbsp;· ${status}${vw.hasList ? "" : " · sans liste"}${vw.seesAll ? "" : " · voit certaines listes"}</span></summary>
+    return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${avatar(m.id, m.name, "s")}&nbsp; ${esc(m.name)} <span class="muted">&nbsp;· ${status}${vw.hasList ? "" : " · sans liste"}${vw.seesAll ? "" : " · voit certaines listes"}</span></summary>
       <p class="muted">Identifiant : ${esc(m.login)}</p>
       ${vw.hasList ? `<button type="button" class="btn" data-go="liste/${m.id}">${m.id === home.me.id ? "Voir ma liste" : "Voir et remplir sa liste"}</button>` : ""}
       <div>${groupChecks(m.groups, `data-mgroup="${m.id}"`)}</div>
@@ -643,7 +764,7 @@ function adminView(){
       ${m.admin ? "" : dangerBox("mdel:" + m.id, {label:"Supprimer ce compte", question:`Supprimer le compte de ${esc(m.name)} ?`,
           effect:`${esc(m.name)} ne pourra plus se connecter. Sa liste est gardée et le compte pourra être restauré. Ce que ${esc(m.name)} offrait redevient libre.`, hold:"Maintenir pour supprimer"})}
     </details>`; }).join("");
-  return `${backBtn("", "Menu")}<h1>La famille</h1>
+  return `${backBtn("profil", "Profil")}<h1>La famille</h1>
   ${errHtml()}
   ${invite ? `<section class="card"><h2>Message pour ${esc(invite.name)}</h2><textarea readonly id="inviteText">${esc(inviteText(invite))}</textarea>
       <button type="button" class="btn" data-share>${navigator.share ? "Envoyer le message" : "Copier le message"}</button>
@@ -672,7 +793,7 @@ function paint(html){
   if(html === lastHtml) return;
   lastHtml = html; app.innerHTML = html;
 }
-function toLogin(note){ token = ""; store.del("session"); home = list = admin = draft = null; paint(loginView(note)); }
+function toLogin(note){ token = ""; store.del("session"); home = list = admin = draft = null; faces = {}; myLogin = ""; pname = null; paint(loginView(note)); }
 function fail(e){
   if(e.code === "session"){ toLogin(MSG.session); return; }
   error = e.message; render();
@@ -683,17 +804,24 @@ function render(){
   if(!token) return paint(loginView());
   const r = route();
   if(!home) return paint(error ? errHtml() + `<button type="button" class="btn" data-retry>Réessayer</button>` : `<p class="muted">Chargement…</p>`);
-  if(r.startsWith("liste/") && list) return paint(listView());
-  if((r.startsWith("ajouter") || r.startsWith("modifier/")) && draft) return paint(editView());
-  if(r === "famille" && admin) return paint(adminView());
-  if(r === "code") return paint(codeView());
-  if(r === "favori") return paint(favoriView());
-  paint(homeView());
+  paint(screen(r) + tabsHtml());
+}
+function screen(r){
+  if(r.startsWith("liste/") && list) return listView();
+  if((r.startsWith("ajouter") || r.startsWith("modifier/")) && draft) return editView();
+  if(r === "famille" && admin) return adminView();
+  if(r === "offre") return offerView();
+  if(r === "profil") return profileView();
+  if(r === "code") return codeView();
+  if(r === "favori") return favoriView();
+  return homeView();
 }
 // Données de l'écran courant
 async function load(){
   const r = route();
   const h = await api("noel_home");
+  // Les photos de profil ne doivent jamais empêcher d'afficher les listes
+  const f = await api("noel_faces").catch(()=>null);
   let l = null, a = null;
   // liste/3 · ajouter/3 · modifier/12/3 : le dernier nombre est la personne ; sans lui, c'est moi
   const [page, a1, a2] = r.split("/"), who = +(page === "modifier" ? a2 : a1) || h.me.id;
@@ -703,10 +831,11 @@ async function load(){
   if(page === "liste" && l && (l.mine || h.me.admin)) t = (await api("noel_trash", {p_member:who})).gifts;
   if(r !== route()) return;                 // l'écran a changé pendant le chargement
   home = h; list = l; admin = a; trash = t;
+  if(f){ faces = f.faces; myLogin = f.login; }
 }
 async function show(){
   const r = route();
-  error = ""; confirming = ""; opened.clear(); danger = {key:"", step:0};
+  error = ""; confirming = ""; pname = null; opened.clear(); danger = {key:"", step:0};
   const inv = r.match(/^inv=([a-f0-9]{32})$/);
   if(inv){
     try{ const i = await rpc("noel_invite_info", {p_invite:inv[1]}); pre = {kind:"activate", token:inv[1], name:i.name, login:i.login}; render(); }
@@ -744,14 +873,14 @@ async function show(){
   }
 }
 // Exécute une action puis recharge l'écran
-async function run(fn){
+async function run(fn, done){
   if(busy) return;
-  busy = true; error = "";
-  try{ await fn(); confirming = ""; if(token && !pre) await load(); render(); }
+  busy = true; error = ""; app.classList.add("busy");
+  try{ await fn(); confirming = ""; if(token && !pre) await load(); render(); if(done) toast(done); }
   catch(e){
     if(e.code === "taken" || e.code === "shared"){ confirming = ""; await load().catch(()=>{}); }
     fail(e);
-  }finally{ busy = false; }
+  }finally{ busy = false; app.classList.remove("busy"); }
 }
 async function signedIn(t){
   token = t; store.set("session", t); store.del("c"); store.del("is_owner");
@@ -800,12 +929,12 @@ app.addEventListener("submit", async e=>{
   }
   if(kind === "code"){
     if(v("pin") !== v("pin2")){ error = "Les deux nouveaux codes sont différents."; render(); return; }
-    return run(async()=>{ await api("noel_change_pin", {p_old:v("old"), p_new:v("pin")}); location.hash = ""; });
+    return run(async()=>{ await api("noel_change_pin", {p_old:v("old"), p_new:v("pin")}); location.hash = "profil"; }, "Code changé ✓");
   }
   if(kind === "share"){
     const amount = amountOf(v("amount"));
     if(!(amount >= 1 && amount < 100000)){ error = "Écris un montant en chiffres, par exemple 20."; render(); return; }
-    return run(()=>api("noel_share", {p_gift:+f.dataset.id, p_amount:amount}));
+    return run(()=>api("noel_share", {p_gift:+f.dataset.id, p_amount:amount}), "Participation notée ✓");
   }
   if(kind === "gift"){
     const current = draft;
@@ -822,7 +951,12 @@ app.addEventListener("submit", async e=>{
       await api("noel_gift_save", {p_id:d.id, p_title:d.title.trim(), p_url:url, p_size:d.size.trim(), p_color:d.color.trim(), p_note:d.note.trim(),
         p_image:image, p_price:price, p_store:url ? d.store : "", p_top:d.top, p_owner:d.owner || null});
       const back = listBack(); draft = null; location.hash = back;
-    });
+    }, "Cadeau enregistré ✓");
+  }
+  if(kind === "profile"){
+    const name = v("name"); if(!name) return;
+    pname = name;
+    return run(async()=>{ await api("noel_profile_save", {p_name:name}); pname = null; }, "Prénom enregistré ✓");
   }
   if(kind === "member") return run(async()=>{
     const name = v("name"), groups = [...f.querySelectorAll('input[name="g"]:checked')].map(i => +i.value);
@@ -850,6 +984,11 @@ app.addEventListener("click", async e=>{
   const d = t.dataset;
   if("go" in d) return go(d.go);
   if("retry" in d) return show();
+  if("pick" in d){   // sans redessiner : le formulaire et sa position restent en place
+    draft.image = d.pick; giftForm().elements.namedItem("image").value = d.pick; showPhoto();
+    app.querySelectorAll("[data-pick]").forEach(b => b.setAttribute("aria-pressed", b === t));
+    return;
+  }
   if("favcopy" in d){
     try{ await navigator.clipboard.writeText(favLink); app.querySelector("[data-favcopied]").hidden = false; }
     catch(err){ prompt("Copie ce texte (tout sélectionner, puis copier) :", favLink); }
@@ -863,13 +1002,14 @@ app.addEventListener("click", async e=>{
   if("hold" in d) return;                       // seul l'appui long agit
   if("grestore" in d) return run(()=>api("noel_admin_group_restore", {p_entry:+d.grestore}));
   if("confirm" in d){ readForm(); confirming = d.confirm; error = ""; return render(); }
-  if("tip" in d){ store.set("tip", "1"); return render(); }
+  if("tip" in d){ store.set(d.tip, "1"); return render(); }
+  if("noface" in d) return run(()=>api("noel_profile_save", {p_photo:""}), "Photo retirée");
   if("nophoto" in d){ readForm(); draft.image = ""; opened.delete("photo"); return render(); }
-  if("restore" in d) return run(()=>api("noel_gift_restore", {p_id:+d.restore}));
+  if("restore" in d) return run(()=>api("noel_gift_restore", {p_id:+d.restore}), "Remis dans la liste ✓");
   if("mrestore" in d) return run(()=>api("noel_admin_member_restore", {p_member:+d.mrestore}));
-  if("take" in d) return run(()=>api("noel_take", {p_gift:+d.take}));
-  if("release" in d) return run(()=>api("noel_release", {p_gift:+d.release}));
-  if("delyes" in d) return run(async()=>{ const back = listBack(); await api("noel_gift_delete", {p_id:+d.delyes}); draft = null; location.hash = back; });
+  if("take" in d) return run(()=>api("noel_take", {p_gift:+d.take}), "C'est noté : il est dans « J'offre » ✓");
+  if("release" in d) return run(()=>api("noel_release", {p_gift:+d.release}), "C'est annulé");
+  if("delyes" in d) return run(async()=>{ const back = listBack(); await api("noel_gift_delete", {p_id:+d.delyes}); draft = null; location.hash = back; }, "Retiré (gardé dans la corbeille)");
   if("reinvite" in d) return run(async()=>{
     const m = admin.members.find(x => x.id === +d.reinvite);
     const r = await api("noel_admin_invite", {p_member:m.id});
@@ -886,8 +1026,17 @@ app.addEventListener("toggle", e=>{
   const k = e.target.dataset && e.target.dataset.k; if(!k || !e.target.isConnected) return;
   e.target.open ? opened.add(k) : opened.delete(k);
 }, true);
+app.addEventListener("input", e=>{ if(e.target.closest('form[data-form="profile"]')) pname = e.target.value; });
 app.addEventListener("change", e=>{
   const i = e.target;
+  if("face" in i.dataset && i.files && i.files[0]){
+    const file = i.files[0];
+    toast("J'envoie la photo…");
+    return run(async()=>{
+      const photo = await api("noel_photo_add", {p_data:await squareFace(file)});
+      await api("noel_profile_save", {p_photo:photo.id});
+    }, "Photo enregistrée ✓");
+  }
   if("capture" in i.dataset && i.files && i.files[0]){
     const file = i.files[0], {owner, ownerName} = draft;
     reading = true; error = ""; lastHtml = ""; render(); progStart("capture");
@@ -937,13 +1086,13 @@ app.addEventListener("change", e=>{
     return run(()=>api("noel_admin_member_groups", {p_member:id, p_groups:groups}));
   }
 });
-// Photo disparue du site du magasin : on la retire de l'écran
-app.addEventListener("error", e=>{ if(e.target.tagName === "IMG" && e.target.parentElement) e.target.parentElement.innerHTML = GIFT; }, true);
+// Photo disparue du site du magasin : on la retire de l'écran (photo de profil : on revient à l'initiale)
+app.addEventListener("error", e=>{ const p = e.target.tagName === "IMG" && e.target.parentElement; if(p) p.innerHTML = p.dataset.letter ? esc(p.dataset.letter) : GIFT; }, true);
 
 // Mise à jour discrète du menu et des listes (jamais pendant une saisie)
 function tick(){
   const r = route();
-  if(!token || pre || busy || confirming || document.hidden || !(r === "" || r.startsWith("liste/"))) return;
+  if(!token || pre || busy || confirming || document.hidden || !(r === "" || r === "offre" || r.startsWith("liste/"))) return;
   load().then(()=>{ if(confirming || r !== route()) return; error = ""; render(); }).catch(e=>{ if(e.code === "session") fail(e); });
 }
 setInterval(tick, 20000);
