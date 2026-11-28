@@ -7,6 +7,12 @@ Depuis le 17 novembre, la réservation est RÉACTIVÉE en version ultra-simplifi
 - Propriétaire : page cachée `site/gestion.html` (redirige vers `./#gestion`, saisie du code propriétaire), ou lien `#c=<code propriétaire>`. Un flag `is_owner` est gardé dans `localStorage` pour empêcher l'appareil du propriétaire d'enregistrer accidentellement un code famille. La base PostgreSQL ne renvoie JAMAIS les données de réservation au propriétaire (règle 1). Dans « Réglages de la liste », le propriétaire peut définir/renouveler le code famille et copier le message d'invitation prêt à l'envoi.
 Public : famille, y compris peu à l'aise avec le numérique, surtout sur téléphone. Langue : français.
 
+## Vue famille simplifiée (28 novembre 2026, remplace les descriptions plus haut et plus bas)
+Demande de Dorian : « très très simple ». Famille et public voient UNE liste numérotée (`famCard`) dans son ordre (« Mes préférés » puis « Autres idées ») : photo, nom, précision (taille, couleur), UN prix, UN magasin, « Voir le produit ».
+Aucun état de prix (vérifié, ancien, rupture), aucun comparateur, autre vendeur, historique, piste, baisse ni fiche détaillée. `simplePrice` ignore les ruptures (souvent fausses). C'est une dérogation voulue à « chaque prix affiche sa date et son état », valable pour cette vue seulement.
+Réservation avec prénom (remplace « anonyme sans prénom ») : demandé au premier « Je le prends », gardé dans `localStorage` `nom`, envoyé dans `p_name`. La famille voit « Pris par X », « ✓ Pris par toi » (+ Annuler) et le résumé « Tu as pris ». Les anciennes réservations par jeton `ftok` s'affichent « Déjà pris ». La base ne change pas ; le propriétaire ne reçoit toujours rien (règle 1).
+Les pistes et l'historique sont désormais dans le panneau de gestion d'un cadeau.
+
 ## Accès (depuis le 17 novembre)
 - Famille : lien `#c=<code famille>` partagé par le propriétaire. Conservé dans `localStorage` dès la première visite.
 - Visiteur public : aucune connexion, appel à `noel_public()` (lecture seule, aucun état de réservation).
