@@ -27,7 +27,8 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   lisible, sinon la page recadre la capture (cadre 0-1000) et l'enregistre. La capture n'est jamais gardée ni journalisée. Formulaire prérempli, rien n'est
   enregistré sans « Enregistrer ». Limites : 20 captures par membre et par heure, `CAPTURE_DAY_MAX` (300) par jour pour le site (en mémoire).
   Secours (28 novembre) : `gemini()` essaie `GEMINI_MODEL` (20 s au plus) puis `GEMINI_FALLBACK_MODEL` (défaut `gemini-3.5-flash-lite`) sur 404, 429, 5xx ou délai
-  dépassé ; les échecs sont journalisés (modèle et raison seulement). Production : `GEMINI_MODEL=gemini-3.8-flash`, qui ne répondait pas le 28 novembre.
+  dépassé ; les échecs sont journalisés (modèle et raison seulement). Recherches Google (lien d'une capture, lien illisible) : modèle de secours D'ABORD, consigne
+  « recherche obligatoire » (sans elle il répond de mémoire, donc sans source, donc aucun lien gardé), second essai pour le lien d'une capture. Production : `GEMINI_MODEL=gemini-3.8-flash`, qui ne répondait pas le 28 novembre.
   `GEMINI_API_KEY` (secret, posé par Dorian dans Coolify, projet Google AVEC facturation : en gratuit, Google peut utiliser les captures et la recherche
   Google n'existe pas) ; vide = la page dit « pas encore activée ». Coût estimé : bien moins d'un centime par capture, recherche Google gratuite jusqu'à
   5 000 par mois (tarifs relevés le 2 décembre). NON essayé avec la vraie API Gemini (pas de clé) : tests avec réponses simulées seulement.

@@ -66,7 +66,7 @@ export async function handler(req: Request): Promise<Response> {
   let searched = false;
   if ((!title || price == null || !image) && Deno.env.get("GEMINI_API_KEY") && aiAllowed(id)) {
     try {
-      const g = parseLookup(await gemini(lookupRequest(page.url || link, title || nameFromUrl(link)), 25_000));
+      const g = parseLookup(await gemini(lookupRequest(page.url || link, title || nameFromUrl(link)), 25_000, true));
       if (g) {
         if (!title && g.title) { title = g.title; searched = true; }
         if (price == null && g.price != null) { price = g.price; searched = true; }

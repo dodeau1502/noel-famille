@@ -102,3 +102,21 @@ Deno.test("modèle surchargé : le modèle de secours répond ; erreur de clé :
     assertEquals(used, ["principal"]);
   } finally { globalThis.fetch = realFetch; Deno.env.delete("GEMINI_MODEL"); Deno.env.delete("GEMINI_FALLBACK_MODEL"); }
 });
+
+Deno.test("recherche du lien : modèle léger d'abord, second essai si aucune source", async () => {
+  Deno.env.set("GEMINI_API_KEY", "k"); Deno.env.set("GEMINI_MODEL", "principal"); Deno.env.set("GEMINI_FALLBACK_MODEL", "secours");
+  const ok = fakeFetch(extract, "<html></html>");
+  const searches: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const m = String(input).match(/models\/([^:]+):generateContent/);
+    if (m && JSON.parse(String(init?.body)).tools) {
+      searches.push(m[1]);
+      if (searches.length === 1) return Promise.resolve(Response.json({ candidates: [{ content: { parts: [{ text: "aucune" }] } }] }));
+    }
+    return ok(input, init);
+  }) as typeof fetch;
+  try {
+    assertEquals((await (await post({ token: "bon", image: IMG })).json()).url, PRODUCT);
+    assertEquals(searches, ["secours", "secours"]);
+  } finally { globalThis.fetch = realFetch; Deno.env.delete("GEMINI_MODEL"); Deno.env.delete("GEMINI_FALLBACK_MODEL"); }
+});

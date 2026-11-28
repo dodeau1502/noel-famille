@@ -68,8 +68,8 @@ export function searchRequest(info) {
   const where = info.store ? ` sur le site du magasin « ${info.store} »` : "";
   return {
     contents: [{ role: "user", parts: [{ text:
-      `Trouve l'adresse exacte de la page de ce produit${where} : « ${info.search || info.title} ».\n` +
-      `Réponds seulement par l'adresse de la page du produit (une ligne commençant par https://), ou par le mot aucune. ` +
+      `Fais une recherche Google (obligatoire, ne réponds jamais de mémoire) pour trouver la page qui vend ce produit${where} : « ${info.search || info.title} ».\n` +
+      `Réponds avec l'adresse de la page du produit (une ligne commençant par https://), ou par le mot aucune. ` +
       `Pas de comparateur de prix, pas de réseau social, pas de page de recherche.` }] }],
     tools: [{ google_search: {} }],
   };
@@ -111,7 +111,7 @@ export function pickLink(inText, resolved, store) {
 export function lookupRequest(url, guess) {
   return {
     contents: [{ role: "user", parts: [{ text:
-      `Cherche avec Google le produit vendu à cette adresse : ${url}\n` + (guess ? `Nom probable : « ${guess} ».\n` : "") +
+      `Fais une recherche Google (obligatoire, ne réponds jamais de mémoire) sur le produit vendu à cette adresse : ${url}\n` + (guess ? `Nom probable : « ${guess} ».\n` : "") +
       `Réponds UNIQUEMENT par un objet JSON, sans texte autour, avec ces clés :\n` +
       `"title" : nom exact du produit, marque comprise, sans le nom du magasin ;\n` +
       `"price" : prix actuel en euros pour un client ordinaire chez CE magasin (nombre ; null si tu ne le trouves pas dans les résultats ; jamais un prix barré ou réservé aux membres) ;\n` +

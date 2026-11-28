@@ -38,10 +38,11 @@ export function allowed(id: number, now = Date.now()): boolean {
 
 // Modèle principal, puis modèle de secours si le premier est surchargé, trop lent ou introuvable (vu le 28 novembre :
 // les modèles Flash récents ne répondaient plus). Une erreur de clé ou de requête (400, 401, 403) n'est pas réessayée.
-export async function gemini(body: unknown, timeoutMs: number): Promise<any> {
+// quick (recherches Google) : le modèle léger d'abord, qui répond en 1 à 2 s et cherche bien quand la consigne l'impose.
+export async function gemini(body: unknown, timeoutMs: number, quick = false): Promise<any> {
   const first = Deno.env.get("GEMINI_MODEL") || "gemini-3.6-flash";
   const backup = Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.5-flash-lite";
-  const models = first === backup ? [first] : [first, backup];
+  const models = first === backup ? [first] : quick ? [backup, first] : [first, backup];
   let error = "ai";
   for (let i = 0; i < models.length; i++) {
     const last = i === models.length - 1;
@@ -80,8 +81,10 @@ async function resolve(uri: string): Promise<string> {
 }
 
 async function findLink(info: { store: string; search: string; title: string }): Promise<string> {
-  const res = await gemini(searchRequest(info), 30_000);
-  const { inText, chunks } = searchSources(res);
+  // Il arrive que le modèle réponde sans chercher (aucune source) : un second essai
+  let found = searchSources(await gemini(searchRequest(info), 25_000, true));
+  if (!found.chunks.length) found = searchSources(await gemini(searchRequest(info), 25_000, true));
+  const { inText, chunks } = found;
   const resolved = (await Promise.all(chunks.slice(0, 6).map(async (c: { uri: string; title: string }) => ({ url: await resolve(c.uri), title: c.title }))))
     .filter((r) => r.url.startsWith("https://"));
   const link = pickLink(inText, resolved, info.store);
