@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0d1117">
+<title>Listes de Noël : de retour très vite</title>
+<noscript><meta http-equiv="refresh" content="15"></noscript>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0; min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:24px 16px;
+    background:#0d1117; color:#f2f4f8; font:1.0625rem/1.5 "Figtree","Avenir Next","Segoe UI",system-ui,sans-serif}
+  main{width:100%; max-width:420px; text-align:center; background:#161c26; border:1px solid #2a3342; border-radius:22px; padding:36px 24px}
+  .icon{font-size:3.5rem; line-height:1}
+  h1{margin:16px 0 8px; font:400 2.4rem/1.05 "Bebas Neue","Oswald","Impact","Arial Narrow",sans-serif; text-wrap:balance}
+  p{margin:0; text-wrap:balance}
+  .muted{margin-top:20px; color:#9aa3b2; font-size:.95rem}
+  .dots{display:flex; justify-content:center; gap:8px; margin-top:24px}
+  .dots i{width:10px; height:10px; border-radius:50%; background:#b8a8ff; animation:pulse 1.2s infinite ease-in-out}
+  .dots i:nth-child(2){animation-delay:.2s}
+  .dots i:nth-child(3){animation-delay:.4s}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dots i{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="icon" aria-hidden="true">🎁</div>
+  <h1>De retour dans moins de 2 minutes !</h1>
+  <p>Le site fait une petite pause, le temps d'une mise à jour.</p>
+  <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+  <p class="muted">Rien à faire : la page se rechargera toute seule.</p>
+</main>
+<script>
+  setInterval(async () => {
+    try { if ((await fetch("/healthz", { cache: "no-store" })).ok) location.reload(); } catch {}
+  }, 5000);
+</script>
+</body>
+</html>

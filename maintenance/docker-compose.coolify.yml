@@ -1,0 +1,22 @@
+# Page d'attente de noel.dorianlab.fr. Ressource Coolify SÉPARÉE de « noel-app » (elle doit rester allumée pendant ses redéploiements).
+# Ne poser AUCUN domaine dans Coolify : le routage vient des étiquettes ci-dessous.
+# Priorité 1 : sous la règle de l'appli (qui gagne tant qu'elle tourne), au-dessus de la page 503 de Coolify.
+services:
+  attente:
+    build:
+      context: .
+    restart: unless-stopped
+    mem_limit: 64m
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.noel-attente.loadbalancer.server.port=80
+      - traefik.http.routers.noel-attente-http.rule=Host(`noel.dorianlab.fr`)
+      - traefik.http.routers.noel-attente-http.entrypoints=http
+      - traefik.http.routers.noel-attente-http.priority=1
+      - traefik.http.routers.noel-attente-http.service=noel-attente
+      - traefik.http.routers.noel-attente-https.rule=Host(`noel.dorianlab.fr`)
+      - traefik.http.routers.noel-attente-https.entrypoints=https
+      - traefik.http.routers.noel-attente-https.priority=1
+      - traefik.http.routers.noel-attente-https.service=noel-attente
+      - traefik.http.routers.noel-attente-https.tls=true
+      - traefik.http.routers.noel-attente-https.tls.certresolver=letsencrypt
