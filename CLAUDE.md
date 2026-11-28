@@ -19,7 +19,9 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
 - Base : migration `supabase/migrations/2026-11-29-noel-comptes.sql` (à la fin de `schema.sql`). Toutes les fonctions à code sont fermées à l'API publique.
   Première ouverture après migration : `https://<site>/#installation` avec l'ancien code propriétaire (une seule fois).
 - Installé sur `noel.dev` le 28 novembre (branche `dev`), essayé sur PostgreSQL 17 avec `supabase/tests/comptes.sql` (copie jetable `noel_essai` seulement).
-- PAS en production : avant, vérifier quelles migrations manquent sur `noel-db` (le dev avait celles du 24 au 28 en retard), `pg_dump -Fc`, accord de Dorian.
+- EN PRODUCTION depuis le 28 novembre (commit `7372115`, migration appliquée sur `noel-db`, sauvegarde préalable sur le VPS).
+- Photos : lues sur la page du lien (dont Amazon via `landingImage`, `pageImage` de `parse.js`) ; la Fnac refuse (403), ne pas contourner. Pas de SerpAPI (refusé).
+  Proposé, pas fait : bouton « Coller la photo ».
 - NON FAIT : essai à l'écran sur un vrai téléphone ; extension de navigateur pas adaptée (elle ne marchera plus) ;
   ancienne page gardée dans `archive/index-v1-prix.html`.
 - Si une nouvelle table est ajoutée : RLS, aucune policy, `revoke all` ; nouvelle fonction : `revoke` de `public` puis `grant` explicite si publique.
