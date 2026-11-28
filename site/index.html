@@ -84,6 +84,18 @@
   .chips li{background:var(--soft); border-radius:10px; padding:4px 10px; font-size:.95rem; overflow-wrap:anywhere}
   .star{color:var(--main); font-weight:700; font-size:.9rem}
   .state{font-weight:700; background:var(--soft); border-radius:12px; padding:12px 14px; text-align:center}
+  [data-progress]:empty{display:none}
+  .prog{background:var(--soft); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:10px}
+  .prog .bar{height:8px; border-radius:99px; background:var(--line); overflow:hidden}
+  .prog .bar i{display:block; height:100%; background:var(--main); transition:width .6s ease}
+  .prog ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+  .prog li{display:flex; align-items:center; gap:10px; color:var(--muted)}
+  .prog li b{display:grid; place-items:center; width:20px; height:20px; flex:none; font-size:.9rem}
+  .prog li.done{color:var(--ink)} .prog li.done b{color:var(--main)}
+  .prog li.now{color:var(--ink); font-weight:700}
+  .prog li.now b{border:3px solid var(--line); border-top-color:var(--main); border-radius:50%; animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .prog li.now b{animation:none} .prog .bar i{transition:none} }
   .danger-zone{border:1.5px solid var(--err); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px}
   .hold{position:relative; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none}
   .hold i{position:absolute; left:0; top:0; bottom:0; width:0; background:var(--err); opacity:.35; pointer-events:none}
@@ -288,6 +300,32 @@ function listView(){
     ${trash.map(g => `<div class="line">${picture(g.image, "thumb")}<div><p><b>${esc(g.title)}</b></p><button type="button" class="btn ghost small" data-restore="${g.id}">Remettre dans la liste</button></div></div>`).join("")}</details>` : ""}`;
 }
 
+/* ---------- Écran d'attente par étapes ---------- */
+// Les étapes avancent au temps écoulé (seconde de début de chacune) : le serveur ne dit pas où il en est. La dernière reste
+// en cours tant que la réponse n'est pas arrivée.
+const STEPS = {
+  capture: [[0,"Envoi de l'image"], [2,"Lecture de l'image"], [6,"Recherche du nom"], [11,"Recherche du prix"], [17,"Taille et couleur"], [23,"Recherche du lien"], [30,"Préparation de la fiche"]],
+  link: [[0,"Ouverture du lien"], [2,"Lecture du nom"], [4,"Lecture du prix"], [6,"Chargement de la photo"], [9,"Préparation de la fiche"]]
+};
+let prog = null;
+function progDraw(){
+  if(!prog) return;
+  const t = (Date.now() - prog.t0) / 1000, steps = STEPS[prog.kind], now = steps.filter(x => x[0] <= t).length - 1;
+  const slow = t > steps[steps.length-1][0] + 10, key = prog.kind + now + slow;
+  app.querySelectorAll(`[data-progress="${prog.kind}"]`).forEach(el => {
+    if(el.dataset.at === key) return;
+    el.dataset.at = key;
+    el.innerHTML = `<div class="prog" role="status"><div class="bar"><i style="width:${Math.round((now + .6) / steps.length * 100)}%"></i></div>
+      <ul>${steps.map((x, i) => `<li class="${i < now ? "done" : i === now ? "now" : ""}"><b aria-hidden="true">${i < now ? "✓" : i === now ? "" : "·"}</b>${x[1]}${i === now ? "…" : ""}</li>`).join("")}</ul>
+      ${slow ? `<p class="muted">C'est un peu plus long que d'habitude, patiente encore.</p>` : ""}</div>`;
+  });
+}
+function progStart(kind){ progStop(); prog = {kind, t0:Date.now(), timer:setInterval(progDraw, 500)}; progDraw(); }
+function progStop(){
+  if(prog){ clearInterval(prog.timer); prog = null; }
+  app.querySelectorAll("[data-progress]").forEach(el => { el.innerHTML = ""; delete el.dataset.at; });
+}
+
 /* ---------- Ajouter / modifier ---------- */
 // Liste concernée : la mienne, ou celle d'une personne que l'administrateur remplit
 const other = () => draft.owner && draft.owner !== home.me.id ? draft.ownerName : "";
@@ -298,17 +336,19 @@ function editView(){
       <label>${other() ? "Quelle est l'idée ?" : "Qu'est-ce qui te ferait plaisir ?"}<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
       <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.${PHONE ? "" : ` Encore plus simple : <button type="button" class="link" data-go="favori">le favori « Ma liste de Noël »</button>.`}</p>
       ${errHtml()}<button class="btn">${busy ? "Je regarde le lien…" : "Continuer"}</button>
+      <div data-progress="link"></div>
     </form>
     ${captureOn ? `<section class="card"><p><b>Ou avec une capture d'écran</b> du produit (page du magasin, appli, publication) : je lis le nom, le prix, la couleur, la taille, et je cherche le lien.</p>
-      ${reading ? `<p class="state">Je lis la capture… (jusqu'à une minute)</p>` : `<label class="btn ghost">📷 Choisir une capture d'écran<input type="file" accept="image/*" data-capture hidden></label>`}</section>` : ""}`;
+      ${reading ? `<div data-progress="capture"></div>` : `<label class="btn ghost">📷 Choisir une capture d'écran<input type="file" accept="image/*" data-capture hidden></label>`}</section>` : ""}`;
   const d = draft;
   const field = (name, label, max, ph, extra = "") => `<label>${label}<input type="text" name="${name}" maxlength="${max}" placeholder="${ph}" value="${esc(d[name])}"${extra}></label>`;
   return `${backBtn(listBack(), other() ? "Sa liste" : "Ma liste")}<h1>${d.id ? "Modifier" : "Nouveau cadeau"}${other() ? " · " + esc(other()) : ""}</h1>
     <form class="card" data-form="gift">
       <p class="muted" data-hint${d.hint ? "" : " hidden"}>${esc(d.hint)}</p>
+      <div data-progress="link"></div>
       ${picture(d.image)}
       ${captureOn ? `<label class="btn ghost" data-capbox${imgUrl(d.image) ? " hidden" : ""}>📷 Pas de photo ? Ajoute une capture de la page<input type="file" accept="image/*" data-capture2 hidden></label>
-      <p class="muted" data-capmsg hidden></p>` : ""}
+      <p class="muted" data-capmsg hidden></p><div data-progress="capture"></div>` : ""}
       ${field("title", "Nom", 120, "Ex. : pull en laine", " required")}
       ${field("size", "Taille ou pointure", 80, "Ex. : M, 42, 8 ans")}
       ${field("color", "Couleur", 80, "Ex. : vert foncé")}
@@ -375,9 +415,10 @@ function linkChanged(){
   readForm();
   const d = draft, url = cleanLink(d.url);
   if(!url.startsWith("https://") || url === d.readUrl) return;
-  d.url = d.readUrl = url; d.store = ""; showHint("Je regarde le lien…");
+  d.url = d.readUrl = url; d.store = ""; showHint(""); progStart("link");
   d.reading = readLink(url).then(info => {
     if(draft !== d || d.readUrl !== url || !giftForm()) return;
+    progStop();
     readForm();
     if(info && (info.title || info.image)){
       if(imgUrl(info.image)) d.image = info.image;
@@ -748,9 +789,10 @@ app.addEventListener("submit", async e=>{
   });
   if(kind === "start"){
     const q = v("q"); if(!q) return;
-    busy = true; const b = f.querySelector("button"); b.disabled = true; b.textContent = "Je regarde le lien…";
+    busy = true; const b = f.querySelector("button"); b.disabled = true;
+    if(/https?:\/\/\S+/i.test(q)){ progStart("link"); }
     const {owner, ownerName} = draft;
-    try{ await startGift(q); Object.assign(draft, {owner, ownerName}); }finally{ busy = false; }
+    try{ await startGift(q); Object.assign(draft, {owner, ownerName}); }finally{ busy = false; progStop(); }
     if(route().startsWith("ajouter")){ lastHtml = ""; render(); }
     return;
   }
@@ -846,17 +888,19 @@ app.addEventListener("change", e=>{
   const i = e.target;
   if("capture" in i.dataset && i.files && i.files[0]){
     const file = i.files[0], {owner, ownerName} = draft;
-    reading = true; error = ""; lastHtml = ""; render();
+    reading = true; error = ""; lastHtml = ""; render(); progStart("capture");
     readCapture(file).then(d => { if(!route().startsWith("ajouter")) return; draft = Object.assign(d, {owner, ownerName}); window.scrollTo(0,0); })
       .catch(err => { if(err.code === "session") return fail(err); error = err.message; })
-      .finally(() => { reading = false; lastHtml = ""; render(); });
+      .finally(() => { reading = false; progStop(); lastHtml = ""; render(); });
     return;
   }
   if("capture2" in i.dataset && i.files && i.files[0]){
     const msg = app.querySelector("[data-capmsg]"), d = draft;
-    if(msg){ msg.textContent = "Je lis la capture… (jusqu'à une minute)"; msg.hidden = false; }
+    if(msg) msg.hidden = true;
+    progStart("capture");
     readCapture(i.files[0]).then(c => {
       if(draft !== d || !giftForm()) return;
+      progStop();
       readForm();
       if(c.title && d.guessedTitle && d.title === d.guessedTitle) d.title = c.title;   // nom deviné, pas retouché : le vrai nom le remplace
       for(const k of ["title", "price", "size", "color"]) if(!String(d[k]).trim() && c[k]) d[k] = c[k];
@@ -866,7 +910,7 @@ app.addEventListener("change", e=>{
       for(const k of ["title","price","size","color","note","url","image"]) giftForm().elements.namedItem(k).value = d[k];
       showPhoto(); if(msg) msg.hidden = true;
       showHint(imgUrl(d.image) ? "Capture lue : vérifie puis enregistre." : "Capture lue, mais je n'y ai pas trouvé de photo du produit.");
-    }).catch(err => { if(err.code === "session") return fail(err); if(msg){ msg.textContent = err.message; msg.hidden = false; } });
+    }).catch(err => { progStop(); if(err.code === "session") return fail(err); if(msg){ msg.textContent = err.message; msg.hidden = false; } });
     return;
   }
   if("photo" in i.dataset && i.files && i.files[0]){

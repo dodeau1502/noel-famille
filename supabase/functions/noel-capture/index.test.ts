@@ -83,3 +83,22 @@ Deno.test("pas de produit sur la capture", async () => {
   try { assertEquals((await (await post({ token: "bon", image: IMG })).json()).error, "noproduct"); }
   finally { globalThis.fetch = realFetch; }
 });
+
+Deno.test("modèle surchargé : le modèle de secours répond ; erreur de clé : pas de second essai", async () => {
+  Deno.env.set("GEMINI_API_KEY", "k"); Deno.env.set("GEMINI_MODEL", "principal"); Deno.env.set("GEMINI_FALLBACK_MODEL", "secours");
+  const ok = fakeFetch({ ...extract, url: PRODUCT }, "<html></html>");
+  const used: string[] = [];
+  let status = 503;
+  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const m = String(input).match(/models\/([^:]+):generateContent/);
+    if (m) { used.push(m[1]); if (m[1] === "principal") return Promise.resolve(new Response("", { status })); }
+    return ok(input, init);
+  }) as typeof fetch;
+  try {
+    assertEquals((await (await post({ token: "bon", image: IMG })).json()).title, extract.title);
+    assertEquals(used, ["principal", "secours"]);
+    used.length = 0; status = 403;
+    assertEquals((await (await post({ token: "bon", image: IMG })).json()).error, "ai");
+    assertEquals(used, ["principal"]);
+  } finally { globalThis.fetch = realFetch; Deno.env.delete("GEMINI_MODEL"); Deno.env.delete("GEMINI_FALLBACK_MODEL"); }
+});

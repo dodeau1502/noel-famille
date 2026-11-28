@@ -2,6 +2,7 @@
 // (nom, prix, couleur, taille, cadre de la photo), puis, si l'adresse n'est pas visible, cherche la page du produit (outil google_search).
 // La capture n'est jamais enregistrée ni écrite dans les journaux. Rien n'est enregistré dans la liste : la page préremplit le formulaire.
 // Variables : GEMINI_API_KEY (secret, posé par Dorian dans Coolify ; sans elle la fonction répond « off »), GEMINI_MODEL,
+// GEMINI_FALLBACK_MODEL (secours, gemini-3.5-flash-lite par défaut),
 // CAPTURE_DAY_MAX (plafond quotidien pour tout le site, 300 par défaut).
 import { assertPublic, readMerchant } from "../noel-preview/net.ts";
 import { API, extractRequest, hostOf, parseExtract, pickLink, searchRequest, searchSources } from "./gemini.js";
@@ -35,21 +36,35 @@ export function allowed(id: number, now = Date.now()): boolean {
   return true;
 }
 
+// Modèle principal, puis modèle de secours si le premier est surchargé, trop lent ou introuvable (vu le 28 novembre :
+// les modèles Flash récents ne répondaient plus). Une erreur de clé ou de requête (400, 401, 403) n'est pas réessayée.
 export async function gemini(body: unknown, timeoutMs: number): Promise<any> {
-  const model = Deno.env.get("GEMINI_MODEL") || "gemini-3.6-flash";
-  const r = await fetch(`${API}${encodeURIComponent(model)}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY")!, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!r.ok) {
-    // Ni clé ni contenu dans le journal : seulement le code HTTP
-    console.error(`noel-capture : Gemini ${r.status}`);
-    try { await r.body?.cancel(); } catch (_) {}
-    throw new Error(r.status === 429 ? "busy" : "ai");
+  const first = Deno.env.get("GEMINI_MODEL") || "gemini-3.6-flash";
+  const backup = Deno.env.get("GEMINI_FALLBACK_MODEL") || "gemini-3.5-flash-lite";
+  const models = first === backup ? [first] : [first, backup];
+  let error = "ai";
+  for (let i = 0; i < models.length; i++) {
+    const last = i === models.length - 1;
+    // Ni clé ni contenu dans le journal : seulement le modèle et la raison
+    const log = (why: string | number) => console.error(`noel-capture : Gemini ${models[i]} ${why}`);
+    try {
+      const r = await fetch(`${API}${encodeURIComponent(models[i])}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY")!, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(last ? timeoutMs : Math.min(timeoutMs, 20_000)),
+      });
+      if (r.ok) return await r.json();
+      log(r.status);
+      try { await r.body?.cancel(); } catch (_) {}
+      error = r.status === 429 ? "busy" : "ai";
+      if (r.status !== 404 && r.status !== 429 && r.status < 500) break;
+    } catch (e) {
+      log((e as Error).name === "TimeoutError" ? "délai dépassé" : "injoignable");
+      error = "busy";
+    }
   }
-  return await r.json();
+  throw new Error(error);
 }
 
 // Lien de redirection d'une source Google → adresse finale (une seule étape, sans lire la page)
@@ -93,7 +108,7 @@ export async function handler(req: Request): Promise<Response> {
   let info;
   try { info = parseExtract(await gemini(extractRequest(image), 45_000)); }
   catch (e) { return json({ error: (e as Error).message === "busy" ? "busy" : "ai" }, 502); }
-  if (!info) return json({ error: "ai" }, 502);
+  if (!info) { console.error("noel-capture : réponse de Gemini illisible"); return json({ error: "ai" }, 502); }
   if (!info.product || !info.title) return json({ error: "noproduct" }, 422);
 
   // Lien : celui de la capture s'il est lisible, sinon recherche Google

@@ -16,6 +16,7 @@ services:
       # (en accès gratuit, Google peut utiliser les captures, et la recherche Google n'y est pas disponible).
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - GEMINI_FALLBACK_MODEL=${GEMINI_FALLBACK_MODEL:-gemini-3.5-flash-lite}
       - CAPTURE_DAY_MAX=${CAPTURE_DAY_MAX:-300}
       - CRON_SECRET=${CRON_SECRET:?}
       # Radar des promotions (26 novembre). JOBS_ENABLED=1 en production SEULEMENT (le dev le laisse vide : on ne lit pas Dealabs deux fois).

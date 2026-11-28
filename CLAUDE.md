@@ -26,9 +26,13 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   sources réellement consultées (redirections Google résolues, `pickLink`, comparateurs et réseaux sociaux écartés, `assertPublic`). Photo : celle du site si
   lisible, sinon la page recadre la capture (cadre 0-1000) et l'enregistre. La capture n'est jamais gardée ni journalisée. Formulaire prérempli, rien n'est
   enregistré sans « Enregistrer ». Limites : 20 captures par membre et par heure, `CAPTURE_DAY_MAX` (300) par jour pour le site (en mémoire).
+  Secours (28 novembre) : `gemini()` essaie `GEMINI_MODEL` (20 s au plus) puis `GEMINI_FALLBACK_MODEL` (défaut `gemini-3.5-flash-lite`) sur 404, 429, 5xx ou délai
+  dépassé ; les échecs sont journalisés (modèle et raison seulement). Production : `GEMINI_MODEL=gemini-3.8-flash`, qui ne répondait pas le 28 novembre.
   `GEMINI_API_KEY` (secret, posé par Dorian dans Coolify, projet Google AVEC facturation : en gratuit, Google peut utiliser les captures et la recherche
   Google n'existe pas) ; vide = la page dit « pas encore activée ». Coût estimé : bien moins d'un centime par capture, recherche Google gratuite jusqu'à
   5 000 par mois (tarifs relevés le 2 décembre). NON essayé avec la vraie API Gemini (pas de clé) : tests avec réponses simulées seulement.
+- Attente (28 novembre, demande de Dorian) : lecture d'un lien ou d'une capture = liste d'étapes cochées et barre (`STEPS`, `progStart`). Les étapes
+  avancent au temps écoulé, pas d'après le serveur (« même si c'est un peu faux », accepté par Dorian).
 - Photos envoyées (`noel_photos`, migration `2026-12-02-noel-photos.sql`, APPLIQUÉE en production le 28 novembre, pas sur `noel-dev-db`) : JPEG ≤ 300 Ko dans la base (donc dans les sauvegardes),
   `noel_photo_add(token, base64)` (40 par heure et par membre), jamais effacées (déclencheur), servies par `server/main.ts` à `/photo/<id>.jpg`
   (`noel_photo_get`, clé de service seulement, refusée par le relais public). L'adresse enregistrée est absolue (`https://<site>/photo/…`)
