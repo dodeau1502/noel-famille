@@ -69,13 +69,27 @@ function firstImage(v) {
   return null;
 }
 
+// Pages sans og:image (Amazon…) : <link rel="image_src">, sinon la photo principale d'Amazon (id="landingImage").
+function pageImage(html) {
+  const attr = (tag, name) => decode((tag.match(new RegExp("\\s" + name + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')", "i")) || []).slice(1).find(Boolean) || "");
+  const TAG = /^<[a-z]+(?:[^>"']|"[^"]*"|'[^']*')*>/i;       // un « > » dans un attribut ne ferme pas la balise
+  const link = html.match(/<link\b[^>]*rel\s*=\s*["']image_src["'][^>]*>/i);
+  if (link && attr(link[0], "href")) return attr(link[0], "href");
+  const at = html.search(/\sid\s*=\s*["']landingImage["']/);
+  if (at < 0) return "";
+  const tag = (html.slice(html.lastIndexOf("<img", at), at + 4000).match(TAG) || [""])[0];
+  const dynamic = (attr(tag, "data-a-dynamic-image").match(/https:\/\/[^"]+/) || [""])[0];
+  const src = attr(tag, "src");
+  return attr(tag, "data-old-hires") || dynamic || (src.startsWith("https://") ? src : "");
+}
+
 export function extract(html, finalUrl) {
   const meta = metaTags(html);
   const ld = jsonLd(html);
   const prod = ld.products[0] || {};
   let title = meta["og:title"] || meta["twitter:title"] || prod.name || "";
   if (!title) { const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i); if (t) title = decode(t[1]); }
-  let image = meta["og:image:secure_url"] || meta["og:image"] || meta["twitter:image"] || firstImage(prod.image) || "";
+  let image = meta["og:image:secure_url"] || meta["og:image"] || meta["twitter:image"] || firstImage(prod.image) || pageImage(html) || "";
   try { image = image ? new URL(decode(image), finalUrl).toString() : ""; } catch (e) { image = ""; }
   if (!image.startsWith("https://")) image = "";
 

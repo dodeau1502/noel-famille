@@ -16,6 +16,12 @@ for (const [i,o] of [["1 299,99",1299.99],["1.299,99",1299.99],["1,299.99",1299.
 assert.ok(isPrivateIp("10.0.0.5")&&isPrivateIp("127.0.0.1")&&isPrivateIp("169.254.169.254")&&isPrivateIp("192.168.1.1")&&isPrivateIp("::1"));
 assert.ok(!isPrivateIp("93.184.216.34"));
 assert.ok(badHostname("localhost")&&badHostname("192.168.0.1")&&badHostname("intranet")&&badHostname("x.internal")&&!badHostname("www.amazon.fr"));
+// Amazon : ni og:image ni JSON-LD, la photo principale porte id="landingImage" (balise avec un « > » dans un attribut)
+const amz = `<title>Liseuse</title><img src="https://m.example/other.jpg"><img alt="x" src="https://m.example/small.jpg" data-old-hires="https://m.example/big.jpg" onload="if(a > 1){}" class="c" id="landingImage" data-a-dynamic-image="{&quot;https://m.example/mid.jpg&quot;:[355,355]}">`;
+assert.equal(extract(amz, "https://www.amazon.fr/dp/X").image, "https://m.example/big.jpg");
+assert.equal(extract(amz.replace("https://m.example/big.jpg", ""), "https://www.amazon.fr/dp/X").image, "https://m.example/mid.jpg");
+assert.equal(extract(`<link rel="image_src" href="/p.jpg">`, "https://shop.fr/a").image, "https://shop.fr/p.jpg");
+assert.equal(extract(`<img src="https://m.example/other.jpg">`, "https://shop.fr/a").image, "");
 console.log("parse OK");
 // --- v6 : code-barres, stock ---
 import { cleanGtin, findStock } from './parse.js';
