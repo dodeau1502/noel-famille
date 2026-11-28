@@ -106,7 +106,7 @@
   .offer:first-of-type{border-top:0; padding-top:0}
   .foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; padding-top:8px}
   textarea{width:100%; min-height:120px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:inherit; font:inherit; font-size:.95rem}
-.steps{padding-left:1.4em;margin:0 0 14px}.steps li{margin:8px 0}
+.steps{padding-left:1.4em;margin:0 0 14px}.mview{margin-top:14px;padding-top:12px;border-top:1px solid var(--line, #2a3342)}.peers{padding-left:1.6em}.steps li{margin:8px 0}
 </style>
 </head>
 <body>
@@ -231,10 +231,11 @@ function homeView(){
     </div>`).join("")}</section>` : "";
   return `${days() ? `<span class="days">${days()}</span>` : ""}
   <h1>Bonjour ${esc(me.name)}</h1>
+  ${me.hasList === false ? `<p class="muted">Ici, tu choisis ce que tu offres sur les listes des autres.</p>` : `
   <button type="button" class="card mylist" data-go="liste/${me.id}"><span><h2>Ma liste</h2><span class="muted">${plural(me.count)}</span></span><span aria-hidden="true">→</span></button>
   <button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau à ma liste</button>
   ${PHONE ? "" : `<button type="button" class="link" data-go="favori">🎁 Ajouter en un geste depuis le site d'un magasin</button>`}
-  ${me.count ? "" : `<p class="muted">Commence par ajouter ta première idée : les autres sauront quoi t'offrir.</p>`}
+  ${me.count ? "" : `<p class="muted">Commence par ajouter ta première idée : les autres sauront quoi t'offrir.</p>`}`}
   ${errHtml()}
   ${groups || `<p class="muted">Les listes des autres apparaîtront ici.</p>`}
   ${offering}
@@ -568,14 +569,31 @@ window.addEventListener("hashchange", holdStop);
 
 /* ---------- Gérer la famille (administrateur) ---------- */
 const groupChecks = (selected, attrs) => admin.groups.map(g => `<label class="check"><input type="checkbox" ${attrs} value="${g.id}"${selected.includes(g.id) ? " checked" : ""}> ${esc(g.name)}</label>`).join("");
+// Réglages « a une liste » et « listes visibles » d'un compte (noel_admin_views)
+const viewOf = id => (admin.views || []).find(v => v.id === id) || {hasList:true, seesAll:true, sees:[]};
+function viewForm(m, vw){
+  // Personnes qui partagent un groupe avec m et qui ont une liste
+  const peers = admin.members.filter(o => o.id !== m.id && viewOf(o.id).hasList && o.groups.some(g => m.groups.includes(g)));
+  return `<form class="mview" data-form="mview" data-id="${m.id}">
+    <label class="check"><input type="checkbox" name="hasList"${vw.hasList ? " checked" : ""}> A sa propre liste de Noël</label>
+    <p class="muted">Sans liste, la personne peut seulement offrir : les autres ne la voient pas dans les listes.</p>
+    <p><b>Listes visibles</b></p>
+    <label class="check"><input type="radio" name="all" value="1"${vw.seesAll ? " checked" : ""}> Toutes celles de ses groupes</label>
+    <label class="check"><input type="radio" name="all" value="0"${vw.seesAll ? "" : " checked"}> Seulement celles cochées :</label>
+    <div class="peers">${peers.length ? peers.map(o => `<label class="check"><input type="checkbox" name="sees" value="${o.id}"${vw.sees.includes(o.id) ? " checked" : ""}> ${esc(o.name)}</label>`).join("")
+      : `<p class="muted">Personne d'autre avec une liste dans ses groupes.</p>`}</div>
+    <button class="btn ghost small">Enregistrer ces réglages</button></form>`;
+}
 const inviteText = i => `Bonjour ${i.name} ! Voici ton accès aux listes de Noël :\n${location.origin}/#inv=${i.token}\nTon identifiant : ${i.login}\nÀ la première ouverture, choisis ton code à 4 chiffres.`;
 function adminView(){
   const members = admin.members.map(m => {
     const k = "m" + m.id, status = m.active ? "compte activé" : m.reset === "pending" ? "choisit un nouveau code" : m.reset ? "réinitialisation expirée" : "pas encore activé";
-    return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${esc(m.name)} <span class="muted">&nbsp;· ${status}</span></summary>
+    const vw = viewOf(m.id);
+    return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${esc(m.name)} <span class="muted">&nbsp;· ${status}${vw.hasList ? "" : " · sans liste"}${vw.seesAll ? "" : " · voit certaines listes"}</span></summary>
       <p class="muted">Identifiant : ${esc(m.login)}</p>
-      <button type="button" class="btn" data-go="liste/${m.id}">${m.id === home.me.id ? "Voir ma liste" : "Voir et remplir sa liste"}</button>
+      ${vw.hasList ? `<button type="button" class="btn" data-go="liste/${m.id}">${m.id === home.me.id ? "Voir ma liste" : "Voir et remplir sa liste"}</button>` : ""}
       <div>${groupChecks(m.groups, `data-mgroup="${m.id}"`)}</div>
+      ${viewForm(m, vw)}
       ${m.admin ? "" : !m.active && !m.reset ? `<button type="button" class="btn ghost" data-reinvite="${m.id}">Nouveau lien d'invitation</button>`
         : dangerBox("reset:" + m.id, {label:"Réinitialiser le code", cls:"btn ghost", question:`Réinitialiser le code de ${esc(m.name)} ?`,
             effect:`${esc(m.name)} sera déconnecté de ses téléphones et devra choisir un nouveau code dans les 48 heures.`, hold:"Maintenir pour réinitialiser"})}
@@ -591,6 +609,7 @@ function adminView(){
     <label>Prénom<input type="text" name="name" required maxlength="40" autocomplete="off"></label>
     <label>Identifiant (vide = le prénom)<input type="text" name="login" maxlength="30" autocapitalize="none" autocomplete="off"></label>
     ${groupChecks(admin.groups.length === 1 ? [admin.groups[0].id] : [], 'name="g"')}
+    <label class="check"><input type="checkbox" name="nolist"> Pas de liste de Noël (offre seulement)</label>
     <button class="btn">Créer et voir l'invitation</button></form>
   <h2>Comptes</h2>${members}
   ${admin.removed && admin.removed.length ? `<details class="card" data-k="removed"${opened.has("removed") ? " open" : ""}><summary>Comptes supprimés (${admin.removed.length})</summary>
@@ -636,7 +655,7 @@ async function load(){
   // liste/3 · ajouter/3 · modifier/12/3 : le dernier nombre est la personne ; sans lui, c'est moi
   const [page, a1, a2] = r.split("/"), who = +(page === "modifier" ? a2 : a1) || h.me.id;
   if(page === "liste" || page === "modifier" || (page === "ajouter" && a1)) l = await api("noel_list", {p_member:who});
-  if(r === "famille" && h.me.admin) a = await api("noel_admin");
+  if(r === "famille" && h.me.admin){ a = await api("noel_admin"); a.views = (await api("noel_admin_views")).members; }
   let t = [];
   if(page === "liste" && l && (l.mine || h.me.admin)) t = (await api("noel_trash", {p_member:who})).gifts;
   if(r !== route()) return;                 // l'écran a changé pendant le chargement
@@ -764,11 +783,20 @@ app.addEventListener("submit", async e=>{
   if(kind === "member") return run(async()=>{
     const name = v("name"), groups = [...f.querySelectorAll('input[name="g"]:checked')].map(i => +i.value);
     const d = await api("noel_admin_member_add", {p_name:name, p_login:v("login") || name, p_groups:groups});
+    if(f.elements.nolist.checked){
+      const a = await api("noel_admin"), m = a.members.find(x => x.login === d.login);
+      if(m) await api("noel_admin_member_view", {p_member:m.id, p_has_list:false, p_sees_all:true, p_sees:[]});
+    }
     f.reset();
     invite = {name, login:d.login, token:d.invite};
     window.scrollTo(0,0);
   });
   if(kind === "group") return run(async()=>{ await api("noel_admin_group_add", {p_name:v("name")}); f.reset(); });
+  if(kind === "mview") return run(async()=>{
+    const all = f.querySelector('input[name="all"]:checked').value === "1";
+    const sees = [...f.querySelectorAll('input[name="sees"]:checked')].map(i => +i.value);
+    await api("noel_admin_member_view", {p_member:+f.dataset.id, p_has_list:f.elements.hasList.checked, p_sees_all:all, p_sees:sees});
+  });
 });
 
 app.addEventListener("click", async e=>{

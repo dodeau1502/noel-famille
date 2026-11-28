@@ -8,6 +8,11 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   Code oublié : l'administrateur réinitialise (`noel_admin_reset`), la personne a 48 h pour entrer son identifiant, code vide, et en choisir un nouveau
   (pendant ce délai, quiconque connaît l'identifiant pourrait le faire à sa place). L'administrateur oublie le sien : `#installation` avec l'ancien code propriétaire.
 - Plusieurs groupes (gérés par l'administrateur seul) : on voit les listes des personnes qui partagent un groupe. Chacun une seule liste, la sienne.
+- Comptes SANS liste et listes visibles (28 novembre, migration `2026-12-03-noel-vues`, en production) : `noel_members.has_list` (faux = la personne
+  offre seulement : invisible des autres, liste refusée sauf à l'administrateur ; identifiant + code comme tout le monde) et `sees_all` (faux = ne voit,
+  dans ses groupes, que les listes cochées dans `noel_member_sees`). Tout passe par `noel_sees` (liste, prise, participation) et `noel_home`.
+  Réglages par l'administrateur seul : « Gérer la famille », pour chaque compte (`noel_admin_views`, `noel_admin_member_view`), et case « Pas de liste »
+  à la création. Journalisé. Règle 1 inchangée. Essai : `supabase/tests/vues.sql` (copie jetable seulement).
 - L'administrateur voit toutes les listes et peut y ajouter, modifier, retirer (même avant activation du compte), via « Gérer la famille » (migration `2026-11-30`).
   Sur sa propre liste il ne voit rien, comme tout le monde.
 - Sur la liste d'un autre : « Je l'offre » ou « Participer à plusieurs » avec un montant (`noel_shares`, exclusif avec la prise seule), « Pris par X »
