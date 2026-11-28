@@ -300,7 +300,7 @@
   .fsec.pref h2{color:var(--pine)}
   .flist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
   .fcard{display:flex; flex-direction:column; gap:12px; background:var(--surface); border-radius:18px; padding:14px; box-shadow:var(--shadow); min-width:0}
-  .ftop{display:grid; grid-template-columns:96px minmax(0,1fr); gap:14px; align-items:start}
+  .ftop{display:grid; grid-template-columns:96px minmax(0,1fr); gap:14px; align-items:start; color:inherit; text-decoration:none; border-radius:12px}
   .fimg{position:relative; width:96px; height:96px; border-radius:12px; background:#fff; overflow:hidden; display:grid; place-items:center}
   .fimg img{position:absolute; inset:0; width:100%; height:100%; padding:6px; object-fit:contain}
   .fimg.ph{background:var(--pine-soft); color:var(--pine)}
@@ -312,7 +312,6 @@
   .fpr{display:flex; flex-wrap:wrap; align-items:baseline; gap:0 10px}
   .fpr b{font:400 2rem/1.15 var(--f-display); color:var(--pine); font-variant-numeric:tabular-nums}
   .fpr span{font-size:.92rem; color:var(--muted)}
-  .fsee{display:inline-flex; align-items:center; min-height:44px; font-weight:600; color:var(--pine)}
   .fcard.taken .ftop{opacity:.55}
   .fstate{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:52px; padding:4px 6px 4px 14px; border-radius:14px; font-weight:700; background:var(--line); overflow-wrap:anywhere}
   .fstate.mine{background:var(--pine-soft); color:var(--pine); border:1.5px solid var(--pine)}
@@ -892,8 +891,8 @@ async function load(){
   $("lead").textContent = role === "owner"
     ? "Classe tes cadeaux : les préférés en premier."
     : (role === "family"
-      ? "Les cadeaux sont classés, le 1 est celui que je veux le plus. Touche « Je le prends » : les autres verront que c'est pris."
-      : "Les cadeaux sont classés : le 1 est celui que je veux le plus.");
+      ? "Le 1 est celui que je veux le plus. Touche un cadeau pour le voir au magasin, et « Je le prends » pour le réserver."
+      : "Le 1 est celui que je veux le plus. Touche un cadeau pour le voir au magasin.");
   render();
   renderSources();
   renderBlocked();
@@ -1534,9 +1533,9 @@ function famCard(g, n){
   const {price, store: st, url} = simplePrice(g), img = imgOf(g);
   const notes = [g.variant ? "Version : " + g.variant : "", g.note].filter(Boolean).map(t => `<span class="fnote">${esc(t)}</span>`).join("");
   const taken = role === "family" && g.claimed_by && !isMine(g);
-  return `<li class="fcard${taken ? " taken" : ""}"><div class="ftop"><div class="fimg${img ? "" : " ph"}"><span class="rank">${n}</span>${img || PLACEHOLDER}</div><div class="ftxt"><h3 class="fname">${esc(g.title)}</h3>${notes}
-    <div class="fpr">${price != null ? `<b>${eur(price)}</b>${st ? `<span>${esc(st)}</span>` : ""}` : `<span>Prix à voir</span>`}</div>
-    ${url ? `<a class="fsee" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Voir le produit</a>` : ""}</div></div>${famActions(g)}</li>`;
+  const tag = url ? "a" : "div", link = url ? ` href="${esc(url)}" target="_blank" rel="noopener noreferrer"` : "";
+  return `<li class="fcard${taken ? " taken" : ""}"><${tag} class="ftop"${link}><div class="fimg${img ? "" : " ph"}"><span class="rank">${n}</span>${img || PLACEHOLDER}</div><div class="ftxt"><h3 class="fname">${esc(g.title)}</h3>${notes}
+    <div class="fpr">${price != null ? `<b>${eur(price)}</b>${st ? `<span>${esc(st)}</span>` : ""}` : `<span>Prix à voir</span>`}</div></div></${tag}>${famActions(g)}</li>`;
 }
 function mineHtml(){
   if(role !== "family") return "";
