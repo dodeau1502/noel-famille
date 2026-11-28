@@ -12,6 +12,11 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:?}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:?}
       - SERPAPI_KEY=${SERPAPI_KEY:-}
+      # Capture d'écran → cadeau (2 décembre). Clé Gemini posée par Dorian dans Coolify (vide = fonction coupée), projet AVEC facturation
+      # (en accès gratuit, Google peut utiliser les captures, et la recherche Google n'y est pas disponible).
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - CAPTURE_DAY_MAX=${CAPTURE_DAY_MAX:-300}
       - CRON_SECRET=${CRON_SECRET:?}
       # Radar des promotions (26 novembre). JOBS_ENABLED=1 en production SEULEMENT (le dev le laisse vide : on ne lit pas Dealabs deux fois).
       - JOBS_ENABLED=${JOBS_ENABLED:-}

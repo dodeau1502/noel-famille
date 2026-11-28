@@ -41,7 +41,7 @@ export function cleanUrl(raw: string): string {
   } catch (_) { return raw; }
 }
 
-const BLOCKED = /just a moment|access denied|attention required|robot|captcha|maintenance|accès refusé|acces refuse|forbidden|are you a human/i;
+const BLOCKED = /just a moment|access denied|attention required|robot|captcha|maintenance|accès refusé|acces refuse|forbidden|are you a human|client challenge|checking your browser|verify you are human|un instant/i;
 
 export type Page = { url: string; status: number; info: ReturnType<typeof extract> | null };
 

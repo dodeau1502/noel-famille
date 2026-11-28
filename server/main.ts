@@ -2,6 +2,7 @@
 // Public (port PORT, 8000) : GET fichiers de site/, POST /rest/v1/rpc/noel_*, POST /functions/v1/noel-link.
 // Interne (127.0.0.1:INTERNAL_PORT, 8001, non publié) : relais complet /rest/v1/* utilisé par les fonctions (SUPABASE_URL).
 import { handler as link } from "../supabase/functions/noel-link/index.ts";
+import { handler as capture } from "../supabase/functions/noel-capture/index.ts";
 // Recherche, relecture et radar des prix : retirés le 29 novembre. Leur code reste dans supabase/functions/ et server/jobs.ts.
 
 const PORT = Number(Deno.env.get("PORT") ?? 8000);
@@ -82,6 +83,23 @@ async function serveStatic(pathname: string): Promise<Response> {
   }
 }
 
+// --- Photos envoyées depuis le téléphone (table noel_photos, jamais modifiées : mises en cache un an) -----
+async function servePhoto(id: string): Promise<Response> {
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  try {
+    const r = await fetch(POSTGREST + "/rpc/noel_photo_get", {
+      method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_id: id }), signal: AbortSignal.timeout(5000),
+    });
+    const b64 = r.ok ? await r.json() : null;
+    if (typeof b64 !== "string" || !b64) return text("Introuvable", 404);
+    const bytes = Uint8Array.from(atob(b64.replace(/\s/g, "")), (c) => c.charCodeAt(0));
+    return new Response(bytes, { headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable", ...SEC } });
+  } catch (_) {
+    return text("Indisponible", 503);
+  }
+}
+
 // --- Relais PostgREST ---------------------------------------------------
 async function relay(req: Request, info: Deno.ServeHandlerInfo, publicFacing: boolean): Promise<Response> {
   const u = new URL(req.url);
@@ -122,16 +140,19 @@ Deno.serve({ port: PORT }, async (req, info) => {
 
   if (p.startsWith("/rest/v1/")) {
     // Seules les fonctions noel_* sont joignables de l'extérieur (les tables sont de toute façon fermées).
-    // noel_job_lease, noel_radar_purge et noel_serp_bump sont réservées à la clé de service (le serveur interne) : jamais relayées de l'extérieur.
-    if (req.method === "POST" && /^\/rest\/v1\/rpc\/noel_(?!job_lease$|radar_purge$|serp_bump$)[a-z_]+$/.test(p) && !u.search) return relay(req, info, true);
+    // noel_job_lease, noel_radar_purge, noel_serp_bump et noel_photo_get sont réservées à la clé de service (le serveur interne) : jamais relayées de l'extérieur.
+    if (req.method === "POST" && /^\/rest\/v1\/rpc\/noel_(?!job_lease$|radar_purge$|serp_bump$|photo_get$)[a-z_]+$/.test(p) && !u.search) return relay(req, info, true);
     return text("Interdit", 403);
   }
   if (p === "/functions/v1/noel-link") return link(req);
+  if (p === "/functions/v1/noel-capture") return capture(req);
   // La tâche planifiée Coolify « price-refresh » appelle encore cette adresse : on répond sans rien faire.
   if (p === "/functions/v1/noel-refresh") return text("désactivé", 200);
   if (p.startsWith("/functions/")) return text("Introuvable", 404);
 
   if (req.method !== "GET" && req.method !== "HEAD") return text("Méthode non autorisée", 405);
+  const photo = p.match(/^\/photo\/([a-f0-9]{24})\.jpg$/);
+  if (photo) return servePhoto(photo[1]);
   const denied = await devAccessDenied(req);
   if (denied) return denied;
   return serveStatic(p);

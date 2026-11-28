@@ -106,6 +106,7 @@
   .offer:first-of-type{border-top:0; padding-top:0}
   .foot{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; padding-top:8px}
   textarea{width:100%; min-height:120px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); color:inherit; font:inherit; font-size:.95rem}
+.steps{padding-left:1.4em;margin:0 0 14px}.steps li{margin:8px 0}
 </style>
 </head>
 <body>
@@ -114,6 +115,8 @@
 <script>
 const SUPABASE_KEY = "__SUPABASE_ANON_KEY__"; // remplacé par le serveur au service de la page (clé publique par conception)
 const app = document.getElementById("app");
+// Téléphone ou tablette (écran tactile) : le favori y est trop compliqué à installer, la capture d'écran le remplace
+const PHONE = matchMedia("(pointer: coarse)").matches;
 const store = {
   get(k){ try{ return localStorage.getItem(k) || "" }catch(e){ return "" } },
   set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} },
@@ -230,6 +233,7 @@ function homeView(){
   <h1>Bonjour ${esc(me.name)}</h1>
   <button type="button" class="card mylist" data-go="liste/${me.id}"><span><h2>Ma liste</h2><span class="muted">${plural(me.count)}</span></span><span aria-hidden="true">→</span></button>
   <button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau à ma liste</button>
+  ${PHONE ? "" : `<button type="button" class="link" data-go="favori">🎁 Ajouter en un geste depuis le site d'un magasin</button>`}
   ${me.count ? "" : `<p class="muted">Commence par ajouter ta première idée : les autres sauront quoi t'offrir.</p>`}
   ${errHtml()}
   ${groups || `<p class="muted">Les listes des autres apparaîtront ici.</p>`}
@@ -291,15 +295,19 @@ function editView(){
   if(draft.step === 1) return `${other() ? backBtn(listBack(), "Sa liste") : backBtn("", "Menu")}<h1>Nouveau cadeau${other() ? " pour " + esc(other()) : ""}</h1>
     <form class="card" data-form="start">
       <label>${other() ? "Quelle est l'idée ?" : "Qu'est-ce qui te ferait plaisir ?"}<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
-      <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.</p>
+      <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.${PHONE ? "" : ` Encore plus simple : <button type="button" class="link" data-go="favori">le favori « Ma liste de Noël »</button>.`}</p>
       ${errHtml()}<button class="btn">${busy ? "Je regarde le lien…" : "Continuer"}</button>
-    </form>`;
+    </form>
+    ${captureOn ? `<section class="card"><p><b>Ou avec une capture d'écran</b> du produit (page du magasin, appli, publication) : je lis le nom, le prix, la couleur, la taille, et je cherche le lien.</p>
+      ${reading ? `<p class="state">Je lis la capture… (jusqu'à une minute)</p>` : `<label class="btn ghost">📷 Choisir une capture d'écran<input type="file" accept="image/*" data-capture hidden></label>`}</section>` : ""}`;
   const d = draft;
   const field = (name, label, max, ph, extra = "") => `<label>${label}<input type="text" name="${name}" maxlength="${max}" placeholder="${ph}" value="${esc(d[name])}"${extra}></label>`;
   return `${backBtn(listBack(), other() ? "Sa liste" : "Ma liste")}<h1>${d.id ? "Modifier" : "Nouveau cadeau"}${other() ? " · " + esc(other()) : ""}</h1>
     <form class="card" data-form="gift">
       <p class="muted" data-hint${d.hint ? "" : " hidden"}>${esc(d.hint)}</p>
       ${picture(d.image)}
+      ${captureOn ? `<label class="btn ghost" data-capbox${imgUrl(d.image) ? " hidden" : ""}>📷 Pas de photo ? Ajoute une capture de la page<input type="file" accept="image/*" data-capture2 hidden></label>
+      <p class="muted" data-capmsg hidden></p>` : ""}
       ${field("title", "Nom", 120, "Ex. : pull en laine", " required")}
       ${field("size", "Taille ou pointure", 80, "Ex. : M, 42, 8 ans")}
       ${field("color", "Couleur", 80, "Ex. : vert foncé")}
@@ -307,7 +315,9 @@ function editView(){
       ${field("price", "Prix à peu près (€)", 12, "Ex. : 25", ' inputmode="decimal"')}
       <label>Lien du produit<input type="url" name="url" maxlength="2000" placeholder="https://…" value="${esc(d.url)}"></label>
       <details data-k="photo"${opened.has("photo") ? " open" : ""}><summary>${imgUrl(d.image) ? "Changer la photo" : "Ajouter une photo"}</summary>
-        <label>Adresse d'une image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
+        <label class="btn ghost">📷 Envoyer une photo de mon téléphone<input type="file" accept="image/*" data-photo hidden></label>
+        <p class="muted" data-photomsg hidden></p>
+        <label>Ou l'adresse d'une image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
         <p class="muted">Sur le site du magasin, reste appuyé sur la photo, choisis « Copier l'adresse de l'image », puis colle-la ici.</p>
         ${imgUrl(d.image) ? `<button type="button" class="link" data-nophoto>Retirer la photo</button>` : ""}</details>
       <label class="check"><input type="checkbox" name="top"${d.top ? " checked" : ""}> ★ ${other() ? "Très envie" : "J'en ai très envie"}</label>
@@ -336,14 +346,29 @@ async function startGift(q){
   const around = q.replace(m[0], "").trim().slice(0,120);
   const info = d.url.length <= 2000 ? await readLink(d.url) : null;
   if(d.url.length > 2000){ d.url = ""; d.hint = "Ce lien est trop long : copie une adresse plus courte."; d.title = around; }
-  else if(info && info.title){ d.title = info.title.slice(0,120); d.image = imgUrl(info.image); d.price = priceText(info.price); d.store = info.store || ""; d.hint = "Vérifie les informations puis enregistre."; }
+  else if(info && info.title){
+    d.title = (info.guessed && around ? around : info.title).slice(0,120); d.image = imgUrl(info.image); d.price = priceText(info.price); d.store = info.store || "";
+    if(info.guessed && !around) d.guessedTitle = d.title;   // nom deviné d'après l'adresse : une capture pourra le remplacer
+    d.hint = linkHint(info, d);
+  }
   else { d.title = around; d.hint = "Ce site ne se laisse pas lire : écris le nom toi-même, et ajoute une photo si tu veux. Le lien est gardé."; }
   draft = d;
+}
+// Message sous le formulaire selon ce que la lecture du lien a donné
+function linkHint(info, d){
+  const parts = [info.guessed ? "Ce site bloque la lecture automatique : le nom vient de l'adresse, corrige-le si besoin."
+    : info.searched ? "Informations complétées par une recherche Google : vérifie-les, surtout le prix." : "Vérifie les informations puis enregistre."];
+  if(!d.price) parts.push("Ajoute le prix si tu le connais.");
+  if(!imgUrl(d.image)) parts.push(captureOn ? "Pas de photo : ajoute une capture de la page (bouton juste en dessous)." : "Tu peux ajouter une photo plus bas.");
+  return parts.join(" ");
 }
 // Lien collé ou changé dans le formulaire : on complète ce qui est vide, et la photo suit le lien.
 // L'écran n'est pas redessiné : le bouton touché juste après et le clavier restent en place.
 const giftForm = () => app.querySelector('form[data-form="gift"]');
-function showPhoto(){ const el = giftForm() && giftForm().querySelector(":scope > .img"); if(el) el.outerHTML = picture(draft.image); }
+function showPhoto(){
+  const f = giftForm(), el = f && f.querySelector(":scope > .img"); if(el) el.outerHTML = picture(draft.image);
+  const b = f && f.querySelector("[data-capbox]"); if(b) b.hidden = !!imgUrl(draft.image);
+}
 function showHint(text){ draft.hint = text; const el = giftForm() && giftForm().querySelector("[data-hint]"); if(el){ el.textContent = text; el.hidden = !text; } }
 function linkChanged(){
   readForm();
@@ -359,9 +384,137 @@ function linkChanged(){
       if(!d.price.trim()) d.price = priceText(info.price);
       d.store = info.store || "";
       for(const k of ["title","price","image"]) giftForm().elements.namedItem(k).value = d[k];
-      showPhoto(); showHint("Informations lues sur le lien : vérifie-les.");
+      showPhoto(); showHint(linkHint(info, d));
     }else showHint("Ce site ne se laisse pas lire. Le lien est gardé.");
   });
+}
+
+/* ---------- Favori « Ma liste de Noël » (lit la page du magasin dans le navigateur de la personne) ---------- */
+// Le favori contient favori.txt (copie de extension/extract.js) puis sendToList. Il s'exécute sur la page du MAGASIN, déjà affichée
+// à la personne : aucun mur anti-robots n'est contourné, rien n'est lu par notre serveur. Il ouvre la liste avec #ajout=<données>.
+// sendToList doit rester autonome (converti en texte) : n'utiliser que extractPage et le paramètre base.
+function sendToList(base){
+  let o = {};
+  try{ o = extractPage(); }catch(e){ o = {url:location.href, title:document.title}; }
+  const num = v => {
+    let t = String(v == null ? "" : v).replace(/[^\d.,]/g, ""); if(!t) return null;
+    const c = t.lastIndexOf(","), d = t.lastIndexOf(".");
+    t = c > d ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, "");
+    const n = parseFloat(t); return isFinite(n) && n > 0 && n < 100000 ? Math.round(n * 100) / 100 : null;
+  };
+  let price = num(o.price);
+  if(price == null){
+    // Prix seulement affiché à l'écran : premier montant en euros visible, hors prix barré
+    const skip = 's,del,header,nav,footer,[class*="strike" i],[class*="old-price" i],[class*="oldprice" i],[class*="price-old" i],[class*="was-price" i],[class*="original" i],[class*="compare" i],[class*="crossed" i]';
+    for(const el of document.querySelectorAll('[class*="price" i],[data-testid*="price" i],[id*="price" i],[itemprop="price"]')){
+      if(!(el.offsetWidth || el.offsetHeight) || el.children.length > 4 || el.closest(skip)) continue;
+      if(/line-through/.test(getComputedStyle(el).textDecorationLine || "")) continue;
+      const t = (el.textContent || "").replace(/\s+/g, " ");
+      const m = t.match(/(\d[\d \u202f\u00a0.]*(?:,\d{1,2})?)\s*(?:€|EUR)/) || t.match(/€\s*(\d[\d \u202f\u00a0.,]*)/);
+      if(m && (price = num(m[1])) != null) break;
+    }
+  }
+  const data = {u:o.url || location.href, t:o.title || document.title || "", i:o.image || "", p:price, v:o.variant || ""};
+  const url = base + "/#ajout=" + encodeURIComponent(JSON.stringify(data));
+  const w = window.open(url, "_blank");
+  if(!w) location.href = url;
+}
+let favLink = "";
+async function loadFav(){
+  if(favLink) return;
+  const src = await (await fetch("favori.txt", {cache:"no-cache"})).text();
+  const body = src.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("//")).join("\n");
+  favLink = "javascript:" + encodeURIComponent("(function(){" + body + "\n(" + sendToList.toString() + ")(" + JSON.stringify(location.origin) + ");})()");
+}
+const favoriView = () => `${backBtn("", "Menu")}<h1>Ajouter depuis un magasin</h1>
+  ${PHONE ? `<section class="card"><p><b>Sur téléphone, le plus simple :</b> touche « + Ajouter un cadeau », puis colle le lien du produit ou choisis une capture d'écran. Le favori ci-dessous est surtout pratique sur ordinateur.</p></section>` : ""}
+  <section class="card"><p>Mets le bouton <b>« 🎁 Ma liste de Noël »</b> dans les favoris de ton navigateur. Ensuite, sur la page d'un produit, touche-le : ta liste s'ouvre avec le nom, la photo et le prix déjà remplis. Tu vérifies, puis tu enregistres.</p>
+    <p class="muted">Ça marche aussi avec les sites qui bloquent la lecture automatique (Amazon, Fnac, Hollister…), puisque c'est ton navigateur qui lit la page que tu regardes.</p></section>
+  <section class="card"><h2>Sur ordinateur</h2><p>Fais glisser ce bouton dans la barre de favoris, en haut du navigateur :</p>
+    <p>${favLink ? `<a class="btn" data-fav href="${esc(favLink)}">🎁 Ma liste de Noël</a>` : `<span class="muted">Chargement…</span>`}</p>
+    <p class="muted" data-favmsg hidden></p>
+    <p class="muted">Barre de favoris cachée : Ctrl + Maj + B (sur Mac : Cmd + Maj + B).</p></section>
+  <section class="card"><h2>Sur téléphone ou tablette</h2>
+    <ol class="steps">
+      <li>Touche « Copier le favori » ci-dessous.</li>
+      <li>Ajoute cette page à tes favoris. iPhone : bouton Partager puis « Ajouter un signet ». Android : menu ⋮ puis l'étoile ☆.</li>
+      <li>Modifie ce favori : appelle-le « Ma liste de Noël », efface son adresse et colle à la place.</li>
+      <li>Sur la page d'un produit : iPhone, ouvre tes signets et touche « Ma liste de Noël ». Android, tape « Ma liste » dans la barre d'adresse et choisis le favori (étoile).</li>
+    </ol>
+    <button type="button" class="btn ghost" data-favcopy${favLink ? "" : " disabled"}>Copier le favori</button>
+    <p class="muted" data-favcopied hidden>Copié ! Colle-le maintenant comme adresse du favori.</p></section>`;
+// Données reçues du favori : gardées le temps de se connecter, puis le formulaire s'ouvre prérempli (rien n'est enregistré sans « Enregistrer »)
+const session = {
+  get(){ try{ return JSON.parse(sessionStorage.getItem("ajout") || "null"); }catch(e){ return null; } },
+  set(v){ try{ sessionStorage.setItem("ajout", JSON.stringify(v)); }catch(e){} },
+  del(){ try{ sessionStorage.removeItem("ajout"); }catch(e){} }
+};
+function fromPage(p){
+  const s = v => typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
+  const url = cleanLink(s(p.u)), image = imgUrl(s(p.i));
+  const d = {step:2, id:null, title:s(p.t).slice(0,120), size:"", color:"", note:"", price:"", store:"", top:false,
+    url: /^https:\/\//i.test(url) && url.length <= 2000 ? url : "", image: image.length <= 2000 ? image : ""};
+  d.readUrl = d.url;
+  if(typeof p.p === "number" && p.p > 0 && p.p < 100000) d.price = priceText(p.p);
+  try{ d.store = new URL(d.url).hostname.replace(/^www\./, ""); }catch(e){}
+  for(const part of s(p.v).split(" · ")){
+    const i = part.indexOf(" : "), k = i < 0 ? "" : part.slice(0, i), val = (i < 0 ? part : part.slice(i + 3)).slice(0, 80);
+    if(!val) continue;
+    if(/taille|size|pointure/i.test(k) && !d.size) d.size = val;
+    else if(/couleur|colou?r|coloris/i.test(k) && !d.color) d.color = val;
+    else d.note = (d.note ? d.note + " · " : "") + part;
+  }
+  d.note = d.note.slice(0,500);
+  d.hint = d.title ? "Lu sur la page du magasin : vérifie, complète si besoin, puis enregistre." : "Je n'ai pas trouvé le nom sur cette page : écris-le.";
+  return d;
+}
+
+/* ---------- Photos et captures d'écran envoyées depuis l'appareil ---------- */
+let reading = false;   // capture en cours de lecture
+let captureOn = false; // lecture des captures activée sur le serveur (clé Gemini posée)
+async function checkCapture(){
+  try{ const r = await fetch(location.origin + "/functions/v1/noel-capture", {cache:"no-store"}); captureOn = !!(r.ok && (await r.json()).on); }catch(e){ captureOn = false; }
+}
+// Image de l'appareil → JPEG réduit (côté le plus long ≤ max), recadré si box ([ymin, xmin, ymax, xmax] de 0 à 1000). Renvoie le base64.
+async function shrink(file, max, quality, box){
+  let img;
+  try{ img = await createImageBitmap(file); }catch(e){ throw new Error("Cette image n'a pas pu être lue : choisis une photo ou une capture d'écran (JPEG ou PNG)."); }
+  let sx = 0, sy = 0, sw = img.width, sh = img.height;
+  if(box){ const [y0, x0, y1, x1] = box; sx = x0 / 1000 * img.width; sy = y0 / 1000 * img.height; sw = (x1 - x0) / 1000 * img.width; sh = (y1 - y0) / 1000 * img.height; }
+  const k = Math.min(1, max / Math.max(sw, sh)), c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k));
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  if(img.close) img.close();
+  return c.toDataURL("image/jpeg", quality).split(",")[1];
+}
+// Photo enregistrée dans la base (noel_photo_add) → adresse https de la photo sur ce site
+async function sendPhoto(file, box){
+  let b = await shrink(file, 1000, 0.82, box);
+  if(b.length > 400000) b = await shrink(file, 700, 0.7, box);
+  const d = await api("noel_photo_add", {p_data:b});
+  return location.origin + "/photo/" + d.id + ".jpg";
+}
+const CAPTURE_MSG = {off:"La lecture des captures n'est pas encore activée sur le site.", noproduct:"Je ne vois pas de produit sur cette capture.",
+  throttled:"Trop de captures d'un coup : réessaie dans un moment.", big:"Cette image est trop grande.", busy:"Le service de lecture est occupé : réessaie dans une minute.",
+  ai:"La lecture n'a pas marché. Réessaie, ou écris le nom du cadeau."};
+async function readCapture(file){
+  const b = await shrink(file, 1600, 0.8);
+  let r, d;
+  try{
+    r = await fetch(location.origin + "/functions/v1/noel-capture", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({token, image:b})});
+  }catch(e){ throw new Error("Pas de connexion internet. Réessaie.") }
+  d = await r.json().catch(()=>null);
+  if(d && d.error === "session") throw Object.assign(new Error(MSG.session), {code:"session"});
+  if(!r.ok || !d || d.error) throw new Error(CAPTURE_MSG[d && d.error] || CAPTURE_MSG.ai);
+  const out = {step:2, id:null, title:d.title || "", size:d.size || "", color:d.color || "", note:(d.details || "").slice(0,500), top:false,
+    price: typeof d.price === "number" ? priceText(d.price) : "", url: /^https:\/\//i.test(d.url || "") ? d.url : "", image:imgUrl(d.image || ""), store:d.store || ""};
+  out.readUrl = out.url;
+  // Pas de photo lisible sur le site : morceau recadré de la capture
+  if(!out.image && Array.isArray(d.box)) try{ out.image = await sendPhoto(file, d.box); }catch(e){}
+  out.hint = "Lu sur ta capture : vérifie, complète si besoin, puis enregistre." +
+    (d.found === "search" ? " Le lien a été trouvé par une recherche : ouvre-le pour vérifier que c'est le bon produit." : !out.url ? " Je n'ai pas trouvé le lien : colle-le si tu l'as." : "");
+  return out;
 }
 
 /* ---------- Changer mon code ---------- */
@@ -472,6 +625,7 @@ function render(){
   if((r.startsWith("ajouter") || r.startsWith("modifier/")) && draft) return paint(editView());
   if(r === "famille" && admin) return paint(adminView());
   if(r === "code") return paint(codeView());
+  if(r === "favori") return paint(favoriView());
   paint(homeView());
 }
 // Données de l'écran courant
@@ -498,10 +652,19 @@ async function show(){
     return;
   }
   if(r === "installation"){ pre = {kind:"setup"}; render(); return; }
+  const add = r.match(/^ajout=([\s\S]{1,8000})$/);
+  if(add){
+    try{ const p = JSON.parse(decodeURIComponent(add[1])); if(p && typeof p === "object" && !Array.isArray(p)) session.set(p); }catch(e){}
+    history.replaceState(null, "", location.pathname + "#ajouter"); return show();
+  }
   pre = null;
   if(!token){ render(); return; }
+  // Connexion faite après un envoi du favori : on reprend l'ajout
+  if(r === "" && session.get()){ history.replaceState(null, "", location.pathname + "#ajouter"); return show(); }
   if(r !== "famille") invite = null;
-  if(r.startsWith("ajouter")) draft = {step:1};
+  if(r.startsWith("ajouter") || r.startsWith("modifier/")) await checkCapture();
+  if(r === "ajouter"){ const p = session.get(); session.del(); draft = p ? fromPage(p) : {step:1}; }
+  else if(r.startsWith("ajouter")) draft = {step:1};
   else if(!r.startsWith("modifier/")) draft = null;
   try{
     await load();
@@ -511,6 +674,7 @@ async function show(){
       if(!g) return go("");
       draft = {step:2, id:g.id, title:g.title, size:g.size || "", color:g.color || "", note:g.note || "", price:priceText(g.price), url:g.url || "", readUrl:g.url || "", image:g.image || "", store:g.store || "", top:g.top, hint:"", owner:list.member.id, ownerName:list.member.name};
     }
+    if(r === "favori"){ render(); await loadFav().catch(()=>{}); }
     render(); window.scrollTo(0,0);
   }catch(e){
     if(e.code === "denied") return go("");
@@ -608,10 +772,17 @@ app.addEventListener("submit", async e=>{
 });
 
 app.addEventListener("click", async e=>{
+  // Le favori se glisse dans la barre de favoris : le toucher ici n'a pas de sens
+  if(e.target.closest("a[data-fav]")){ e.preventDefault(); const m = app.querySelector("[data-favmsg]"); if(m){ m.textContent = "Ne touche pas le bouton : fais-le glisser dans la barre de favoris, ou utilise « Copier le favori »."; m.hidden = false; } return; }
   const t = e.target.closest("button"); if(!t || t.disabled) return;
   const d = t.dataset;
   if("go" in d) return go(d.go);
   if("retry" in d) return show();
+  if("favcopy" in d){
+    try{ await navigator.clipboard.writeText(favLink); app.querySelector("[data-favcopied]").hidden = false; }
+    catch(err){ prompt("Copie ce texte (tout sélectionner, puis copier) :", favLink); }
+    return;
+  }
   if("size" in d){ const h = document.documentElement; h.dataset.size = h.dataset.size === "big" ? "" : "big"; store.set("size", h.dataset.size); return render(); }
   if("themeToggle" in d){ const h = document.documentElement; h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light"; store.set("theme", h.dataset.theme); return render(); }
   if("logout" in d){ try{ await api("noel_logout"); }catch(err){} history.replaceState(null, "", location.pathname); return toLogin(); }
@@ -645,6 +816,41 @@ app.addEventListener("toggle", e=>{
 }, true);
 app.addEventListener("change", e=>{
   const i = e.target;
+  if("capture" in i.dataset && i.files && i.files[0]){
+    const file = i.files[0], {owner, ownerName} = draft;
+    reading = true; error = ""; lastHtml = ""; render();
+    readCapture(file).then(d => { if(!route().startsWith("ajouter")) return; draft = Object.assign(d, {owner, ownerName}); window.scrollTo(0,0); })
+      .catch(err => { if(err.code === "session") return fail(err); error = err.message; })
+      .finally(() => { reading = false; lastHtml = ""; render(); });
+    return;
+  }
+  if("capture2" in i.dataset && i.files && i.files[0]){
+    const msg = app.querySelector("[data-capmsg]"), d = draft;
+    if(msg){ msg.textContent = "Je lis la capture… (jusqu'à une minute)"; msg.hidden = false; }
+    readCapture(i.files[0]).then(c => {
+      if(draft !== d || !giftForm()) return;
+      readForm();
+      if(c.title && d.guessedTitle && d.title === d.guessedTitle) d.title = c.title;   // nom deviné, pas retouché : le vrai nom le remplace
+      for(const k of ["title", "price", "size", "color"]) if(!String(d[k]).trim() && c[k]) d[k] = c[k];
+      if(!d.note.trim() && c.note) d.note = c.note;
+      if(!imgUrl(d.image) && c.image) d.image = c.image;
+      if(!d.url.trim() && c.url){ d.url = d.readUrl = c.url; }
+      for(const k of ["title","price","size","color","note","url","image"]) giftForm().elements.namedItem(k).value = d[k];
+      showPhoto(); if(msg) msg.hidden = true;
+      showHint(imgUrl(d.image) ? "Capture lue : vérifie puis enregistre." : "Capture lue, mais je n'y ai pas trouvé de photo du produit.");
+    }).catch(err => { if(err.code === "session") return fail(err); if(msg){ msg.textContent = err.message; msg.hidden = false; } });
+    return;
+  }
+  if("photo" in i.dataset && i.files && i.files[0]){
+    const msg = app.querySelector("[data-photomsg]"), d = draft;
+    if(msg){ msg.textContent = "J'envoie la photo…"; msg.hidden = false; }
+    sendPhoto(i.files[0]).then(u => {
+      if(draft !== d || !giftForm()) return;
+      readForm(); d.image = u; giftForm().elements.namedItem("image").value = u; showPhoto();
+      if(msg) msg.hidden = true;
+    }).catch(err => { if(msg){ msg.textContent = err.code === "session" ? MSG.session : (err.message || "La photo n'a pas pu être envoyée."); msg.hidden = false; } });
+    return;
+  }
   if("understood" in i.dataset){ i.closest(".danger-zone").querySelector("[data-next]").disabled = !i.checked; return; }
   if(i.closest('form[data-form="gift"]')){
     if(i.name === "url") linkChanged();

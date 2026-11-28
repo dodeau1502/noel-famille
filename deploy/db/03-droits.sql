@@ -13,3 +13,4 @@ grant select, insert, update on public.noel_serp_usage to service_role;
 grant select, insert, delete on public.noel_observations to service_role;   -- lot O : un relevé par marchand
 grant execute on function public.noel_job_lease(text,int,text), public.noel_radar_purge(), public.noel_serp_bump(text,int) to service_role;
 -- Vérification : \dp public.noel_claims ne doit montrer AUCUN droit pour service_role.
+grant execute on function public.noel_photo_get(text) to service_role;   -- photos envoyées depuis le téléphone (2 décembre)

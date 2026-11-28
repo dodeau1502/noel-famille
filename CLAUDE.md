@@ -12,8 +12,22 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   Sur sa propre liste il ne voit rien, comme tout le monde.
 - Sur la liste d'un autre : « Je l'offre » ou « Participer à plusieurs » avec un montant (`noel_shares`, exclusif avec la prise seule), « Pris par X »
   (nom visible même d'un autre groupe), « Ce que j'offre » sur le menu, avec une alerte si le cadeau a été modifié (`changed_at`) ou retiré.
-- Précisions par cadeau seulement : taille, couleur, autre info. Photo lue sur le lien, ou adresse d'image collée. PAS d'envoi de photo depuis le téléphone,
-  pas de profil « tailles et goûts », pas d'idée cachée (refusés par Dorian).
+- Précisions par cadeau seulement : taille, couleur, autre info. Photo lue sur le lien, adresse d'image collée, ou photo envoyée depuis le téléphone
+  (AUTORISÉ par Dorian le 2 décembre, voir « Capture d'écran » plus bas). Pas de profil « tailles et goûts », pas d'idée cachée (refusés par Dorian).
+- Capture d'écran → cadeau (2 décembre, demande de Dorian, choix de Gemini par Dorian) : bouton « 📷 Choisir une capture d'écran » au premier écran d'ajout.
+  La page réduit l'image (1600 px) et l'envoie à `/functions/v1/noel-capture` (`supabase/functions/noel-capture/`, partie pure `gemini.js`) : Gemini
+  (`generateContent`, `GEMINI_MODEL`, défaut `gemini-3.6-flash`) lit nom, prix « client ordinaire » (jamais barré ni membre), couleur, taille, détails, magasin,
+  adresse visible et cadre de la photo ; si l'adresse n'est pas visible, seconde requête avec l'outil `google_search` ; un lien n'est gardé que s'il vient des
+  sources réellement consultées (redirections Google résolues, `pickLink`, comparateurs et réseaux sociaux écartés, `assertPublic`). Photo : celle du site si
+  lisible, sinon la page recadre la capture (cadre 0-1000) et l'enregistre. La capture n'est jamais gardée ni journalisée. Formulaire prérempli, rien n'est
+  enregistré sans « Enregistrer ». Limites : 20 captures par membre et par heure, `CAPTURE_DAY_MAX` (300) par jour pour le site (en mémoire).
+  `GEMINI_API_KEY` (secret, posé par Dorian dans Coolify, projet Google AVEC facturation : en gratuit, Google peut utiliser les captures et la recherche
+  Google n'existe pas) ; vide = la page dit « pas encore activée ». Coût estimé : bien moins d'un centime par capture, recherche Google gratuite jusqu'à
+  5 000 par mois (tarifs relevés le 2 décembre). NON essayé avec la vraie API Gemini (pas de clé) : tests avec réponses simulées seulement.
+- Photos envoyées (`noel_photos`, migration `2026-12-02-noel-photos.sql`, NON appliquée) : JPEG ≤ 300 Ko dans la base (donc dans les sauvegardes),
+  `noel_photo_add(token, base64)` (40 par heure et par membre), jamais effacées (déclencheur), servies par `server/main.ts` à `/photo/<id>.jpg`
+  (`noel_photo_get`, clé de service seulement, refusée par le relais public). L'adresse enregistrée est absolue (`https://<site>/photo/…`)
+  car `noel_gift_save` exige `https://`. Un changement de domaine casserait ces adresses.
 - Règle 1 inchangée : sur SA liste, aucune donnée de réservation ni de participation (ni champ, ni compteur, ni ordre, ni réponse différente). Retirer un cadeau le garde en base (`removed_at`) :
   celui qui l'avait pris voit « a retiré ce cadeau ». Limite assumée : l'administrateur peut entrer dans un compte réinitialisé ou en créer un faux.
 - NE JAMAIS PERDRE UNE LISTE (exigence de Dorian, migration `2026-12-01`) : jamais de `delete` sur `noel_gifts` ni `noel_members` (des déclencheurs le refusent) ;
@@ -30,6 +44,23 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
 - EN PRODUCTION depuis le 28 novembre (commit `7372115`, migration appliquée sur `noel-db`, sauvegarde préalable sur le VPS).
 - Photos : lues sur la page du lien (dont Amazon via `landingImage`, `pageImage` de `parse.js`) ; la Fnac refuse (403), ne pas contourner. Pas de SerpAPI (refusé).
   Proposé, pas fait : bouton « Coller la photo ».
+  Murs anti-robots (Hollister « Client Challenge » vu depuis le VPS, Amazon, Fnac…) : `BLOCKED` de `net.ts` les reconnaît ; `noel-link` renvoie alors un nom deviné
+  d'après l'adresse (`noel-link/guess.js`, test `guess.test.mjs`) avec `guessed:true`, sans photo ni prix. On ne contourne jamais le mur (ni faux navigateur, ni navigateur sans tête côté serveur).
+  Repli (2 décembre, si `GEMINI_API_KEY`) : page illisible OU sans prix OU sans photo → Gemini + outil `google_search` (`lookupRequest` / `parseLookup` de
+  `noel-capture/gemini.js`) complète ce qui manque, signalé par `searched:true` (« vérifie, surtout le prix »). Rien n'est gardé si la recherche n'a consulté
+  aucune source ou n'a pas trouvé CE produit ; une image proposée n'est gardée que si notre serveur la télécharge comme image (`isImage`, `assertPublic`).
+  Mêmes compteurs que les captures (20 par heure et par membre, `CAPTURE_DAY_MAX` par jour). REFUSÉ (Dorian ne l'a pas validé) : l'outil « URL context »
+  de Gemini, qui ferait lire par Google une page qui nous bloque. Photo toujours absente : bouton « 📷 Pas de photo ? Ajoute une capture de la page »
+  dans le formulaire (complète seulement les champs vides ; remplace un nom deviné non retouché). Test : `deno test --allow-env --allow-read supabase/functions/noel-link/index.test.ts`.
+- Favori « 🎁 Ma liste de Noël » (`#favori`, lien depuis le menu et le formulaire d'ajout) : favori JavaScript qui s'exécute sur la page du magasin DÉJÀ affichée
+  à la personne (tous navigateurs, ordinateur et téléphone), lit nom, photo, prix, options (`site/favori.txt` = copie EXACTE de `extension/extract.js`,
+  test `supabase/functions/favori.test.mjs` ; puis `sendToList` de `index.html`, qui ajoute un prix lu à l'écran si les données structurées n'en ont pas)
+  et ouvre `/#ajout=<JSON>`. La page garde ces données en `sessionStorage` le temps de la connexion, puis ouvre le formulaire prérempli (`fromPage` :
+  liens https seulement, prix 0 à 100 000, texte échappé) ; rien n'est enregistré sans « Enregistrer ». Notre serveur ne lit rien : aucun mur contourné.
+  Essayé : Hollister dans un vrai navigateur (nom, photo, prix 19,95 € ; le prix « membre » n'est pas pris), réception déconnecté puis connecté, enregistrement simulé.
+  NON essayé : installation et usage sur un vrai iPhone / Android (Chrome Android : taper le nom du favori dans la barre d'adresse).
+  Sur écran tactile (`PHONE`, `pointer: coarse`), le favori n'est proposé nulle part (trop compliqué à installer) : téléphone = lien collé ou capture d'écran.
+  La page `#favori` reste joignable et le dit. Le bouton capture n'apparaît que si `GET /functions/v1/noel-capture` répond `{"on":true}` (clé Gemini posée).
 - NON FAIT : essai à l'écran sur un vrai téléphone ; extension de navigateur pas adaptée (elle ne marchera plus) ;
   ancienne page gardée dans `archive/index-v1-prix.html`.
 - Si une nouvelle table est ajoutée : RLS, aucune policy, `revoke all` ; nouvelle fonction : `revoke` de `public` puis `grant` explicite si publique.
@@ -83,6 +114,10 @@ Les pistes et l'historique sont désormais dans le panneau de gestion d'un cadea
 Le site est déployé par Coolify depuis ce dépôt (projet `noel`, ressource `noel-app`) : fusionner sur la branche suivie, puis « Redeploy » à la main dans Coolify (pas de webhook), puis vérifier `https://noel.dorianlab.fr/healthz`. Un push sur `main` ne publie que la page de redirection sur GitHub Pages.
 
 **Piège récurrent : Coolify suit la branche `vps-migration`, PAS `main`.** Un « Redeploy » après un push sur `main` redéploie l'ancien commit. Avant de redéployer : `git push origin main:vps-migration` (avance rapide), puis « Redeploy » et contrôler que le commit affiché par Coolify est le bon.
+Page d'attente (28 novembre) : dossier `maintenance/` (nginx, code 503, « De retour dans moins de 2 minutes »), ressource Coolify SÉPARÉE de `noel-app`
+(Docker Compose, branche `vps-migration`, dossier de base `/maintenance`, AUCUN domaine). Le routage vient de ses étiquettes Traefik : `Host(noel.dorianlab.fr)`,
+priorité 1, réseau `coolify` ; l'appli (priorité par défaut, plus haute) gagne dès qu'elle tourne et qu'elle est en bonne santé. La page interroge `/healthz` toutes les 5 s et se recharge.
+Elle s'affiche aussi si l'appli plante. Ne jamais poser de priorité explicite sur les routeurs de `noel-app`, ni de domaine sur la page d'attente.
 Base de production : conteneur PostgreSQL `iytbupytjfucaiabhuezrm3g` (base `noel`, 9 cadeaux au 25 novembre) ; celui de dev est `vaognnqx0rsscghmbhfkvwsu` (`noel.dev.dorianlab.fr`). Accès : `ssh ovh` (utilisateur `debian`, pas dans le groupe docker : `sudo docker …`). `noel_owner` ne peut pas se connecter : appliquer une migration avec `psql -U postgres -d noel -v ON_ERROR_STOP=1 --single-transaction` en commençant par `set role noel_owner;` (les fonctions gardent ainsi le bon propriétaire), après un `pg_dump -Fc`.
 Documentation d'exploitation : dossier `vps-infra` de Dorian (`JOURNAL.md`, `ARCHITECTURE.md`).
 
@@ -274,6 +309,8 @@ But : ne rater aucune promotion publique sur les cadeaux de la liste, sans coût
 - Migration NON appliquée : dev d'abord, après `pg_dump -Fc`. Tests : `deno test --allow-env --allow-read supabase/functions/noel-radar/sweep.test.ts`.
 
 ## Vérifier avant de pousser
+- `node supabase/functions/favori.test.mjs`, `node supabase/functions/noel-link/guess.test.mjs`, `node supabase/functions/noel-capture/gemini.test.mjs`,
+  `deno test --allow-env --allow-read supabase/functions/noel-capture/index.test.ts`
 - `node supabase/functions/noel-preview/parse.test.mjs`, `offers.test.mjs`, `verify.test.mjs`, `trust.test.mjs` et `node supabase/functions/shared.test.mjs`, `node supabase/functions/freshness-parity.test.mjs`
 - Radar : `node supabase/functions/noel-radar/dealabs.test.mjs`, `conditions.test.mjs`, `match.test.mjs` ; `deno test --allow-env --allow-read supabase/functions/noel-radar/index.test.ts` ; `deno test --allow-env server/jobs.test.ts` ; `deno test --allow-env --allow-read supabase/functions/noel-radar/selftest.test.ts supabase/functions/noel-refresh/save.test.ts`; `node supabase/functions/noel-radar/observe.test.mjs`, `noel-refresh/schedule.test.mjs`, `source-alerts.test.mjs`
 - Ouvrir `site/index.html` avec Playwright en simulant les appels `noel_get`, `noel-preview` et `noel-refresh` (aucune base réelle nécessaire),
