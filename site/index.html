@@ -451,6 +451,15 @@ function editView(){
       <div data-progress="link"></div>
       ${picture(d.image)}
       <div data-picks>${picksHtml(d)}</div>
+      <p class="muted">Ta propre photo :</p>
+      <div class="row">
+        <label class="btn ghost small">🖼️ Galerie<input type="file" accept="image/*" data-photo hidden></label>
+        <button type="button" class="btn ghost small" data-paste>📋 Coller</button>
+        <button type="button" class="btn ghost small" data-imglink aria-expanded="${opened.has("photo")}">🔗 Lien</button>
+      </div>
+      <label data-linkbox${opened.has("photo") ? "" : " hidden"}>Adresse de l'image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
+      <p class="muted" data-photomsg role="status" hidden></p>
+      <button type="button" class="link" data-nophoto${imgUrl(d.image) ? "" : " hidden"}>Retirer la photo</button>
       ${captureOn ? `<label class="btn ghost" data-capbox${imgUrl(d.image) ? " hidden" : ""}>📷 Pas de photo ? Ajoute une capture de la page<input type="file" accept="image/*" data-capture2 hidden></label>
       <p class="muted" data-capmsg hidden></p><div data-progress="capture"></div>` : ""}
       ${field("title", "Nom", 120, "Ex. : pull en laine", " required")}
@@ -459,12 +468,6 @@ function editView(){
       <label>Autre info utile<textarea class="field" name="note" rows="3" maxlength="500" placeholder="Modèle, marque, version, où le trouver…">${esc(d.note)}</textarea></label>
       ${field("price", "Prix à peu près (€)", 12, "Ex. : 25", ' inputmode="decimal"')}
       <label>Lien du produit<input type="url" name="url" maxlength="2000" placeholder="https://…" value="${esc(d.url)}"></label>
-      <details data-k="photo"${opened.has("photo") ? " open" : ""}><summary>${imgUrl(d.image) ? "Changer la photo" : "Ajouter une photo"}</summary>
-        <label class="btn ghost">📷 Envoyer une photo de mon téléphone<input type="file" accept="image/*" data-photo hidden></label>
-        <p class="muted" data-photomsg hidden></p>
-        <label>Ou l'adresse d'une image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
-        <p class="muted">Sur le site du magasin, reste appuyé sur la photo, choisis « Copier l'adresse de l'image », puis colle-la ici.</p>
-        ${imgUrl(d.image) ? `<button type="button" class="link" data-nophoto>Retirer la photo</button>` : ""}</details>
       <label class="check"><input type="checkbox" name="top"${d.top ? " checked" : ""}> ★ ${other() ? "Très envie" : "J'en ai très envie"}</label>
       ${errHtml()}
       <button class="btn">Enregistrer</button>
@@ -513,7 +516,7 @@ function linkHint(info, d){
     : info.searched ? "Informations complétées par une recherche Google : vérifie-les, surtout le prix." : "Vérifie les informations puis enregistre."];
   if(!d.price) parts.push("Ajoute le prix si tu le connais.");
   if(info.photoSearched) parts.push("Photo trouvée par une recherche d'images : vérifie-la.");
-  if(!imgUrl(d.image)) parts.push(captureOn ? "Pas de photo : ajoute une capture de la page (bouton juste en dessous)." : "Tu peux ajouter une photo plus bas.");
+  if(!imgUrl(d.image)) parts.push(captureOn ? "Pas de photo : ajoute une capture de la page (bouton juste en dessous)." : "Tu peux ajouter une photo juste en dessous.");
   return parts.join(" ");
 }
 // Lien collé ou changé dans le formulaire : on complète ce qui est vide, et la photo suit le lien.
@@ -522,6 +525,7 @@ const giftForm = () => app.querySelector('form[data-form="gift"]');
 function showPhoto(){
   const f = giftForm(), el = f && f.querySelector(":scope > .img"); if(el) el.outerHTML = picture(draft.image);
   const b = f && f.querySelector("[data-capbox]"); if(b) b.hidden = !!imgUrl(draft.image);
+  const rm = f && f.querySelector("[data-nophoto]"); if(rm) rm.hidden = !imgUrl(draft.image);
 }
 function showHint(text){ draft.hint = text; const el = giftForm() && giftForm().querySelector("[data-hint]"); if(el){ el.textContent = text; el.hidden = !text; } }
 function linkChanged(){
@@ -653,6 +657,38 @@ async function squareFace(file){
   const x = (w - side) / 2 / w * 1000, y = (h - side) / 2 / h * 1000;
   return shrink(file, 400, 0.82, [y, x, 1000 - y, 1000 - x]);
 }
+function photoNote(text){ const el = app.querySelector("[data-photomsg]"); if(el){ el.textContent = text; el.hidden = !text; } }
+// Photo choisie par la personne (adresse https) : mise dans la fiche sans redessiner l'écran
+function setPhoto(u){
+  readForm(); draft.image = u; giftForm().elements.namedItem("image").value = u; showPhoto(); photoNote("");
+  app.querySelectorAll("[data-pick]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pick === u));
+}
+function usePhotoFile(file){
+  const d = draft;
+  photoNote("J'envoie la photo…");
+  sendPhoto(file).then(u => { if(draft === d && giftForm()) setPhoto(u); })
+    .catch(err => photoNote(err.code === "session" ? MSG.session : (err.message || "La photo n'a pas pu être envoyée.")));
+}
+// Presse-papiers : une image copiée est envoyée, une adresse https copiée est utilisée telle quelle
+const NO_PASTE = "Je n'ai pas trouvé d'image copiée. Copie une photo (appui long sur l'image, « Copier »), puis touche « Coller ».";
+async function pastePhoto(){
+  try{
+    for(const item of await navigator.clipboard.read()){
+      const type = item.types.find(t => t.startsWith("image/"));
+      if(type) return usePhotoFile(await item.getType(type));
+      if(item.types.includes("text/plain")){
+        const u = cleanLink(await (await item.getType("text/plain")).text());
+        if(/^https:\/\/\S+$/i.test(u) && u.length <= 2000) return setPhoto(u);
+      }
+    }
+    photoNote(NO_PASTE);
+  }catch(e){ photoNote(NO_PASTE); }
+}
+// Ordinateur : Ctrl+V / Cmd+V d'une image directement sur la fiche (le texte collé dans un champ n'est pas touché)
+document.addEventListener("paste", e=>{
+  const file = [...(e.clipboardData ? e.clipboardData.files : [])].find(f => f.type.startsWith("image/"));
+  if(file && draft && giftForm()){ e.preventDefault(); usePhotoFile(file); }
+});
 // Photo enregistrée dans la base (noel_photo_add) → adresse https de la photo sur ce site
 async function sendPhoto(file, box){
   let b = await shrink(file, 1000, 0.82, box);
@@ -984,11 +1020,7 @@ app.addEventListener("click", async e=>{
   const d = t.dataset;
   if("go" in d) return go(d.go);
   if("retry" in d) return show();
-  if("pick" in d){   // sans redessiner : le formulaire et sa position restent en place
-    draft.image = d.pick; giftForm().elements.namedItem("image").value = d.pick; showPhoto();
-    app.querySelectorAll("[data-pick]").forEach(b => b.setAttribute("aria-pressed", b === t));
-    return;
-  }
+  if("pick" in d) return setPhoto(d.pick);
   if("favcopy" in d){
     try{ await navigator.clipboard.writeText(favLink); app.querySelector("[data-favcopied]").hidden = false; }
     catch(err){ prompt("Copie ce texte (tout sélectionner, puis copier) :", favLink); }
@@ -1004,7 +1036,14 @@ app.addEventListener("click", async e=>{
   if("confirm" in d){ readForm(); confirming = d.confirm; error = ""; return render(); }
   if("tip" in d){ store.set(d.tip, "1"); return render(); }
   if("noface" in d) return run(()=>api("noel_profile_save", {p_photo:""}), "Photo retirée");
-  if("nophoto" in d){ readForm(); draft.image = ""; opened.delete("photo"); return render(); }
+  if("nophoto" in d) return setPhoto("");
+  if("paste" in d) return pastePhoto();
+  if("imglink" in d){
+    const box = app.querySelector("[data-linkbox]"); box.hidden = !box.hidden; t.setAttribute("aria-expanded", !box.hidden);
+    box.hidden ? opened.delete("photo") : opened.add("photo");
+    if(!box.hidden) box.querySelector("input").select();
+    return;
+  }
   if("restore" in d) return run(()=>api("noel_gift_restore", {p_id:+d.restore}), "Remis dans la liste ✓");
   if("mrestore" in d) return run(()=>api("noel_admin_member_restore", {p_member:+d.mrestore}));
   if("take" in d) return run(()=>api("noel_take", {p_gift:+d.take}), "C'est noté : il est dans « J'offre » ✓");
@@ -1065,13 +1104,7 @@ app.addEventListener("change", e=>{
     return;
   }
   if("photo" in i.dataset && i.files && i.files[0]){
-    const msg = app.querySelector("[data-photomsg]"), d = draft;
-    if(msg){ msg.textContent = "J'envoie la photo…"; msg.hidden = false; }
-    sendPhoto(i.files[0]).then(u => {
-      if(draft !== d || !giftForm()) return;
-      readForm(); d.image = u; giftForm().elements.namedItem("image").value = u; showPhoto();
-      if(msg) msg.hidden = true;
-    }).catch(err => { if(msg){ msg.textContent = err.code === "session" ? MSG.session : (err.message || "La photo n'a pas pu être envoyée."); msg.hidden = false; } });
+    usePhotoFile(i.files[0]); i.value = "";
     return;
   }
   if("understood" in i.dataset){ i.closest(".danger-zone").querySelector("[data-next]").disabled = !i.checked; return; }

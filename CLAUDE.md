@@ -80,6 +80,9 @@ vue publique, prix vérifiés, comparateurs, radar, balayage) sont HISTORIQUES :
   `SERPAPI_KEY` est posée (offre gratuite, ~250 par mois, par Dorian dans Coolify), `noel-link` cherche des images (`google_images`, `noel-link/photos.js`) d'après
   le nom : jusqu'à 6, vérifiées par notre serveur, la première est mise, les autres proposées sous la photo (`picksHtml`). 15 recherches par membre et par heure.
   Aucune autre recherche SerpAPI (ni prix). Pas de promesse de 100 % : rien trouvé = pas de photo. NON essayé avec la vraie API.
+- Photo choisie par la personne (28 novembre) : sous la photo de la fiche, toujours visibles, « Galerie », « Coller » (image ou adresse https du
+  presse-papiers ; Ctrl+V sur ordinateur) et « Lien » ; plus de bloc replié « Changer la photo ». Essayé à 390 px avec réponses et presse-papiers simulés,
+  PAS sur un vrai iPhone / Android.
 - Favori « 🎁 Ma liste de Noël » (`#favori`, lien depuis le menu et le formulaire d'ajout) : favori JavaScript qui s'exécute sur la page du magasin DÉJÀ affichée
   à la personne (tous navigateurs, ordinateur et téléphone), lit nom, photo, prix, options (`site/favori.txt` = copie EXACTE de `extension/extract.js`,
   test `supabase/functions/favori.test.mjs` ; puis `sendToList` de `index.html`, qui ajoute un prix lu à l'écran si les données structurées n'en ont pas)
