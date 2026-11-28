@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Sauvegarde VPS (Liste de Noël, adaptée de la sauvegarde de Finance) : pg_dump (schéma public, données seules) chiffré avec age, puis envoi vers un stockage S3. FAIL-CLOSED.
+# --column-inserts : chaque ligne nomme ses colonnes. Sans cela, la restauration échoue dès que l'ordre des colonnes de la base
+# reconstruite diffère de la production (constaté le 28 novembre 2026).
 # Tout est dans la base « noel » (aucun fichier à part). Le dump contient noel_claims (réservations) : il est chiffré avant tout envoi.
 # Variables OBLIGATOIRES (aucune valeur de repli) :
 #   BACKUP_DATABASE_URL, BACKUP_AGE_RECIPIENT (age1…, clé PUBLIQUE),
@@ -34,7 +36,7 @@ mkdir -p "$OUT"
 STAGE="$(mktemp -d "$OUT/.stage.XXXXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 
-"${PG_DUMP:-pg_dump}" --no-owner --no-privileges --schema=public --data-only --inserts "$BACKUP_DATABASE_URL" \
+"${PG_DUMP:-pg_dump}" --no-owner --no-privileges --schema=public --data-only --column-inserts "$BACKUP_DATABASE_URL" \
   | awk '{ print } /^-- PostgreSQL database dump complete/ { done = 1 } END { if (!done) exit 3 }' \
   | age -r "$BACKUP_AGE_RECIPIENT" -o "$STAGE/$NAME"
 

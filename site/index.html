@@ -84,6 +84,11 @@
   .chips li{background:var(--soft); border-radius:10px; padding:4px 10px; font-size:.95rem; overflow-wrap:anywhere}
   .star{color:var(--main); font-weight:700; font-size:.9rem}
   .state{font-weight:700; background:var(--soft); border-radius:12px; padding:12px 14px; text-align:center}
+  .danger-zone{border:1.5px solid var(--err); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px}
+  .hold{position:relative; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none}
+  .hold i{position:absolute; left:0; top:0; bottom:0; width:0; background:var(--err); opacity:.35; pointer-events:none}
+  .hold.on i{width:100%; transition:width 5s linear}
+  .hold span{position:relative; pointer-events:none}
   .shares{background:var(--soft); border-radius:12px; padding:10px 14px}
   .shares ul{margin:4px 0 0; padding-left:18px}
   .photo{align-self:center; max-width:100%; max-height:180px; border-radius:12px; background:#fff}
@@ -115,11 +120,12 @@ const store = {
   del(k){ try{ localStorage.removeItem(k) }catch(e){} }
 };
 let token = store.get("session");
-let home = null, list = null, admin = null;       // dernières réponses du serveur
+let home = null, list = null, admin = null, trash = [];   // dernières réponses du serveur
 let draft = null;                                  // cadeau en cours d'ajout ou de modification
 let invite = null;                                 // lien d'activation affiché à l'administrateur
 let confirming = "", error = "", busy = false, lastHtml = "";
 const opened = new Set();                          // blocs dépliés, gardés ouverts quand l'écran est redessiné
+let danger = {key:"", step:0};                     // action sensible en cours de validation
 
 const MSG = {
   denied:"Action impossible.", throttled:"Trop d'essais. Réessaie dans quelques minutes.",
@@ -216,7 +222,7 @@ function homeView(){
   const groups = home.groups.filter(g => g.members.length).map(g => `<h2>${home.groups.length > 1 ? esc(g.name) : "Les listes de la famille"}</h2><ul class="people">${g.members.map(personBtn).join("")}</ul>`).join("");
   const offering = home.offering.length ? `<section class="card"><h2>Ce que j'offre</h2>${home.offering.map(o => `<div class="offer">
       <div class="line">${picture(o.image, "thumb")}<div><p><b>${esc(o.title)}</b></p><p>pour ${esc(o.ownerName)}${o.price != null ? " · environ " + eur(o.price) : ""}</p>${o.details ? `<p class="muted">${esc(o.details)}</p>` : ""}</div></div>
-      ${o.removed ? `<p class="err">${esc(o.ownerName)} a retiré ce cadeau de sa liste.</p>` : o.changed ? `<p class="err">${esc(o.ownerName)} a modifié ce cadeau : vérifie avant d'acheter.</p>` : ""}
+      ${o.removed ? `<p class="err">Ce cadeau a été retiré de la liste de ${esc(o.ownerName)}.</p>` : o.changed ? `<p class="err">Ce cadeau a été modifié : vérifie avant d'acheter.</p>` : ""}
       ${o.amount != null ? sharesHtml(o.shares, o.price) : `<label class="check"><input type="checkbox" data-bought="${o.id}"${o.bought ? " checked" : ""}> C'est acheté</label>`}
       <div class="row">${webUrl(o.url) ? `<a class="btn ghost small" href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">Voir</a>` : ""}<button type="button" class="btn ghost small" data-release="${o.id}">${o.amount != null ? "Retirer ma participation" : "Je ne l'offre plus"}</button></div>
     </div>`).join("")}</section>` : "";
@@ -240,6 +246,7 @@ function homeView(){
 
 /* ---------- Une liste ---------- */
 function giftHtml(g, mine){
+  const editBtn = mine || !home.me.admin ? "" : `<button type="button" class="link" data-go="modifier/${g.id}/${list.member.id}">Modifier ce cadeau</button>`;
   const url = webUrl(g.url), shares = mine ? [] : g.shares, my = shares.find(x => x.mine), taken = !mine && g.taken && !g.mine;
   const tag = url ? "a" : "div", href = url ? ` href="${esc(url)}" target="_blank" rel="noopener noreferrer"` : "";
   const chips = [g.size ? "Taille : " + g.size : "", g.color ? "Couleur : " + g.color : "", g.note].filter(Boolean);
@@ -260,29 +267,36 @@ function giftHtml(g, mine){
       ${chips.length ? `<ul class="chips">${chips.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
       ${g.price != null ? `<p class="price">${eur(g.price)}${g.store ? `<small>${esc(g.store)}</small>` : ""}</p>` : ""}
       ${url ? `<span class="see">Voir le produit ↗</span>` : ""}</div></${tag}>
-    <div class="acts">${acts}</div></li>`;
+    <div class="acts">${acts}${editBtn}</div></li>`;
 }
 function listView(){
   const mine = list.mine, name = list.member.name;
   return `${backBtn("", "Menu")}
   <h1>${mine ? "Ma liste" : "La liste de " + esc(name)}</h1>
   ${mine ? `<button type="button" class="btn" data-go="ajouter">+ Ajouter un cadeau</button><p class="muted">Tu ne vois pas qui a pris quoi : c'est la surprise.</p>` : ""}
+  ${!mine && home.me.admin ? `<button type="button" class="btn ghost" data-go="ajouter/${list.member.id}">+ Ajouter un cadeau pour ${esc(name)}</button>` : ""}
   ${errHtml()}
   ${list.gifts.length ? `<ul class="gifts">${list.gifts.map(g => giftHtml(g, mine)).join("")}</ul>`
-    : `<p class="card">${mine ? "Ta liste est vide. Ajoute ta première idée !" : esc(name) + " n'a pas encore ajouté d'idées."}</p>`}`;
+    : `<p class="card">${mine ? "Ta liste est vide. Ajoute ta première idée !" : esc(name) + " n'a pas encore ajouté d'idées."}</p>`}
+  ${trash.length ? `<details class="card" data-k="trash"${opened.has("trash") ? " open" : ""}><summary>Corbeille (${trash.length})</summary>
+    <p class="muted">Les cadeaux retirés sont gardés ici.</p>
+    ${trash.map(g => `<div class="line">${picture(g.image, "thumb")}<div><p><b>${esc(g.title)}</b></p><button type="button" class="btn ghost small" data-restore="${g.id}">Remettre dans la liste</button></div></div>`).join("")}</details>` : ""}`;
 }
 
 /* ---------- Ajouter / modifier ---------- */
+// Liste concernée : la mienne, ou celle d'une personne que l'administrateur remplit
+const other = () => draft.owner && draft.owner !== home.me.id ? draft.ownerName : "";
+const listBack = () => "liste/" + (draft.owner || home.me.id);
 function editView(){
-  if(draft.step === 1) return `${backBtn("", "Menu")}<h1>Nouveau cadeau</h1>
+  if(draft.step === 1) return `${other() ? backBtn(listBack(), "Sa liste") : backBtn("", "Menu")}<h1>Nouveau cadeau${other() ? " pour " + esc(other()) : ""}</h1>
     <form class="card" data-form="start">
-      <label>Qu'est-ce qui te ferait plaisir ?<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
+      <label>${other() ? "Quelle est l'idée ?" : "Qu'est-ce qui te ferait plaisir ?"}<input type="text" name="q" required maxlength="2000" placeholder="Colle un lien, ou écris le nom" autocomplete="off" autofocus></label>
       <p class="muted">Astuce : sur le site du magasin, copie l'adresse du produit puis colle-la ici.</p>
       ${errHtml()}<button class="btn">${busy ? "Je regarde le lien…" : "Continuer"}</button>
     </form>`;
   const d = draft;
   const field = (name, label, max, ph, extra = "") => `<label>${label}<input type="text" name="${name}" maxlength="${max}" placeholder="${ph}" value="${esc(d[name])}"${extra}></label>`;
-  return `${backBtn("liste/" + home.me.id, "Ma liste")}<h1>${d.id ? "Modifier" : "Nouveau cadeau"}</h1>
+  return `${backBtn(listBack(), other() ? "Sa liste" : "Ma liste")}<h1>${d.id ? "Modifier" : "Nouveau cadeau"}${other() ? " · " + esc(other()) : ""}</h1>
     <form class="card" data-form="gift">
       <p class="muted" data-hint${d.hint ? "" : " hidden"}>${esc(d.hint)}</p>
       ${picture(d.image)}
@@ -296,11 +310,11 @@ function editView(){
         <label>Adresse d'une image<input type="url" name="image" maxlength="2000" placeholder="https://…" value="${esc(d.image)}"></label>
         <p class="muted">Sur le site du magasin, reste appuyé sur la photo, choisis « Copier l'adresse de l'image », puis colle-la ici.</p>
         ${imgUrl(d.image) ? `<button type="button" class="link" data-nophoto>Retirer la photo</button>` : ""}</details>
-      <label class="check"><input type="checkbox" name="top"${d.top ? " checked" : ""}> ★ J'en ai très envie</label>
+      <label class="check"><input type="checkbox" name="top"${d.top ? " checked" : ""}> ★ ${other() ? "Très envie" : "J'en ai très envie"}</label>
       ${errHtml()}
       <button class="btn">Enregistrer</button>
-      ${d.id ? (confirming === "gift" ? `<p>Retirer ce cadeau de ta liste ?</p><div class="row"><button type="button" class="btn danger" data-delyes="${d.id}">Oui, retirer</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
-        : `<button type="button" class="btn danger" data-confirm="gift">Retirer de ma liste</button>`) : ""}
+      ${d.id ? (confirming === "gift" ? `<p>Retirer ce cadeau de ${other() ? "la liste de " + esc(other()) : "ta liste"} ? Il restera dans la corbeille.</p><div class="row"><button type="button" class="btn danger" data-delyes="${d.id}">Oui, retirer</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
+        : `<button type="button" class="btn danger" data-confirm="gift">Retirer de ${other() ? "sa" : "ma"} liste</button>`) : ""}
     </form>`;
 }
 function readForm(){
@@ -356,6 +370,49 @@ const codeView = () => `${backBtn("", "Menu")}<h1>Changer mon code</h1>
   <form class="card" data-form="code">${pinInput("old", "Code actuel")}${pinInput("pin", "Nouveau code")}${pinInput("pin2", "Nouveau code, encore une fois")}
     ${errHtml()}<button class="btn">Changer</button></form>`;
 
+/* ---------- Actions sensibles : 3 validations, la dernière en restant appuyé 5 secondes ---------- */
+const HOLD_MS = 5000;
+const dangerOpen = (key, label, cls = "link") => `<button type="button" class="${cls}" data-danger="${key}">${label}</button>`;
+function dangerBox(key, o){
+  if(danger.key !== key) return dangerOpen(key, o.label, o.cls);
+  const stop = `<button type="button" class="btn ghost" data-danger="">Annuler</button>`;
+  const step = n => `<p class="muted">Validation ${n} sur 3</p>`;
+  if(danger.step === 1) return `<div class="danger-zone">${step(1)}<p><b>${o.question}</b></p><button type="button" class="btn danger" data-next>Oui, je veux continuer</button>${stop}</div>`;
+  if(danger.step === 2) return `<div class="danger-zone">${step(2)}<p>${o.effect}</p>
+    <label class="check"><input type="checkbox" data-understood> J'ai lu et compris</label>
+    <button type="button" class="btn danger" data-next disabled>Continuer</button>${stop}</div>`;
+  return `<div class="danger-zone">${step(3)}<p>Reste appuyé 5 secondes. Relâcher annule.</p>
+    <button type="button" class="btn danger hold" data-hold="${key}"><i></i><span>${o.hold}</span></button>${stop}</div>`;
+}
+const DANGER = {
+  mdel: id => api("noel_admin_member_remove", {p_member:id}).then(()=>{ invite = null; }),
+  gdel: id => api("noel_admin_group_remove", {p_group:id}),
+  reset: id => api("noel_admin_reset", {p_member:id})
+};
+let holding = null;
+function holdStart(b){
+  if(holding || busy) return;
+  b.classList.add("on");
+  holding = {b, timer:setTimeout(()=>{
+    const [kind, id] = b.dataset.hold.split(":");
+    holding = null; danger = {key:"", step:0};
+    run(()=>DANGER[kind](+id));
+  }, HOLD_MS)};
+}
+function holdStop(){
+  if(!holding) return;
+  clearTimeout(holding.timer); holding.b.classList.remove("on"); holding = null;
+}
+app.addEventListener("pointerdown", e=>{ const b = e.target.closest("[data-hold]"); if(b && e.button === 0) holdStart(b); });
+for(const type of ["pointerup","pointercancel"]) window.addEventListener(type, holdStop);
+app.addEventListener("pointerout", e=>{ if(holding && e.target === holding.b && !holding.b.contains(e.relatedTarget)) holdStop(); });
+app.addEventListener("keydown", e=>{ const b = e.target.closest("[data-hold]"); if(b && (e.key === " " || e.key === "Enter")){ e.preventDefault(); if(!e.repeat) holdStart(b); } });
+app.addEventListener("keyup", holdStop);
+app.addEventListener("contextmenu", e=>{ if(e.target.closest("[data-hold]")) e.preventDefault(); });   // pas de menu à l'appui long
+window.addEventListener("blur", holdStop);
+document.addEventListener("visibilitychange", holdStop);
+window.addEventListener("hashchange", holdStop);
+
 /* ---------- Gérer la famille (administrateur) ---------- */
 const groupChecks = (selected, attrs) => admin.groups.map(g => `<label class="check"><input type="checkbox" ${attrs} value="${g.id}"${selected.includes(g.id) ? " checked" : ""}> ${esc(g.name)}</label>`).join("");
 const inviteText = i => `Bonjour ${i.name} ! Voici ton accès aux listes de Noël :\n${location.origin}/#inv=${i.token}\nTon identifiant : ${i.login}\nÀ la première ouverture, choisis ton code à 4 chiffres.`;
@@ -364,12 +421,13 @@ function adminView(){
     const k = "m" + m.id, status = m.active ? "compte activé" : m.reset === "pending" ? "choisit un nouveau code" : m.reset ? "réinitialisation expirée" : "pas encore activé";
     return `<details class="card" data-k="${k}"${opened.has(k) ? " open" : ""}><summary>${esc(m.name)} <span class="muted">&nbsp;· ${status}</span></summary>
       <p class="muted">Identifiant : ${esc(m.login)}</p>
+      <button type="button" class="btn" data-go="liste/${m.id}">${m.id === home.me.id ? "Voir ma liste" : "Voir et remplir sa liste"}</button>
       <div>${groupChecks(m.groups, `data-mgroup="${m.id}"`)}</div>
       ${m.admin ? "" : !m.active && !m.reset ? `<button type="button" class="btn ghost" data-reinvite="${m.id}">Nouveau lien d'invitation</button>`
-        : confirming === "r" + m.id ? `<p>${esc(m.name)} devra choisir un nouveau code dans les 48 heures. Ses téléphones seront déconnectés.</p><div class="row"><button type="button" class="btn" data-reset="${m.id}">Oui, réinitialiser</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
-        : `<button type="button" class="btn ghost" data-confirm="r${m.id}">Réinitialiser le code</button>`}
-      ${m.admin ? "" : confirming === "d" + m.id ? `<p>Supprimer ${esc(m.name)}, sa liste et ce que ${esc(m.name)} a pris ? C'est définitif.</p><div class="row"><button type="button" class="btn danger" data-mdel="${m.id}">Oui, supprimer</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
-        : `<button type="button" class="link" data-confirm="d${m.id}">Supprimer ce compte</button>`}
+        : dangerBox("reset:" + m.id, {label:"Réinitialiser le code", cls:"btn ghost", question:`Réinitialiser le code de ${esc(m.name)} ?`,
+            effect:`${esc(m.name)} sera déconnecté de ses téléphones et devra choisir un nouveau code dans les 48 heures.`, hold:"Maintenir pour réinitialiser"})}
+      ${m.admin ? "" : dangerBox("mdel:" + m.id, {label:"Supprimer ce compte", question:`Supprimer le compte de ${esc(m.name)} ?`,
+          effect:`${esc(m.name)} ne pourra plus se connecter. Sa liste est gardée et le compte pourra être restauré. Ce que ${esc(m.name)} offrait redevient libre.`, hold:"Maintenir pour supprimer"})}
     </details>`; }).join("");
   return `${backBtn("", "Menu")}<h1>La famille</h1>
   ${errHtml()}
@@ -382,10 +440,14 @@ function adminView(){
     ${groupChecks(admin.groups.length === 1 ? [admin.groups[0].id] : [], 'name="g"')}
     <button class="btn">Créer et voir l'invitation</button></form>
   <h2>Comptes</h2>${members}
+  ${admin.removed && admin.removed.length ? `<details class="card" data-k="removed"${opened.has("removed") ? " open" : ""}><summary>Comptes supprimés (${admin.removed.length})</summary>
+    ${admin.removed.map(m => `<div class="row"><p class="state">${esc(m.name)}</p><button type="button" class="btn ghost small" data-mrestore="${m.id}">Restaurer</button></div>`).join("")}
+    <p class="muted">Après restauration, utilise « Réinitialiser le code » ou envoie un nouveau lien.</p></details>` : ""}
   <form class="card" data-form="group"><h2>Groupes</h2>
     <p class="muted">Chacun voit les listes des personnes de ses groupes.</p>
-    ${admin.groups.map(g => confirming === "g" + g.id ? `<div class="row"><button type="button" class="btn danger" data-gdel="${g.id}">Oui, supprimer « ${esc(g.name)} »</button><button type="button" class="btn ghost" data-confirm="">Non</button></div>`
-      : `<div class="row"><p class="state">${esc(g.name)}</p><button type="button" class="btn ghost small" data-confirm="g${g.id}">Supprimer</button></div>`).join("")}
+    ${admin.groups.map(g => `<p class="state">${esc(g.name)}</p>${dangerBox("gdel:" + g.id, {label:`Supprimer le groupe « ${esc(g.name)} »`, question:`Supprimer le groupe « ${esc(g.name)} » ?`,
+        effect:"Les personnes de ce groupe ne verront plus les listes les unes des autres. Les comptes et les listes sont gardés, et le groupe pourra être restauré.", hold:"Maintenir pour supprimer"})}`).join("")}
+    ${(admin.removedGroups || []).map(g => `<div class="row"><p class="muted">Supprimé : ${esc(g.name)}</p><button type="button" class="btn ghost small" data-grestore="${g.entry}">Restaurer</button></div>`).join("")}
     <label>Nouveau groupe<input type="text" name="name" required maxlength="40" autocomplete="off"></label>
     <button class="btn ghost">Créer le groupe</button></form>`;
 }
@@ -407,7 +469,7 @@ function render(){
   const r = route();
   if(!home) return paint(error ? errHtml() + `<button type="button" class="btn" data-retry>Réessayer</button>` : `<p class="muted">Chargement…</p>`);
   if(r.startsWith("liste/") && list) return paint(listView());
-  if((r === "ajouter" || r.startsWith("modifier/")) && draft) return paint(editView());
+  if((r.startsWith("ajouter") || r.startsWith("modifier/")) && draft) return paint(editView());
   if(r === "famille" && admin) return paint(adminView());
   if(r === "code") return paint(codeView());
   paint(homeView());
@@ -417,14 +479,18 @@ async function load(){
   const r = route();
   const h = await api("noel_home");
   let l = null, a = null;
-  if(r.startsWith("liste/") || r.startsWith("modifier/")) l = await api("noel_list", {p_member: r.startsWith("liste/") ? +r.split("/")[1] : h.me.id});
+  // liste/3 · ajouter/3 · modifier/12/3 : le dernier nombre est la personne ; sans lui, c'est moi
+  const [page, a1, a2] = r.split("/"), who = +(page === "modifier" ? a2 : a1) || h.me.id;
+  if(page === "liste" || page === "modifier" || (page === "ajouter" && a1)) l = await api("noel_list", {p_member:who});
   if(r === "famille" && h.me.admin) a = await api("noel_admin");
+  let t = [];
+  if(page === "liste" && l && (l.mine || h.me.admin)) t = (await api("noel_trash", {p_member:who})).gifts;
   if(r !== route()) return;                 // l'écran a changé pendant le chargement
-  home = h; list = l; admin = a;
+  home = h; list = l; admin = a; trash = t;
 }
 async function show(){
   const r = route();
-  error = ""; confirming = ""; opened.clear();
+  error = ""; confirming = ""; opened.clear(); danger = {key:"", step:0};
   const inv = r.match(/^inv=([a-f0-9]{32})$/);
   if(inv){
     try{ const i = await rpc("noel_invite_info", {p_invite:inv[1]}); pre = {kind:"activate", token:inv[1], name:i.name, login:i.login}; render(); }
@@ -435,14 +501,15 @@ async function show(){
   pre = null;
   if(!token){ render(); return; }
   if(r !== "famille") invite = null;
-  if(r === "ajouter") draft = {step:1};
+  if(r.startsWith("ajouter")) draft = {step:1};
   else if(!r.startsWith("modifier/")) draft = null;
   try{
     await load();
+    if(r.startsWith("ajouter/")) Object.assign(draft, {owner:list.member.id, ownerName:list.member.name});
     if(r.startsWith("modifier/")){
       const g = list && list.gifts.find(x => x.id === +r.split("/")[1]);
       if(!g) return go("");
-      draft = {step:2, id:g.id, title:g.title, size:g.size || "", color:g.color || "", note:g.note || "", price:priceText(g.price), url:g.url || "", readUrl:g.url || "", image:g.image || "", store:g.store || "", top:g.top, hint:""};
+      draft = {step:2, id:g.id, title:g.title, size:g.size || "", color:g.color || "", note:g.note || "", price:priceText(g.price), url:g.url || "", readUrl:g.url || "", image:g.image || "", store:g.store || "", top:g.top, hint:"", owner:list.member.id, ownerName:list.member.name};
     }
     render(); window.scrollTo(0,0);
   }catch(e){
@@ -499,8 +566,9 @@ app.addEventListener("submit", async e=>{
   if(kind === "start"){
     const q = v("q"); if(!q) return;
     busy = true; const b = f.querySelector("button"); b.disabled = true; b.textContent = "Je regarde le lien…";
-    try{ await startGift(q); }finally{ busy = false; }
-    if(route() === "ajouter"){ lastHtml = ""; render(); }
+    const {owner, ownerName} = draft;
+    try{ await startGift(q); Object.assign(draft, {owner, ownerName}); }finally{ busy = false; }
+    if(route().startsWith("ajouter")){ lastHtml = ""; render(); }
     return;
   }
   if(kind === "code"){
@@ -525,8 +593,8 @@ app.addEventListener("submit", async e=>{
     if(image && !imgUrl(image)){ error = "L'adresse de la photo doit commencer par https://"; render(); return; }
     return run(async()=>{
       await api("noel_gift_save", {p_id:d.id, p_title:d.title.trim(), p_url:url, p_size:d.size.trim(), p_color:d.color.trim(), p_note:d.note.trim(),
-        p_image:image, p_price:price, p_store:url ? d.store : "", p_top:d.top});
-      draft = null; location.hash = "liste/" + home.me.id;
+        p_image:image, p_price:price, p_store:url ? d.store : "", p_top:d.top, p_owner:d.owner || null});
+      const back = listBack(); draft = null; location.hash = back;
     });
   }
   if(kind === "member") return run(async()=>{
@@ -547,20 +615,23 @@ app.addEventListener("click", async e=>{
   if("size" in d){ const h = document.documentElement; h.dataset.size = h.dataset.size === "big" ? "" : "big"; store.set("size", h.dataset.size); return render(); }
   if("themeToggle" in d){ const h = document.documentElement; h.dataset.theme = h.dataset.theme === "light" ? "dark" : "light"; store.set("theme", h.dataset.theme); return render(); }
   if("logout" in d){ try{ await api("noel_logout"); }catch(err){} history.replaceState(null, "", location.pathname); return toLogin(); }
+  if("danger" in d){ danger = {key:d.danger, step:d.danger ? 1 : 0}; return render(); }
+  if("next" in d){ danger.step++; return render(); }
+  if("hold" in d) return;                       // seul l'appui long agit
+  if("grestore" in d) return run(()=>api("noel_admin_group_restore", {p_entry:+d.grestore}));
   if("confirm" in d){ readForm(); confirming = d.confirm; error = ""; return render(); }
   if("tip" in d){ store.set("tip", "1"); return render(); }
   if("nophoto" in d){ readForm(); draft.image = ""; opened.delete("photo"); return render(); }
-  if("reset" in d) return run(()=>api("noel_admin_reset", {p_member:+d.reset}));
+  if("restore" in d) return run(()=>api("noel_gift_restore", {p_id:+d.restore}));
+  if("mrestore" in d) return run(()=>api("noel_admin_member_restore", {p_member:+d.mrestore}));
   if("take" in d) return run(()=>api("noel_take", {p_gift:+d.take}));
   if("release" in d) return run(()=>api("noel_release", {p_gift:+d.release}));
-  if("delyes" in d) return run(async()=>{ await api("noel_gift_delete", {p_id:+d.delyes}); draft = null; location.hash = "liste/" + home.me.id; });
+  if("delyes" in d) return run(async()=>{ const back = listBack(); await api("noel_gift_delete", {p_id:+d.delyes}); draft = null; location.hash = back; });
   if("reinvite" in d) return run(async()=>{
     const m = admin.members.find(x => x.id === +d.reinvite);
     const r = await api("noel_admin_invite", {p_member:m.id});
     invite = {name:m.name, login:m.login, token:r.invite}; window.scrollTo(0,0);
   });
-  if("mdel" in d) return run(async()=>{ await api("noel_admin_member_remove", {p_member:+d.mdel}); invite = null; });
-  if("gdel" in d) return run(()=>api("noel_admin_group_remove", {p_group:+d.gdel}));
   if("share" in d){
     const text = inviteText(invite);
     if(navigator.share){ try{ await navigator.share({text}); }catch(err){} return; }
@@ -574,6 +645,7 @@ app.addEventListener("toggle", e=>{
 }, true);
 app.addEventListener("change", e=>{
   const i = e.target;
+  if("understood" in i.dataset){ i.closest(".danger-zone").querySelector("[data-next]").disabled = !i.checked; return; }
   if(i.closest('form[data-form="gift"]')){
     if(i.name === "url") linkChanged();
     if(i.name === "image"){ readForm(); showPhoto(); }

@@ -39,7 +39,11 @@ COUNTS="$(P -d noel -At -F ' : ' -c "
   select 'noel_claims', count(*) from noel_claims union all
   select 'noel_prices', count(*) from noel_prices union all
   select 'noel_blocked', count(*) from noel_blocked union all
-  select 'noel_domains', count(*) from noel_domains;")"
+  select 'noel_domains', count(*) from noel_domains union all
+  select 'noel_members', count(*) from noel_members union all
+  select 'noel_groups', count(*) from noel_groups union all
+  select 'noel_shares', count(*) from noel_shares union all
+  select 'noel_journal', count(*) from noel_journal;")"
 echo "$COUNTS"
 # Intégrité référentielle après rejeu (les FK étaient différées) : aucune réservation ni prix orphelin.
 ORPH="$(P -d noel -At -c "select (select count(*) from noel_claims c where not exists (select 1 from noel_gifts g where g.id=c.gift_id)) + (select count(*) from noel_prices p where not exists (select 1 from noel_gifts g where g.id=p.gift_id))")"

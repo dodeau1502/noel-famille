@@ -33,6 +33,19 @@ begin
   assert noel_home(a)->'offering' = '[]'::jsonb, 'fuite offering';
   -- Cloisonnement des groupes
   assert noel_list(z, jid)->>'error' = 'denied', 'groupe cloisonné';
+  -- L'administrateur remplit la liste d'un autre, même d'un autre groupe ; personne d'autre ne le peut
+  assert noel_gift_save(a, null, 'Pour Zoé', null, null, null, null, null, null, null, false, zid) ? 'ok', 'admin ajoute';
+  r := noel_list(z, zid); assert r->'gifts'->0->>'title' = 'Pour Zoé' and not (r->'gifts'->0 ? 'taken'), 'visible par la personne';
+  r := noel_list(a, zid); assert r->'gifts'->0 ? 'taken', 'admin voit la liste';
+  assert noel_gift_save(a, (r->'gifts'->0->>'id')::bigint, 'Corrigé', null, 'S', null, null, null, null, null, false) ? 'ok', 'admin modifie';
+  assert noel_list(z, zid)->'gifts'->0->>'size' = 'S', 'modification vue';
+  assert noel_gift_save(j, null, 'Pirate', null, null, null, null, null, null, null, false, zid)->>'error' = 'denied', 'ajout chez un autre refusé';
+  assert noel_gift_save(j, (r->'gifts'->0->>'id')::bigint, 'Pirate', null, null, null, null, null, null, null, false)->>'error' = 'denied', 'modif refusée';
+  assert noel_gift_delete(j, (r->'gifts'->0->>'id')::bigint)->>'error' = 'denied', 'retrait refusé';
+  assert noel_take(a, (r->'gifts'->0->>'id')::bigint) ? 'ok', 'admin peut offrir';
+  assert not (noel_list(z, zid)->'gifts'->0 ?| array['taken','by','mine','shares']), 'fuite chez Zoé';
+  assert noel_gift_delete(a, (r->'gifts'->0->>'id')::bigint) ? 'ok', 'admin retire';
+  assert noel_release(a, (r->'gifts'->0->>'id')::bigint) ? 'ok', 'admin annule';
   assert noel_admin(j)->>'error' = 'denied', 'admin réservé';
 
   -- Listes, liens longs, tailles
@@ -92,14 +105,88 @@ begin
   assert noel_activate(r->>'invite', '8888') ? 'token', 'réactivation';
   raise notice 'partie 2 : OK';
 end $$;
+-- Rien ne se perd : corbeille, compte supprimé puis restauré
+do $$
+declare a text; j text; r jsonb; jid bigint; pid bigint; gid bigint; grp bigint;
+begin
+  r := noel_setup('essai-proprio', 'x', 'xx'); a := noel_activate(r->>'invite', '9999')->>'token';
+  r := noel_admin(a); grp := (select (x->>'id')::bigint from jsonb_array_elements(r->'groups') x where x->>'name' = 'Famille');
+  r := noel_admin_member_add(a, 'Nina', 'nina', array[grp]); j := noel_activate(r->>'invite', '1212')->>'token';
+  r := noel_home(j); jid := (r->'me'->>'id')::bigint;
+  perform noel_gift_save(j, null, 'Précieux', null, null, null, null, null, null, null, false);
+  gid := (noel_list(j, jid)->'gifts'->0->>'id')::bigint;
+  assert noel_take(a, gid) ? 'ok', 'pris';
+  assert noel_gift_delete(j, gid) ? 'ok', 'retiré';
+  r := noel_trash(j, jid); assert r->'gifts'->0->>'title' = 'Précieux' and not (r->'gifts'->0 ?| array['taken','by','mine','bought']), 'corbeille ' || r;
+  assert noel_gift_restore(j, gid) ? 'ok' and noel_trash(j, jid) is not null, 'remis';
+  assert noel_list(a, jid)->'gifts'->0->>'by' is not null, 'réservation gardée';
+  assert noel_trash(j, (noel_home(a)->'me'->>'id')::bigint)->>'error' = 'denied', 'corbeille des autres fermée';
+  -- la personne offre un cadeau, puis son compte est supprimé et restauré
+  perform noel_gift_save(a, null, 'Du chef', null, null, null, null, null, null, null, false);
+  pid := (select (x->>'id')::bigint from jsonb_array_elements(noel_list(j, (noel_home(a)->'me'->>'id')::bigint)->'gifts') x where x->>'title' = 'Du chef');
+  assert noel_take(j, pid) ? 'ok', 'Nina offre';
+  perform set_config('essai.a', a, false); perform set_config('essai.j', j, false); perform set_config('essai.jid', jid::text, false);
+end $$;
+do $$
+declare a text := current_setting('essai.a'); j text := current_setting('essai.j'); jid bigint := current_setting('essai.jid'); r jsonb;
+begin
+  assert noel_admin_member_remove(j, jid)->>'error' = 'denied', 'suppression réservée';
+  assert noel_admin_member_remove(a, jid) ? 'ok', 'supprimé';
+  assert noel_home(j)->>'error' = 'session' and noel_login('nina', '1212')->>'error' = 'denied', 'plus d''accès';
+  r := noel_admin(a); assert r->'removed'->0->>'name' = 'Nina' and r::text not like '%"login": "nina"%', 'listé comme supprimé';
+  assert noel_admin_invite(a, jid)->>'error' = 'denied', 'pas de lien';
+  perform set_config('essai.a', a, false);
+end $$;
+do $$
+declare a text := current_setting('essai.a'); jid bigint := current_setting('essai.jid'); r jsonb;
+begin
+  assert noel_admin_member_restore(a, jid) ? 'ok', 'restauré';
+  r := noel_list(a, jid); assert jsonb_array_length(r->'gifts') = 1 and r->'gifts'->0->>'title' = 'Précieux', 'liste intacte';
+  r := noel_admin(a); assert (select jsonb_array_length(x->'groups') = 1 from jsonb_array_elements(r->'members') x where (x->>'id')::bigint = jid), 'groupe revenu';
+  assert noel_admin_reset(a, jid) ? 'ok' and (noel_login('nina', '')->>'reset')::boolean, 'nouveau code possible';
+  assert noel_reset_choose('nina', '3434') ? 'token', 'reconnexion';
+  raise notice 'partie 3 : OK';
+end $$;
+do $$
+declare a text := current_setting('essai.a'); r jsonb; grp bigint; n int;
+begin
+  r := noel_admin(a); grp := (select (x->>'id')::bigint from jsonb_array_elements(r->'groups') x where x->>'name' = 'Famille');
+  select count(*) into n from jsonb_array_elements(r->'members') x where x->'groups' @> to_jsonb(grp);
+  assert noel_admin_group_remove(a, grp) ? 'ok', 'groupe supprimé';
+  perform set_config('essai.grp', grp::text, false); perform set_config('essai.n', n::text, false);
+end $$;
+do $$
+declare a text := current_setting('essai.a'); grp bigint := current_setting('essai.grp'); n int := current_setting('essai.n'); r jsonb; m int;
+begin
+  r := noel_admin(a); assert r->'removedGroups'->0->>'name' = 'Famille', 'listé ' || r;
+  assert noel_admin_group_restore(a, (r->'removedGroups'->0->>'entry')::bigint) ? 'ok', 'groupe restauré';
+  r := noel_admin(a);
+  select count(*) into m from jsonb_array_elements(r->'members') x where x->'groups' @> to_jsonb(grp);
+  assert m = n and n > 1 and r->'removedGroups' = '[]'::jsonb, format('membres %s sur %s', m, n);
+  raise notice 'partie 4 : OK';
+end $$;
+reset role;
+do $$
+declare n int := 0; q text;
+begin
+  assert (select count(*) from noel_claims where member_id = current_setting('essai.jid')::bigint) = 1, 'sa réservation est revenue';
+  assert (select count(*) from noel_journal) > 5, 'journal rempli';
+  assert not exists (select 1 from noel_journal where data ? 'pin_hash'), 'pas d''empreinte de code au journal';
+  foreach q in array array['delete from noel_gifts', 'delete from noel_members', 'truncate noel_claims', 'truncate noel_gifts cascade'] loop
+    begin execute q; raise exception 'SUPPRESSION POSSIBLE : %', q;
+    exception when raise_exception then if sqlerrm like 'SUPPRESSION POSSIBLE%' then raise; end if; n := n + 1; end;
+  end loop;
+  raise notice 'suppressions bloquées : % sur 4', n;
+end $$;
+set role anon;
 -- Anciennes fonctions et tables fermées
 do $$
 declare q text; n int := 0;
 begin
   foreach q in array array['select noel_public()', 'select noel_get(''essai-proprio'')', 'select noel_claim(''x'',1,''y'')', 'select noel_auth(''x'')',
-                          'select noel_new_session(1)', 'select * from noel_claims', 'select * from noel_shares', 'select * from noel_members', 'select * from noel_sessions'] loop
+                          'select noel_new_session(1)', 'select * from noel_claims', 'select * from noel_journal', 'select * from noel_shares', 'select * from noel_members', 'select * from noel_sessions'] loop
     begin execute q; raise exception 'ACCES OUVERT : %', q;
     exception when insufficient_privilege then n := n + 1; end;
   end loop;
-  raise notice 'fermetures : % sur 9', n;
+  raise notice 'fermetures : % sur 10', n;
 end $$;
